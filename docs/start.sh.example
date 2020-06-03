@@ -1,0 +1,37 @@
+#!/bin/sh 
+ cd /opt/otp/Dispatcher 
+ if [[ ! -f application.conf ]] ; then 
+ echo 'File "application.conf" is missed, aborting.' 
+ exit 
+ fi 
+ if [[ ! -f fairscheduler.xml ]] ; then 
+ echo 'File "fairscheduler.xml" is missed, aborting.' 
+ exit 
+ fi 
+ /opt/otp/spark_master/bin/spark-submit \
+ --verbose \
+ --master spark://localhost:7077 \
+ --deploy-mode cluster \
+ --supervise \
+ --driver-cores 2 \
+ --driver-memory 4G \
+ --executor-cores 1 \
+ --executor-memory 6G \
+ --conf "spark.sql.autoBroadcastJoinThreshold=-1" \
+ --conf "spark.application.config=/opt/otp/Dispatcher/application.conf" \
+ --conf "spark.blacklist.enable=true" \
+ --conf "spark.driver.maxResultSize=4G" \
+ --conf "spark.dynamicAllocation.enabled=false" \
+ --conf "spark.locality.wait=0" \
+ --conf "spark.scheduler.allocation.file=/opt/otp/Dispatcher/fairscheduler.xml" \
+ --conf "spark.scheduler.mode=FAIR" \
+ --conf "spark.shuffle.service.enabled=false" \
+ --conf "spark.speculation=true" \
+ --conf "spark.sql.caseSensitive=true" \
+ --conf "spark.sql.crossJoin.enabled=true" \
+ --conf "spark.sql.files.ignoreCorruptFiles=true" \
+ --conf "spark.sql.files.ignoreMissingFiles=true" \
+ --conf "spark.driver.extraClassPath=/opt/otp/Dispatcher/mssql-jdbc-8.2.0.jre8.jar" \
+ --conf "spark.executor.extraClassPath=/opt/otp/Dispatcher/mssql-jdbc-8.2.0.jre8.jar" \
+ --jars `find $(cd ..; pwd)/Dispatcher -name "*.jar" | xargs | sed -r 's/ /,/g'` \
+ --class SuperDriver $(cd ..; pwd)/Dispatcher/jars/ot.dispatcher/dispatcher_2.11/dispatcher_2.11-1.2.1_release_1.3.0.jar
