@@ -10,7 +10,7 @@ Addition section:
 endef
 
 GENERATE_VERSION = $(shell grep version build.sbt  | sed -r 's/version := "(.+?)"/\1/' )
-GENERATE_BRANCH = $(shell git branch | grep -P '^\*' | sed -re 's/^..//' | tr '/' '_')
+GENERATE_BRANCH = $(shell git name-rev $$(git rev-parse HEAD) | cut -d\  -f2 | sed -re 's/^(remotes\/)?origin\///' | tr '/' '_')
 GENERATE_SCALA_VERSION = $(shell grep scalaVersion build.sbt  | sed -r 's/scalaVersion := "([0-9]+?\.[0-9]+?)\.[0-9]+"/\1/' )
 GENERATE_PROJECT_NAME = $(shell grep name build.sbt  | sed -r 's/name := "(.+?)"/\1/' )
 GENERATE_PROJECT_NAME_LOW_CASE = $(shell grep name build.sbt  | sed -r 's/name := "(.+?)"/\1/' | tr A-Z a-z)
@@ -31,15 +31,17 @@ all:
 
 pack: build
 	$(SET_VERSION)
-	$(SET_SCALA_VERSION)
+	$(SET_BRANCH)
 	$(SET_PROJECT_NAME_LOW_CASE)
-	rm -f $(PROJECT_NAME_LOW_CASE)_$(SCALA_VERSION)-$(VERSION).tar.gz
-	echo Create archive \"$(PROJECT_NAME_LOW_CASE)_$(SCALA_VERSION)-$(VERSION).tar.gz\"
-	cd build; tar czf ../$(PROJECT_NAME_LOW_CASE)_$(SCALA_VERSION)-$(VERSION).tar.gz .
+	rm -f $(PROJECT_NAME_LOW_CASE)-$(VERSION)-$(BRANCH).tar.gz
+	echo Create archive \"$(PROJECT_NAME_LOW_CASE)-$(VERSION)-$(BRANCH).tar.gz\"
+	cd build; tar czf ../$(PROJECT_NAME_LOW_CASE)-$(VERSION)-$(BRANCH).tar.gz .
 
 package:
+	# Addition section
 	echo Package
 	sbt package
+	touch package
 
 build: package
 	# required section
@@ -64,7 +66,7 @@ clean:
 	$(SET_VERSION)
 	$(SET_SCALA_VERSION)
 	$(SET_PROJECT_NAME_LOW_CASE)
-	rm -rf build $(PROJECT_NAME_LOW_CASE)_$(SCALA_VERSION)-$(VERSION).tar.gz
+	rm -rf build $(PROJECT_NAME_LOW_CASE)-*.tar.gz package target/ project/
 
 test:
 	# required section
