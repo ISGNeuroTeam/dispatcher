@@ -1,6 +1,6 @@
 package ot.dispatcher
 
-import org.apache.spark.sql.types.{DoubleType, IntegerType, LongType, NullType, StringType, StructField, StructType, ArrayType}
+import org.apache.spark.sql.types.{DoubleType, IntegerType, LongType, NullType, StringType, StructField, StructType, ArrayType, BooleanType}
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import ot.AppConfig._
@@ -91,6 +91,7 @@ class CacheManager(sparkSession: SparkSession) {
       "LONG" -> LongType,
       "BIGINT" -> LongType,
       "NULL" -> NullType,
+      "BOOLEAN" -> BooleanType,
       "ARRAY<STRING>" -> ArrayType(StringType),
       "ARRAY<DOUBLE>" -> ArrayType(DoubleType),
       "ARRAY<INTEGER>" -> ArrayType(IntegerType),
