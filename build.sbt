@@ -10,7 +10,7 @@ retrieveManaged := true
 
 resolvers += Resolver.jcenterRepo
 
-libraryDependencies += "ot.dispatcher" % "dispatcher-sdk_2.11" % "1.0.0"% Compile
+libraryDependencies += "ot.dispatcher" % "dispatcher-sdk_2.11" % "1.1.0"% Compile
 
 libraryDependencies += "net.totietje" %% "evaluator" % "1.1.0"
 
