@@ -188,7 +188,9 @@ class SuperVisor {
         case error: Exception =>
           superConnector.setJobStateFailed(otlQuery.id, error.getLocalizedMessage)
           throw error
-
+        case throwable: Throwable =>
+          superConnector.setJobStateFailed(otlQuery.id, throwable.getLocalizedMessage)
+          throw throwable
       }
     }
   }
