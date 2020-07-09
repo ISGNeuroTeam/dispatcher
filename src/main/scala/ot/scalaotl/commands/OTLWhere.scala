@@ -42,6 +42,7 @@ class OTLWhere(sq: SimpleQuery) extends OTLBaseCommand(sq) with ExpressionParser
           if(pair.startsWith("like(")) pair + ")" else pair
         })
         val replExpr = pairs.foldLeft(exp)((accExpr, ex) => {
+          log.debug(s"Expression: $ex")
           val vals = ex.split("(>=|<=|!=|<|>|=)").map(_.strip())
           val arrs = vals.filter(v => isArray(expr(v).expr, acc.schema))
           val svs = vals.filter(v => !isArray(expr(v).expr, acc.schema))
