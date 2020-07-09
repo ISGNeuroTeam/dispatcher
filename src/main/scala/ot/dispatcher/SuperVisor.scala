@@ -192,6 +192,7 @@ class SuperVisor {
           throw error
         case throwable: Throwable =>
           superConnector.setJobStateFailed(otlQuery.id, throwable.getLocalizedMessage)
+          superConnector.unlockCaches(otlQuery.id)
           throw throwable
       }
     }
