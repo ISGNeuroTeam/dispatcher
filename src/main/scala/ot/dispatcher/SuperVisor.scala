@@ -184,11 +184,16 @@ class SuperVisor {
           }
         case error: OutOfMemoryError =>
           superConnector.setJobStateFailed(otlQuery.id, error.getLocalizedMessage)
+          superConnector.unlockCaches(otlQuery.id)
           throw error
         case error: Exception =>
           superConnector.setJobStateFailed(otlQuery.id, error.getLocalizedMessage)
+          superConnector.unlockCaches(otlQuery.id)
           throw error
-
+        case throwable: Throwable =>
+          superConnector.setJobStateFailed(otlQuery.id, throwable.getLocalizedMessage)
+          superConnector.unlockCaches(otlQuery.id)
+          throw throwable
       }
     }
   }

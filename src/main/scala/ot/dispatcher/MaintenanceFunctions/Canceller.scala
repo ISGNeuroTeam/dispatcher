@@ -25,6 +25,7 @@ object Canceller {
       log.info(s"Job $jobID was cancelled because of timeout.")
       sparkSession.sparkContext.cancelJobGroup(s"Search ID $jobID")
       superConnector.setJobStateCanceled(jobID)
+      superConnector.unlockCaches(jobID)
     }
   }
 }

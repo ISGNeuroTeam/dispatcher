@@ -6,11 +6,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [UNRELEASED]
 
+## [1.5.0]
+### Added
+- Add boolean type for loaded caches
+- Logging to OTLWhere command
+### Fixed
+- Subsearch caches've been still locked if parent job failed
+- Don't catch throwable if job fails
+- OTLWhere fails on String strip method over expression
+### Changed
+- Update to new SDK
+
 ## [1.4.0]
 ### Changed
 - Remove unmanaged dependencies (lib dir).
 - Remove unused files in tests.
-
 
 ## [1.3.1]
 ### Fixed
