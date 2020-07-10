@@ -1,6 +1,6 @@
 name := "Dispatcher"
 
-version := "1.4.0_bugfix_unlock-caches-on-jobs-cancel"
+version := "1.5.0"
 
 scalaVersion := "2.11.12"
 
