@@ -44,8 +44,8 @@ class OTLWhere(sq: SimpleQuery) extends OTLBaseCommand(sq) with ExpressionParser
         val replExpr = pairs.foldLeft(exp)((accExpr, ex) => {
           log.debug(s"Expression: $ex")
           val vals = ex.split("(>=|<=|!=|<|>|=)").map(splitted_part => {
-            log.debug(s"Splitted part: $splitted_part")
-            splitted_part
+            log.debug(s"Splitted part: $splitted_part (isInstanceOf[String]: ${splitted_part.isInstanceOf[String]}")
+            splitted_part.trim()
           }
           )
           val arrs = vals.filter(v => isArray(expr(v).expr, acc.schema))
