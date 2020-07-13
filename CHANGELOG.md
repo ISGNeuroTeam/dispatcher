@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [UNRELEASED]
 
+## [1.5.1] - 2020-07-13
+### Fixed
+- OTLWhere fails if spaces are in field names
+
 ## [1.5.0]
 ### Added
 - Add boolean type for loaded caches
