@@ -5,7 +5,7 @@ import ot.scalaotl.static.EvalFunctions
 import ot.scalaotl.extensions.StringExt._
 import org.apache.spark.sql.Column
 import org.apache.spark.sql.functions.expr
-import org.apache.spark.sql.types.{ DataType, NumericType, StructType}
+import org.apache.spark.sql.types.{DataType, NumericType, StructType}
 import org.apache.spark.sql.catalyst.expressions.{Alias, CaseWhen, CreateArray, ExprId, Expression, Literal}
 import org.apache.spark.sql.catalyst.analysis.{UnresolvedAttribute, UnresolvedFunction}
 import org.apache.spark.sql.catalyst.expressions.aggregate._
@@ -24,11 +24,15 @@ object ColumnExt {
     def getTypes(expr: Expression): List[DataType] = expr.nodeName match {
       case "Literal"             => List(expr.dataType)
       case "UnresolvedAttribute" => List(sch(expr.toString.replaceAll("'", "").replaceAll("`", "")).dataType)
+      case "UnresolvedFunction" => List[DataType]()
       case _                     => expr.children.map(x => getTypes(x)).toList.flatten
     }
 
     if (ex.nodeName == "Add") {
-      val types = ex.children.map(getTypes)
+      val types = ex.children.map(x => {
+        val types = getTypes(x)
+        types
+      })
       if (types.flatten.forall(_.isInstanceOf[NumericType])) ex else {
         UnresolvedFunction("concat", ex.children.map(changeAddToConcat(_, sch)), false)
       }
