@@ -1,6 +1,6 @@
 name := "Dispatcher"
 
-version := "1.5.1_hotfix_catalyst-unresolved-function-types"
+version := "1.5.2"
 
 scalaVersion := "2.11.12"
 
