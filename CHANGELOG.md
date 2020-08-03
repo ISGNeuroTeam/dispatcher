@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [UNRELEASED]
 
+## [1.5.2] - 2020-08-03
+### Fixed
+- OTLEval concat instead of addition because of Catalyst unresolved functions
+
 ## [1.5.1] - 2020-07-13
 ### Fixed
 - OTLWhere fails if spaces are in field names
