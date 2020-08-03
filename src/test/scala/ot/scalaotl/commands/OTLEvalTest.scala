@@ -438,6 +438,25 @@ class OTLEvalTest extends CommandTest {
     assert(jsonCompare(actual, expected), f"Result : $actual\n---\nExpected : $expected")
   }
 
+  test("Test 18.4 Command: | eval x = _num_ + strptime(...)") {
+    val actual = execute("""| eval g = 1 + strptime("2016-01-01", "%Y-%m-%d")""")
+    val expected =
+      """[
+         |{"_time":1568026476854,"_raw":"{\"serialField\": \"0\", \"random_Field\": \"100\", \"WordField\": \"qwe\", \"junkField\": \"q2W\"}","g":1451595601},
+         |{"_time":1568026476854,"_raw":"{\"serialField\": \"1\", \"random_Field\": \"-90\", \"WordField\": \"rty\", \"junkField\": \"132_.\"}","g":1451595601},
+         |{"_time":1568026476854,"_raw":"{\"serialField\": \"2\", \"random_Field\": \"50\", \"WordField\": \"uio\", \"junkField\": \"asd.cx\"}","g":1451595601},
+         |{"_time":1568026476854,"_raw":"{\"serialField\": \"3\", \"random_Field\": \"20\", \"WordField\": \"GreenPeace\", \"junkField\": \"XYZ\"}","g":1451595601},
+         |{"_time":1568026476854,"_raw":"{\"serialField\": \"4\", \"random_Field\": \"30\", \"WordField\": \"fgh\", \"junkField\": \"123_ASD\"}","g":1451595601},
+         |{"_time":1568026476854,"_raw":"{\"serialField\": \"5\", \"random_Field\": \"50\", \"WordField\": \"jkl\", \"junkField\": \"casd(@#)asd\"}","g":1451595601},
+         |{"_time":1568026476854,"_raw":"{\"serialField\": \"6\", \"random_Field\": \"60\", \"WordField\": \"zxc\", \"junkField\": \"QQQ.2\"}","g":1451595601},
+         |{"_time":1568026476854,"_raw":"{\"serialField\": \"7\", \"random_Field\": \"-100\", \"WordField\": \"RUS\", \"junkField\": \"00_3\"}","g":1451595601},
+         |{"_time":1568026476854,"_raw":"{\"serialField\": \"8\", \"random_Field\": \"0\", \"WordField\": \"MMM\", \"junkField\": \"112\"}","g":1451595601},
+         |{"_time":1568026476854,"_raw":"{\"serialField\": \"9\", \"random_Field\": \"10\", \"WordField\": \"USA\", \"junkField\": \"word\"}","g":1451595601}
+         |]""".stripMargin
+    assert(jsonCompare(actual, expected), f"Result : $actual\n---\nExpected : $expected")
+  }
+
+
   test("Test 19. Command: | eval. 'Max' and 'min' in query should not replaced with 'array_max' and 'array_min'") {
     val actual = execute(""" eval max = 3 | eval min = 2 | eval newf = if(serialField > 5, max, min) | fields min, max, newf """)
     val expected = """[
