@@ -1,24 +1,28 @@
 package ot.scalaotl
 package commands
 
+import org.apache.log4j.Level
 import ot.scalaotl.config.OTLIndexes
 import org.apache.spark.sql.{Column, DataFrame}
 import org.apache.spark.sql.functions.{col, concat, lit}
 import org.apache.spark.sql.types.StructField
+import ot.scalaotl.static.OtDatetime
+import ot.scalaotl.utils.logging.StatViewer
 
 
 class OTLCollect(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLIndexes {
   val requiredKeywords= Set("index")
   val optionalKeywords= Set("host","source","sourcetype")
 
+  override val fieldsUsed = List()
+
   override def transform(_df: DataFrame): DataFrame = {
-    val isTimed = _df.schema.fields.exists {
-      case StructField("_time", _, _, _) => true
-      case _ => false
+    if (log.getLevel == Level.DEBUG) {
+      log.debug(f"[SearchId:${sq.searchId}] Input:\n" + StatViewer.getPreviewString(_df))
     }
 
-    val hasRaw = _df.schema.fields.exists {
-      case StructField("_raw", _, _, _) => true
+    val isTimed = _df.schema.fields.exists {
+      case StructField("_time", _, _, _) => true
       case _ => false
     }
 
@@ -45,11 +49,14 @@ class OTLCollect(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLIndexes {
           case Some(Keyword(_,v)) => res.withColumn("_sourcetype",lit(v))
           case _=> res
         }
-        res = if(!isTimed) res.withColumn("_time",lit(sq.tws * 1000L)) else res
+        res = if(!isTimed) res.withColumn("_time",lit(OtDatetime.getCurrentTimeInSeconds())) else res
         val expr = res.schema.fields.foldLeft(List[Column]()){ (accum, item) => lit(item.name) :: lit("=") :: col(item.name) :: (lit(",") :: accum) }.dropRight(1)
 
-        res = if(true) res.withColumn("_%raw", concat(expr: _* )) else res//!hasRaw
-        res.write.parquet(f"$fsdisk$indexPathDisk/$i/bucket$timeMin-$timeMax-${System.currentTimeMillis / 1000}")
+        res = if(true) res.withColumn("_raw", concat(expr: _* )) else res//!hasRaw
+        if (log.getLevel == Level.DEBUG) {
+          log.debug(f"[SearchId:${sq.searchId}] Output:\n" + StatViewer.getPreviewString(res))
+        }
+        res.write.parquet(f"$fsdisk$indexPathDisk/$i/bucket-${timeMin*1000}-${timeMax*1000}-${System.currentTimeMillis / 1000}")
         res
       case _ =>
         log.error("Required argument 'index' not found")
