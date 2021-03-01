@@ -9,7 +9,22 @@ import org.apache.spark.sql.types.StructField
 import ot.scalaotl.static.OtDatetime
 import ot.scalaotl.utils.logging.StatViewer
 
-
+/**
+ * Adds the results of a search to an index that you specify.
+ * ==Syntax==
+ * | collect collect index=__index__ [source=__source__] [sourcetype=__sourcetype__] [host=__host__]
+ * | collect index=__index__ mode=__mode__
+ *
+ * ==Arguments==
+ * mode[String] - Mode of working with DataFrame. Default: raw.
+ *  raw - Aggregates all columns to _raw column and appends it ot DataFrame.
+ *  as-is - Writes DataFrame to buckets as it is, without any modifications.
+ * source[String] - Updates original value of column source with new one. It's used only in raw mode.
+ * sourcetype[String] - Updates original value of column sourcetype with new one. It's used only in raw mode.
+ * host[String] - Updates original value of column host with new one. It's used only in raw mode.
+ *
+ * @param sq SimpleQuery object with search information.
+ */
 class OTLCollect(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLIndexes {
   val requiredKeywords= Set("index")
   val optionalKeywords= Set("host","source","sourcetype")
