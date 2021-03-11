@@ -9,7 +9,7 @@ import org.apache.spark.sql.functions.{ asc, desc }
 class OTLSort(sq: SimpleQuery) extends OTLBaseCommand(sq) {
   val requiredKeywords= Set.empty[String]
   val optionalKeywords= Set.empty[String]
-  override val fieldsUsed = returns.flatFields.map(_.stripPrefix("+").stripPrefix("-"))
+  override def fieldsUsed: List[String] = returns.flatFields.map(_.replace("+", "").replace("-", ""))
 
   val order = "\\s+".r.replaceAllIn(
     "[-+,']".r.replaceAllIn(args, ""),
