@@ -1,6 +1,6 @@
 name := "Dispatcher"
 
-version := "1.5.2"
+version := "1.5.2_bugfix_command_collect"
 
 scalaVersion := "2.11.12"
 

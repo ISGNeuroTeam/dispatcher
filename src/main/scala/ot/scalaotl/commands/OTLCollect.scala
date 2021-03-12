@@ -1,24 +1,43 @@
 package ot.scalaotl
 package commands
 
+import org.apache.log4j.Level
 import ot.scalaotl.config.OTLIndexes
 import org.apache.spark.sql.{Column, DataFrame}
 import org.apache.spark.sql.functions.{col, concat, lit}
 import org.apache.spark.sql.types.StructField
+import ot.scalaotl.static.OtDatetime
+import ot.scalaotl.utils.logging.StatViewer
 
-
+/**
+ * Adds the results of a search to an index that you specify.
+ * ==Syntax==
+ * | collect collect index=__index__ [source=__source__] [sourcetype=__sourcetype__] [host=__host__]
+ * | collect index=__index__ mode=__mode__
+ *
+ * ==Arguments==
+ * mode[String] - Mode of working with DataFrame. Default: raw.
+ *  raw - Aggregates all columns to _raw column and appends it ot DataFrame.
+ *  as-is - Writes DataFrame to buckets as it is, without any modifications.
+ * source[String] - Updates original value of column source with new one. It's used only in raw mode.
+ * sourcetype[String] - Updates original value of column sourcetype with new one. It's used only in raw mode.
+ * host[String] - Updates original value of column host with new one. It's used only in raw mode.
+ *
+ * @param sq SimpleQuery object with search information.
+ */
 class OTLCollect(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLIndexes {
   val requiredKeywords= Set("index")
   val optionalKeywords= Set("host","source","sourcetype")
 
+  override val fieldsUsed = List()
+
   override def transform(_df: DataFrame): DataFrame = {
-    val isTimed = _df.schema.fields.exists {
-      case StructField("_time", _, _, _) => true
-      case _ => false
+    if (log.getLevel == Level.DEBUG) {
+      log.debug(f"[SearchId:${sq.searchId}] Input:\n" + StatViewer.getPreviewString(_df))
     }
 
-    val hasRaw = _df.schema.fields.exists {
-      case StructField("_raw", _, _, _) => true
+    val isTimed = _df.schema.fields.exists {
+      case StructField("_time", _, _, _) => true
       case _ => false
     }
 
@@ -32,29 +51,31 @@ class OTLCollect(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLIndexes {
 
     keywordsMap.get("index") match {
       case Some(Keyword(_,i)) =>
-       // var res = keywordsMap.foldLeft(_df){case (df, (_,Keyword(k,v))) => df.withColumn(k,lit(v))}
-        var res = keywordsMap.get("host") match {
-          case Some(Keyword(_,v)) => _df.withColumn("_host",lit(v))
-          case _=>_df
+        val res = keywordsMap.get("mode") match {
+          case Some(Keyword(_, "as-is")) => _df
+          case _ =>
+            var raw_df = keywordsMap.get("host") match {
+              case Some(Keyword(_, v)) => _df.withColumn("_host", lit(v))
+              case _ => _df
+            }
+            raw_df = keywordsMap.get("source") match {
+              case Some(Keyword(_, v)) => raw_df.withColumn("_source", lit(v))
+              case _ => raw_df
+            }
+            raw_df = keywordsMap.get("sourcetype") match {
+              case Some(Keyword(_, v)) => raw_df.withColumn("_sourcetype", lit(v))
+              case _ => raw_df
+            }
+            raw_df = if (!isTimed) raw_df.withColumn("_time", lit(OtDatetime.getCurrentTimeInSeconds())) else raw_df
+            val expr = raw_df.schema.fields.foldLeft(List[Column]()) { (accum, item) => lit(item.name) :: lit("=") :: col(item.name) :: (lit(",") :: accum) }.dropRight(1)
+            raw_df.withColumn("_raw", concat(expr: _*))
         }
-        res = keywordsMap.get("source") match {
-          case Some(Keyword(_,v)) => res.withColumn("_source",lit(v))
-          case _=> res
-        }
-        res = keywordsMap.get("sourcetype") match {
-          case Some(Keyword(_,v)) => res.withColumn("_sourcetype",lit(v))
-          case _=> res
-        }
-        res = if(!isTimed) res.withColumn("_time",lit(sq.tws * 1000L)) else res
-        val expr = res.schema.fields.foldLeft(List[Column]()){ (accum, item) => lit(item.name) :: lit("=") :: col(item.name) :: (lit(",") :: accum) }.dropRight(1)
-
-        res = if(true) res.withColumn("_%raw", concat(expr: _* )) else res//!hasRaw
-        res.write.parquet(f"$fsdisk$indexPathDisk/$i/bucket$timeMin-$timeMax-${System.currentTimeMillis / 1000}")
+        res.write.parquet(f"$fsdisk$indexPathDisk/$i/bucket-${timeMin*1000}-${timeMax*1000}-${System.currentTimeMillis / 1000}")
         res
+
       case _ =>
         log.error("Required argument 'index' not found")
         throw new CustomException(4, sq.searchId, "Required argument 'index' not found",List(commandname, "index"))
-        //_df
     }
   }
 }
