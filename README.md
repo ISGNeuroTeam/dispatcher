@@ -1,15 +1,18 @@
 # OT Platform. Spark Driver App.
 
-Distributed structure above Spark cluster for routing of search queries, caching and loading their results.
+
+Converts OTL queries to Spark DAG and orchestrates computing processes based on user pools. Also, manages caches in
+ order to decrease a computational load on a platform.
 
 ## Getting Started
 
-Use "make pack" in terminal to get working environment and deploy able jar.
+You'd to `publish local` dispatcher-sdk lib in order not to use unmanaged libs.
 
 ### Prerequisites
 Install:
 * java 1.8
 * sbt 1.3.8
+* scala 2.11.12
 
 ### Installing
 
@@ -18,9 +21,12 @@ Install:
 
 ### Command List
 
+[Documentation](https://github.com/ISGNeuroTeam/otp/blob/master/docs/functions/index.md)
+
 We've tests for these and think it works... Maybe it is with little problems.  
 * addtotals   
 * appendpipe
+* collect  
 * command  
 * eval (MV-subcommands don't work with SV-fields and vice verse, also some of them are not able to work with nulls)
 * fields    
@@ -59,7 +65,6 @@ We've tests for these and think it works... Maybe it is with little problems.
 
 Untested but realized commands:
 * chart
-* collect  
 * convert  
 * dedup 
 * delta  
@@ -81,6 +86,8 @@ sbt test
 
 ## Deployment
 
+Use `make pack` to get a deployable tarball. Unpack it to $OTP_HOME. Create conf files based on examples.
+
 ### Configuring
 Check example configs in docs dir.  
 
@@ -93,7 +100,7 @@ For command classes name of logger is simple class name by default.
 Use start.sh from Makefile
 
 ## Plugin system
-See _Readme.md_ in [Software Development Kit](https://github.com/otdeveloper/SuperSDK) repository. 
+See _Readme.md_ in [Software Development Kit](https://github.com/ISGNeuroTeam/dispatcher_sdk) repository. 
 
 ## Built with
 
@@ -101,13 +108,14 @@ config-1.3.4.jar
 json4s-ast_2.11-3.5.5.jar  
 json4s-native_2.11-3.5.5.jar  
 postgresql-42.2.5.jar  
-dispatcher-sdk_2.11-1.0.0.jar
+dispatcher-sdk_2.11-1.1.0.jar
 
 ## Compatible with
 
-ot_simple_rest 0.14.0   
-ot_simple 0.14.0  
-zeppelin-spl 1.3.3  
+ot_simple_rest 1.6.0   
+ot_simple 1.0.0  
+zeppelin-spl 2.2.0
+ot_simple_zeppelin 0.2.1
 nifi-custom-processors 0.1.12  
 nifi_processors 1.4.1  
 
@@ -115,7 +123,7 @@ nifi_processors 1.4.1
 
 ## Versioning
 
-We use SemVer for versioning. For the versions available, see the tags on this repository. 
+We use [SemVer](http://semver.org/) for versioning. For the versions available, see the tags on this repository. 
 
 ## Authors
 

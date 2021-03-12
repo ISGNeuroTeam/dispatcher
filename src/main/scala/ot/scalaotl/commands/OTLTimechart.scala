@@ -31,6 +31,6 @@ class OTLTimechart(sq: SimpleQuery) extends OTLBaseCommand(sq, _seps = Set("by")
     }
     val chartArgs = s"$argsClear over _time $by".trim
     log.debug(f"[SearchId:${sq.searchId}] Args for chart: $chartArgs")
-    new Converter(OTLQuery(s"chart $chartArgs | sort 0 _time")).setDF(dfTime).run
+    new Converter(OTLQuery(s"chart $chartArgs | sort _time")).setDF(dfTime).run
   }
 }

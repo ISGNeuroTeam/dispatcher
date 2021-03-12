@@ -6,6 +6,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [UNRELEASED]
 
+## [1.6.0] - 2021-03-12
+### Added
+- Organization fields to build.sbt. Now authorized developers can import modules from SuperDispatcher.
+- Pause to InfinitiveLoop of SuperVisor in order to decrease postgres load in platform idle.  
+### Fixed
+- OTLCollect saves buckets in wrong format
+- OTLSort creates wrong columns based on ascending/descending syntax of args
+- OTLEventstats mistakenly creates 0-column 
+- Converter ignores fieldsUsed property set by command from a plugin. This results to unexpected columns in output
+ dataset.
+  
+
 ## [1.5.2] - 2020-08-03
 ### Fixed
 - OTLEval concat instead of addition because of Catalyst unresolved functions
@@ -56,10 +68,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.1.0]
 ### Add
-- SDK for creating plugin commands. More details in [Plugins.md](Plugins.md)
+- SDK for creating plugin commands. More details in [Plugins.md](https://github.com/ISGNeuroTeam/dispatcher_sdk)
 - Mapping from commands to classes with realisation moved to [commands.properties](src/main/resources/commands.properties)
-- Levels of logging are configured in [loglevel.properties](deploydir/loglevel.properties)
-- Possibility to write comments in query using triple backticks like  `` ```MY COMMENT```  ``.
+- Configuring of logging levels in loglevel.properties
+- Possibility to write comments in query using triple backticks like  `` ```MY COMMENT```  ``
 
 ## [1.0.0]
 ### Changed
