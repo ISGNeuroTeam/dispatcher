@@ -2,7 +2,7 @@ name := "Dispatcher"
 
 organization := "ot.dispatcher"
 
-version := "1.5.2_feature_add_organization_to_build_sbt"
+version := "1.6.0"
 
 scalaVersion := "2.11.12"
 
