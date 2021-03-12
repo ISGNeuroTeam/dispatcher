@@ -1,6 +1,7 @@
 package ot.dispatcher
 
 import java.sql.ResultSet
+import java.util.Calendar
 
 import org.apache.spark.sql.SparkSession
 import org.apache.log4j.{Level, Logger}
@@ -74,9 +75,17 @@ class SuperVisor {
     */
   def runInfiniteLoop(): Unit = {
     log.debug("Infinite Loop started.")
+    val pause = config.getInt("loop.pause")
+    var loopEndTime = Calendar.getInstance().getTimeInMillis
     while (true) {
-      systemMaintenance()
-      userMaintenance()
+      val delta = Calendar.getInstance().getTimeInMillis - loopEndTime
+      if (delta > pause) {
+        systemMaintenance()
+        userMaintenance()
+        loopEndTime = Calendar.getInstance().getTimeInMillis
+      } else {
+          Thread.sleep(delta)
+      }
     }
   }
 
