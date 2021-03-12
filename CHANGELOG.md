@@ -8,7 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.6.0] - 2021-03-12
 ### Added
-- Organization fields to build.sbt. Now authorized developers can import modules from SuperDispatcher. 
+- Organization fields to build.sbt. Now authorized developers can import modules from SuperDispatcher.
+- Pause to InfinitiveLoop of SuperVisor in order to decrease postgres load in platform idle.  
 ### Fixed
 - OTLCollect saves buckets in wrong format
 - OTLSort creates wrong columns based on ascending/descending syntax of args
