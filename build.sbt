@@ -1,6 +1,8 @@
 name := "Dispatcher"
 
-version := "1.5.2_bugfix_command_collect"
+organization := "ot.dispatcher"
+
+version := "1.5.2_feature_add_organization_to_build_sbt"
 
 scalaVersion := "2.11.12"
 
