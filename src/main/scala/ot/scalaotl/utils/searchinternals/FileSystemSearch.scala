@@ -5,6 +5,9 @@ package searchinternals
 import ot.scalaotl.config.OTLIndexes
 import ot.scalaotl.extensions.StringExt._
 import ot.scalaotl.extensions.DataFrameExt._
+
+import ot.dispatcher.sdk.core.CustomException.E00004
+
 import org.apache.log4j.Logger
 import org.apache.spark.sql.{DataFrame, Row, SparkSession, functions => F}
 import org.apache.spark.sql.types.{LongType, StringType, StructField, StructType}
@@ -20,7 +23,7 @@ import scala.util.matching.Regex
 import scala.collection.mutable.ListBuffer
 
 class FileSystemSearch(spark: SparkSession, log: Logger, searchId: Int, fieldsUsedInFullQuery: Seq[String], fs: FileSystem, indexPath: String, index: String, query: String, _tws: Long, _twf: Long, preview: Boolean, isCache: Boolean = false, fullReadFlag: Boolean = false) extends OTLIndexes
-{ 
+{
   val defaultFields = List("_time", "_raw")
   val externalSchema = otlconfig.getString("schema.external_schema").toBoolean
   val mergeSchema = otlconfig.getString("schema.merge_schema").toBoolean
@@ -135,12 +138,12 @@ class FileSystemSearch(spark: SparkSession, log: Logger, searchId: Int, fieldsUs
     fdf
   }
 
-  private def searchInDataFrame(df: DataFrame): DataFrame = 
+  private def searchInDataFrame(df: DataFrame): DataFrame =
   {
     var fdf = df.withColumn("_time", F.col("_time").cast(LongType))
-    val tws = _tws.toLong 
+    val tws = _tws.toLong
     val twf = _twf.toLong
-    
+
     fdf = fdf//.withColumn("_time", F.expr("""if(_time / 1e10 < 1, _time, _time / 1000)""").cast(LongType))
       .filter(s"_time >= $tws AND _time < $twf")
     log.debug(s"[SearchId:$searchId] time filter: from $tws to $twf")
@@ -165,17 +168,17 @@ class FileSystemSearch(spark: SparkSession, log: Logger, searchId: Int, fieldsUs
 
     if (!fs.exists(new Path(indexPath + index))){
       log.debug(s"Index in $fs: $index not found")
-    return Failure(CustomException(3, searchId, f"Index not found: $index", List(index)))}
+    return Failure(E00004(searchId, index))}
 
     val filesTime = Timerange.getBucketsByTimerange(fs, indexPath, index, _tws, _twf, isCache)
     log.debug(s"[SearchId:$searchId] Buckets by timerange $filesTime")
     if (filesTime.isEmpty) return Success(fdf)
-    
+
     var filesBloom = ListBuffer[String]()
     if (!query.isEmpty()){
-        filesBloom = FilterBloom.getBucketsByFB(fs, indexPath, index, filesTime, query) 
+        filesBloom = FilterBloom.getBucketsByFB(fs, indexPath, index, filesTime, query)
         log.debug(s"[SearchId:$searchId] Buckets by BloomFilter $filesBloom")}
-    else 
+    else
     {
         filesBloom = filesTime
         log.debug(s"[SearchId:$searchId] Query is empty. No BloomFilter used ")
@@ -190,7 +193,7 @@ class FileSystemSearch(spark: SparkSession, log: Logger, searchId: Int, fieldsUs
       log.debug(s"[SearchId:$searchId] Enable Preview Mode")
       fdf = readParquetSequential(files)}
     else
-    { 
+    {
       log.debug(s"[SearchId:$searchId] Enable Parallel Mode")
       fdf = readParquetParallel(files)
     }

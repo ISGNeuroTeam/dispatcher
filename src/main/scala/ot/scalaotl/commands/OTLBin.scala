@@ -3,6 +3,7 @@ package commands
 
 import ot.scalaotl.parsers.ReplaceParser
 import ot.scalaotl.static.OtDatetime
+import ot.dispatcher.sdk.core.CustomException.E00018
 
 import org.apache.spark.sql.functions.{ lit, expr, min, max }
 import org.apache.spark.sql.DataFrame
@@ -21,7 +22,7 @@ class OTLBin(sq: SimpleQuery) extends OTLBaseCommand(sq) with ReplaceParser {
       val span = OtDatetime.getSpanInSeconds(getKeyword("span").getOrElse("10000d"))
       (df: DataFrame) => df.withColumn("__span__", lit(span))
     } else {
-      throw CustomException(6, sq.searchId, s"Command ${commandname} requires 'bins' or 'span' argument", List(commandname,"'bins','span'" ))
+      throw E00018(sq.searchId, commandname)
     }
 
     dfWithMinMax

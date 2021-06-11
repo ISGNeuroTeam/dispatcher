@@ -4,7 +4,8 @@ import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import ot.dispatcher.OTLQuery
 import ot.dispatcher.sdk.PluginUtils
-import ot.scalaotl.{Converter, CustomException}
+import ot.scalaotl.Converter
+import ot.dispatcher.sdk.core.CustomException.E00002
 import ot.scalaotl.utils.logging.StatViewer
 
 class PluginBaseUtils(sparkSession: SparkSession, jarPath: String) extends PluginBaseConfig(jarPath) with PluginUtils{
@@ -22,7 +23,7 @@ class PluginBaseUtils(sparkSession: SparkSession, jarPath: String) extends Plugi
     log.debug(f"[SearchId:${id}]\n" + StatViewer.getPreviewString(df))
   }
 
-  override def sendError(id: Int, message: String) = throw CustomException(0, id, message)
+  override def sendError(id: Int, message: String) = throw E00002(id, message)
 
   override def spark: SparkSession = sparkSession
 

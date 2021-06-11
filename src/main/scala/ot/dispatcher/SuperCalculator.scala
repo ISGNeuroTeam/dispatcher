@@ -3,7 +3,9 @@ package ot.dispatcher
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.DataFrame
 import ot.AppConfig._
-import ot.scalaotl.{Converter, CustomException}
+import ot.scalaotl.Converter
+import ot.dispatcher.sdk.core.CustomException
+import ot.dispatcher.sdk.core.CustomException.{E00008, E00009, E00010}
 
 /** Represents the start point of main calculation process for Job.
   *
@@ -122,9 +124,9 @@ class SuperCalculator(cacheManager: CacheManager, superConnector: SuperConnector
             case "running" => cacheReadyFlag = false
             case "finished" => log.trace(s"Job ${otlQuery.id}. Subsearch ($subsearch) finished.")
             case "external" =>
-            case "failed" => throw CustomException(3002, otlQuery.id, "Subsearch failed. Check logs.")
-            case "canceled" => throw CustomException(3003, otlQuery.id, "Subsearch was canceled. Check logs.")
-            case _ => throw CustomException(3004, otlQuery.id, "Unknown status of finished subsearch. Check logs.")
+            case "failed" => throw E00008(otlQuery.id)
+            case "canceled" => throw E00009(otlQuery.id)
+            case _ => throw E00010(otlQuery.id)
           }
         }
         subsearchId match {
