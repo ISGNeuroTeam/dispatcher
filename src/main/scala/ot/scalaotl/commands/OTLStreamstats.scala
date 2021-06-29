@@ -17,9 +17,9 @@ class OTLStreamstats(sq: SimpleQuery) extends OTLBaseCommand(sq, _seps = Set("by
   val requiredKeywords= Set.empty[String]
   val optionalKeywords= Set("time_window","window","center")
 
-  override val fieldsUsed = getFieldsUsed(returns) ++ getPositionalFieldUsed(positionals)
-  override val fieldsGenerated = getFieldsGenerated(returns)
-  val center = Try(getKeyword("center").getOrElse("false").toLowerCase()
+  override val fieldsUsed: List[String] = getFieldsUsed(returns) ++ getPositionalFieldUsed(positionals)
+  override val fieldsGenerated: List[String] = getFieldsGenerated(returns)
+  val center: Boolean = Try(getKeyword("center").getOrElse("false").toLowerCase()
     .replaceAll("^t$", "true")
     .replaceAll("^f$", "false").toBoolean) match {
     case Success(v) => v
@@ -28,34 +28,32 @@ class OTLStreamstats(sq: SimpleQuery) extends OTLBaseCommand(sq, _seps = Set("by
 
   def getTimeWindow(kw: Map[String, Field], df: DataFrame): Option[Stream] = {
     kw.get("time_window").map {
-      case Keyword(k, tw) => {
+      case Keyword(k, tw) =>
         val wSize = OtDatetime.getSpanInSeconds(tw)
-        val range: Tuple2[Long, Long] = if (center) (1 - wSize - (Window.currentRow/2 - 1), Window.currentRow/2 + 1)  else (1 - wSize, Window.currentRow)
+        val range: (Long, Long) = if (center) (1 - wSize - (Window.currentRow/2 - 1), Window.currentRow/2 + 1)  else (1 - wSize, Window.currentRow)
         val win = Window.orderBy("_time").rangeBetween(range._1, range._2)
         Stream(win, df)
-      }
     }
   }
 
   def getSimpleWindow(kw: Map[String, Field], df: DataFrame): Option[Stream] = {
     kw.get("window").map {
-      case Keyword(k, w) => {
+      case Keyword(k, w) =>
         val win = if (w == "global") {
           Window.orderBy("idx").rowsBetween(Window.unboundedPreceding, Window.unboundedFollowing)
         } else {
           val wSize = w.toInt
-          val range: Tuple2[Long, Long] = if (center) (1 - wSize - (Window.currentRow/2 - 1), Window.currentRow/2 + 1)  else (1 - wSize, Window.currentRow)
+          val range: (Long, Long) = if (center) (1 - wSize - (Window.currentRow/2 - 1), Window.currentRow/2 + 1)  else (1 - wSize, Window.currentRow)
           Window.orderBy("idx").rowsBetween(range._1, range._2)
         }
-        val dfout = df.withIndex("idx")
+        val dfout = df.withIndex()
         Stream(win, dfout)
-      }
     }
   }
 
   def getDefaultWindow(df: DataFrame): Stream = {
     val win = Window.orderBy("idx").rowsBetween(Window.unboundedPreceding, Window.currentRow)
-    Stream(win, df.withIndex("idx"))
+    Stream(win, df.withIndex())
   }
 
   override def transform(_df: DataFrame): DataFrame = {
@@ -84,11 +82,11 @@ class OTLStreamstats(sq: SimpleQuery) extends OTLBaseCommand(sq, _seps = Set("by
     // Apply functions over window    
     returnsWcFuncs.foldLeft(streamGrouped.df) {
       case (accum, sf) => accum.withColumn(
-        sf.newfield.stripBackticks, 
+        sf.newfield.stripBackticks(),
         StatsFunctions.getExpr(sf.func, sf.field).over(streamGrouped.window)
       )
     }
       .dropFake
-      .dropIndex("idx")
+      .dropIndex()
   }
 }

@@ -13,6 +13,8 @@ import org.json4s.native.JsonMethods._
 import org.apache.commons.lang.StringEscapeUtils.escapeJava
 import org.apache.spark.sql.expressions.UserDefinedFunction
 
+import scala.collection.mutable.ListBuffer
+
 class OTLRead(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLIndexes with ExpressionParser with WildcardParser {
   val requiredKeywords= Set.empty[String]
   val optionalKeywords= Set("limit", "subsearch")
@@ -21,12 +23,12 @@ class OTLRead(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLIndexes with E
 
   override def validateOptionalKeywords(): Unit = () 
   def jsonStrToMap(jsonStr: String): Map[String, Map[String, String]] = {
-    implicit val formats = org.json4s.DefaultFormats
+    implicit val formats: DefaultFormats.type = org.json4s.DefaultFormats
     parse(jsonStr).extract[Map[String, Map[String, String]]]
   }
-  val indexQueriesMapFirst = jsonStrToMap(excludeKeywords(_args.trim, List(Keyword("limit", "t"))))
-  var indexQueriesMap = indexQueriesMapFirst
-  val allIndexes = getAllIndexes()
+  val indexQueriesMapFirst: Map[String, Map[String, String]] = jsonStrToMap(excludeKeywords(_args.trim, List(Keyword("limit", "t"))))
+  var indexQueriesMap: Map[String, Map[String, String]] = indexQueriesMapFirst
+  val allIndexes: ListBuffer[String] = getAllIndexes()
   for (index <- indexQueriesMap)
   {
     if (index._1.contains("*"))
@@ -36,15 +38,15 @@ class OTLRead(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLIndexes with E
       val mask_indexes = allIndexes filter ( x => regex_raw.pattern.matcher(x).matches())
       log.debug(s"[SearchID:$searchId] maskIndexes : $mask_indexes")
       indexQueriesMap -= index._1
-      mask_indexes.map( x => indexQueriesMap = indexQueriesMap + (x -> index._2))
+      mask_indexes.foreach(x => indexQueriesMap = indexQueriesMap + (x -> index._2))
     }
   }
 
-  override val fieldsUsed = indexQueriesMap.map {
+  override val fieldsUsed: List[String] = indexQueriesMap.map {
     case (_, singleIndexMap) => singleIndexMap.getOrElse("query", "").withKeepQuotedText[List[String]](
       (s: String) => """(?![!\(])(\S*?)\s*(=|>|<|like|rlike)\s*""".r.findAllIn(s).matchData.map(_.group(1)).toList
     )
-      .map(_.strip("!").strip("'").strip("\"").stripBackticks.addSurroundedBackticks)
+      .map(_.strip("!").strip("'").strip("\"").stripBackticks().addSurroundedBackticks)
   }.toList.flatten
 
   private def searchMap(query: Map[String, Map[String, String]]): DataFrame = {
@@ -67,8 +69,8 @@ class OTLRead(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLIndexes with E
       })
         (i._1, i._2 + ("query" -> backtickedQuery))
     }
-    val (df, allExceptions) = query.foldLeft((spark.emptyDataFrame.asInstanceOf[DataFrame], List[Exception]())) {
-      case (accum, item) => {
+    val (df, allExceptions) = query.foldLeft((spark.emptyDataFrame, List[Exception]())) {
+      case (accum, item) =>
         val mItem =modifyItemQuery(item)
         log.debug(s"[SearchID:$searchId]Query is " + item)
         log.debug(s"[SearchID:$searchId]Modified query is" + mItem)
@@ -79,7 +81,7 @@ class OTLRead(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLIndexes with E
         val cols2 = accum._1.columns.map(_.stripBackticks().addSurroundedBackticks).toSet
         val totalCols = (cols1 ++ cols2).toList
         def expr(myCols: Set[String], allCols: Set[String]) = {
-          allCols.toList.map(x => if (myCols.contains(x)) F.col(x).as(x.stripBackticks) else F.lit(null).as(x.stripBackticks))
+          allCols.toList.map(x => if (myCols.contains(x)) F.col(x).as(x.stripBackticks()) else F.lit(null).as(x.stripBackticks()))
         }
 
         totalCols match {
@@ -89,7 +91,6 @@ class OTLRead(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLIndexes with E
         }catch {
           case ex: Exception =>  (accum._1, ex +: accum._2)
         }
-      }
     }
     if (query.size == allExceptions.size) throw allExceptions.head
 
@@ -98,7 +99,7 @@ class OTLRead(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLIndexes with E
     val bracketCols = df.columns.filter("""^.*\[\d+\].*$""".r.pattern.matcher(_).matches)
     val dfWithArrays = bracketCols
       .groupBy(_.replaceAll("\\[\\d+\\]", "{}"))
-      .filterKeys(fieldsUsedInFullQuery.map(_.stripBackticks).contains)
+      .filterKeys(fieldsUsedInFullQuery.map(_.stripBackticks()).contains)
       .mapValues(x => x.map(_.addSurroundedBackticks).sorted.mkString(", "))
       .foldLeft(df) {
         case (acc, (newfield, arrayStr)) =>           
@@ -116,7 +117,7 @@ class OTLRead(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLIndexes with E
     
     // Add columns which are used in query but does not exist in dataframe after read
     val emptyCols = fieldsUsedInFullQuery
-      .map(_.stripBackticks)
+      .map(_.stripBackticks())
       .distinct
       .filterNot(_.contains("*"))
       .diff(dfColsRenamed.columns.toSeq)
@@ -158,19 +159,18 @@ class OTLRead(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLIndexes with E
     log.debug(s"searchId = $searchId queryMap: $indexQueriesMap")
     val dfInit = searchMap(indexQueriesMap)
     val dfLimit = getKeyword("limit") match {
-      case Some(lim) => { log.debug(s"[SearchID:$searchId] Dataframe is limited"); dfInit.limit(100000) }
+      case Some(lim) => log.debug(s"[SearchID:$searchId] Dataframe is limited to $lim"); dfInit.limit(100000)
       case _         => dfInit
     }
     
     val dfStfe = if (stfe == true) extractFields(dfLimit) else dfLimit
     getKeyword("subsearch") match {
-      case Some(str) => {
+      case Some(str) =>
         cache.get(str) match {
           case Some(jdf) => new OTLJoin(SimpleQuery(s"""type=inner max=1 ${jdf.columns.toList.mkString(",")} subsearch=$str""", cache)).transform(dfStfe)
           case None      => dfStfe
         }
-      }
-          case None => dfStfe
+      case None => dfStfe
     }
   }
 }

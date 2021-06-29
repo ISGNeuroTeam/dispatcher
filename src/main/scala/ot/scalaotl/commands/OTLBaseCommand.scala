@@ -14,33 +14,33 @@ import org.apache.spark.sql.types.{NullType, StructField}
 import ot.scalaotl.utils.logging.StatViewer
 
 abstract class OTLBaseCommand(sq: SimpleQuery, _seps: Set[String] = Set.empty) extends OTLSparkSession with DefaultParser {
-  val args = sq.args
-  val seps = _seps
+  val args: String = sq.args
+  val seps: Set[String] = _seps
 
-  val keywords = keywordsParser(args)
-  val keywordsMap = fieldsToMap(keywords)
-  val positionals = positionalsParser(args, seps)
-  val positionalsMap = fieldsToMap(positionals)
-  val returns = returnsParser(args, seps)
+  val keywords: List[Keyword] = keywordsParser(args)
+  val keywordsMap: Map[String, Field] = fieldsToMap(keywords)
+  val positionals: Seq[Positional] = positionalsParser(args, seps)
+  val positionalsMap: Map[String, Field] = fieldsToMap(positionals)
+  val returns: Return = returnsParser(args, seps)
   val requiredKeywords: Set[String]
   val optionalKeywords: Set[String]
 
-  def fieldsUsed = getFieldsUsed(returns)
-  def fieldsGenerated = getFieldsGenerated(returns)
+  def fieldsUsed: List[String] = getFieldsUsed(returns)
+  def fieldsGenerated: List[String] = getFieldsGenerated(returns)
 
-  var fieldsUsedInFullQuery = Seq[String]()
+  var fieldsUsedInFullQuery: Seq[String] = Seq[String]()
 
-  def setFieldsUsedInFullQuery(fs: Seq[String]) = {
+  def setFieldsUsedInFullQuery(fs: Seq[String]): OTLBaseCommand = {
     fieldsUsedInFullQuery = fs
     this
   }
 
-  val classname = this.getClass.getSimpleName
-  def commandname = this.getClass.getSimpleName.toLowerCase.replace("otl","")
+  val classname: String = this.getClass.getSimpleName
+  def commandname: String = this.getClass.getSimpleName.toLowerCase.replace("otl","")
 
-  def loggerName = this.getClass.getName
+  def loggerName: String = this.getClass.getName
   def log: Logger = Logger.getLogger(loggerName)
-  def logLevel = getLogLevel(config, classname)
+  def logLevel: String = getLogLevel(config, classname)
   log.setLevel(Level.toLevel(logLevel))
 
   def getKeyword(label: String): Option[String] = {
@@ -71,7 +71,7 @@ abstract class OTLBaseCommand(sq: SimpleQuery, _seps: Set[String] = Set.empty) e
 
   def validateOptionalKeywords(): Unit ={
     //    if (!keywordsMap.keys.toSet.subsetOf((requiredArguments.union(optionalArguments))))
-    val unknownKeywords = keywordsMap.keys.toSet.diff((requiredKeywords.union(optionalKeywords)))
+    val unknownKeywords = keywordsMap.keys.toSet.diff(requiredKeywords.union(optionalKeywords))
     if(unknownKeywords.nonEmpty) {
       val unknownKeysString = unknownKeywords.mkString("['", "', '", "']")
       throw new CustomException(5, sq.searchId, f"Unknown argument(s) $unknownKeysString for command '$commandname'",List(commandname, unknownKeysString))
@@ -118,12 +118,11 @@ abstract class OTLBaseCommand(sq: SimpleQuery, _seps: Set[String] = Set.empty) e
     val ndf = nullFields.foldLeft(_df) { (acc, col) => acc.withColumn(col, lit(null)) }
     Try(loggedTransform(ndf)) match {
       case Success(df) => df
-      case Failure(ex: CustomException) => {
+      case Failure(ex: CustomException) =>
         log.error(ex.getMessage)
         throw ex
-      }
       //Working with udf exceptions when call df.show
-      case Failure(ex : InvocationTargetException) => {
+      case Failure(ex : InvocationTargetException) =>
         val exception = ex.getTargetException match {
           case e1 if ! e1.getMessage.startsWith("Job aborted due to stage failure") =>  e1
           case e1 => e1.getCause match {
@@ -133,11 +132,9 @@ abstract class OTLBaseCommand(sq: SimpleQuery, _seps: Set[String] = Set.empty) e
         }
         log.error(f"Error in  '$commandname' command: ${exception.getMessage}" )
         throw CustomException(1, sq.searchId, f"Error in  '$commandname' command",exception, List(commandname, exception.getMessage))
-      }
-      case Failure(ex) => {
+      case Failure(ex) =>
         log.error(f"Error in  '$commandname' command: ${ex.getMessage}" )
         throw CustomException(1, sq.searchId, f"Error in  '$commandname' command",ex, List(commandname, ex.getMessage))
-      }
     }
   }
 }

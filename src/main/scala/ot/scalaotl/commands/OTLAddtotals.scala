@@ -22,7 +22,7 @@ class OTLAddtotals(sq: SimpleQuery) extends OTLBaseCommand(sq) {
 
     val cdf = fieldlist.foldLeft(_df){ case (accum, item) => accum.withColumn("__casted_" + item.stripBackticks,_df(item).cast(DoubleType))}
     def getColStats(df: DataFrame, numeric: Array[String], nonNumeric: Array[String]): DataFrame = {
-      val aggs = numeric.map(name => sum(col(name)).as(name.stripBackticks))
+      val aggs = numeric.map(name => sum(col(name)).as(name.stripBackticks()))
       nonNumeric.foldLeft(df.agg(aggs.head, aggs.tail: _*))((data, colName) => {
         data.withColumn(colName, lit(null))
       })
@@ -31,35 +31,35 @@ class OTLAddtotals(sq: SimpleQuery) extends OTLBaseCommand(sq) {
     {
       if (isRow) {
         if (isCol) {
-          val rowStats = cdf.withColumn(fieldname, numericCols.map(col(_)).reduce(_ + _))
+          val rowStats = cdf.withColumn(fieldname, numericCols.map(col).reduce(_ + _))
           val numeric = numericCols ++ Array(fieldname)
-          val other = cdf.columns.diff(numeric.map(_.stripBackticks))
+          val other = cdf.columns.diff(numeric.map(_.stripBackticks()))
 
           if (labelfield == "None") {//TODO
             val colStats = getColStats(rowStats, numeric, other)
-            val origColStats = numericCols.foldLeft(colStats){ case (accum, item) => accum.withColumn(item.stripBackticks.stripPrefix("__casted_"),accum(item))}
+            val origColStats = numericCols.foldLeft(colStats){ case (accum, item) => accum.withColumn(item.stripBackticks().stripPrefix("__casted_"),accum(item))}
             rowStats.unionByName(origColStats)
           } else {
             val labeledDf = rowStats.withColumn(labelfield, lit(null))
             val lcolStats = getColStats(labeledDf, numeric, other)
-            val origColStats = numericCols.foldLeft(lcolStats){ case (accum, item) => accum.withColumn(item.stripBackticks.stripPrefix("__casted_"),accum(item))}
+            val origColStats = numericCols.foldLeft(lcolStats){ case (accum, item) => accum.withColumn(item.stripBackticks().stripPrefix("__casted_"),accum(item))}
             labeledDf.unionByName(origColStats.withColumn(labelfield, lit(label)))
           }
         } else {
-          cdf.withColumn(fieldname, numericCols.map(col(_)).reduce(_ + _))
+          cdf.withColumn(fieldname, numericCols.map(col).reduce(_ + _))
         }
       } else {
         if (isCol) {
-          val other = cdf.columns.diff(numericCols.map(_.stripBackticks))
+          val other = cdf.columns.diff(numericCols.map(_.stripBackticks()))
 
           if (labelfield == "None") {
             val colStats = getColStats(cdf, numericCols, other)
-            val origColStats = numericCols.foldLeft(colStats){ case (accum, item) => accum.withColumn(item.stripBackticks.stripPrefix("__casted_"),accum(item))}
+            val origColStats = numericCols.foldLeft(colStats){ case (accum, item) => accum.withColumn(item.stripBackticks().stripPrefix("__casted_"),accum(item))}
             cdf.unionByName(origColStats)
           } else {
             val labeledDf = cdf.withColumn(labelfield, lit(null))
             val lcolStats = getColStats(labeledDf, numericCols, other)
-            val origColStats = numericCols.foldLeft(lcolStats){ case (accum, item) => accum.withColumn(item.stripBackticks.stripPrefix("__casted_"),accum(item))}
+            val origColStats = numericCols.foldLeft(lcolStats){ case (accum, item) => accum.withColumn(item.stripBackticks().stripPrefix("__casted_"),accum(item))}
             labeledDf.unionByName(origColStats).withColumn(labelfield, lit(label))
           }
         } else {

@@ -12,19 +12,18 @@ class OTLDedup(sq: SimpleQuery) extends OTLBaseCommand(sq, _seps = Set("sortby")
   val optionalKeywords= Set.empty[String]
   override def transform(_df: DataFrame): DataFrame = {
     val dfDedup = keywordsMap.get("consecutive") match {
-      case Some(Keyword("consecutive", "t")) => {
+      case Some(Keyword("consecutive", "t")) =>
         val expr = returns.flatFields.foldLeft(List[Column]()) { (accum, item) => col(item) :: (lit("#") :: accum) }
         _df.withColumn("idx", monotonically_increasing_id())
           .withColumn("dedupcol", concat(expr: _*))
           .withColumn("prevdedup", lag("dedupcol", 1).over(Window.orderBy("idx")))
           .filter(when(col("dedupcol") === col("prevdedup"), false).otherwise(true))
           .drop("dedupcol", "prevdedup", "idx")
-      }
-      case _ => _df.dropDuplicates(returns.flatFields.map(_.stripBackticks))
+      case _ => _df.dropDuplicates(returns.flatFields.map(_.stripBackticks()))
     }
 
     positionalsMap.get("sortby") match {
-      case Some(Positional("sortby", sf)) => (new OTLSort(SimpleQuery(sf.map(_.stripBackticks).mkString(" ")))).transform(dfDedup)
+      case Some(Positional("sortby", sf)) => new OTLSort(SimpleQuery(sf.map(_.stripBackticks()).mkString(" "))).transform(dfDedup)
       case _                              => dfDedup
     }
   }

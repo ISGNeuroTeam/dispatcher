@@ -11,14 +11,14 @@ class OTLMakeresults(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLSparkSe
   val requiredKeywords= Set.empty[String]
   val optionalKeywords= Set("annotate","count")
 
-  override val fieldsGenerated = if (getKeyword("annotate").getOrElse("f") == "t") {
+  override val fieldsGenerated: List[String] = if (getKeyword("annotate").getOrElse("f") == "t") {
     List("_raw", "host", "source", "sourcetype")
   } else List("_time")
 
   override def transform(_df: DataFrame): DataFrame = {
     val sch = StructType(
       List(
-        StructField("_time", ArrayType(LongType, false), nullable = true)))
+        StructField("_time", ArrayType(LongType, containsNull = false), nullable = true)))
 
     val cnt = getKeyword("count").getOrElse("1").toInt
     val unixTimestamp: Long = OtDatetime.getCurrentTimeInSeconds()

@@ -9,12 +9,12 @@ import org.apache.spark.sql.DataFrame
 class OTLJoin(sq: SimpleQuery) extends OTLBaseCommand(sq) {
   val requiredKeywords= Set.empty[String]
   val optionalKeywords= Set("subsearch","max","type")
-  val cachedDFs = sq.cache
+  val cachedDFs: Map[String, DataFrame] = sq.cache
   override def transform(_df: DataFrame): DataFrame = {
     val subsearch: String = getKeyword("subsearch").getOrElse("__nosubsearch__")
     if (cachedDFs.contains(subsearch) && returns.flatFields.nonEmpty) {
       val jdf: DataFrame = cachedDFs(subsearch)
-      val joinOn = returns.flatFields.toSeq.map(_.stripBackticks)
+      val joinOn = returns.flatFields.map(_.stripBackticks())
       val bothCols = _df.columns.intersect(jdf.columns)
       log.debug(f"[SearchId:${sq.searchId}] Columns in right df: ${jdf.columns.mkString(", ")}")
       log.debug(f"[SearchId:${sq.searchId}] Columns join on: ${joinOn.mkString(", ")}")

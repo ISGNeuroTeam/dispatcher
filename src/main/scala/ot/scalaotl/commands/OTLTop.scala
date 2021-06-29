@@ -12,6 +12,8 @@ class OTLTop(sq: SimpleQuery) extends OTLBaseCommand(sq, _seps = Set("by")) {
   val optionalKeywords= Set.empty[String]
   override val fieldsGenerated = List("percent")
 
+  //override def fieldsUsed: List[String] = List()
+
   override def transform(_df: DataFrame): DataFrame = {
 
     val limit = args.split(" ").headOption match {
@@ -30,9 +32,8 @@ class OTLTop(sq: SimpleQuery) extends OTLBaseCommand(sq, _seps = Set("by")) {
     }
 
     val dfCount = groups ++ fields match {
-      case head :: tail => {
+      case head :: tail =>
         _df.groupBy(head, tail: _*).agg(count("*").alias("count"))
-      }
       case _ => return _df
     }
 
@@ -47,14 +48,12 @@ class OTLTop(sq: SimpleQuery) extends OTLBaseCommand(sq, _seps = Set("by")) {
       .drop("rn")
 
     val dfJoined = groups match {
-      case h :: t => {
+      case h :: t =>
         val jdf = _df.groupBy(h, t: _*).agg(count("*").alias("total"))
-        dfLimit.join(jdf, groups.toSeq)
-      }
-      case _ => {
+        dfLimit.join(jdf, groups)
+      case _ =>
         val jdf = _df.agg(count("*").alias("total"))
         dfLimit.crossJoin(jdf)
-      }
     }
 
     dfJoined

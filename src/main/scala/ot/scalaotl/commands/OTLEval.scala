@@ -14,21 +14,22 @@ import org.apache.spark.sql.DataFrame
 class OTLEval(sq: SimpleQuery) extends OTLBaseCommand(sq) with ExpressionParser {
   val requiredKeywords= Set.empty[String]
   val optionalKeywords= Set.empty[String]
-  override def getFieldsUsed = (ret: Return) => {
+  override def getFieldsUsed: Return => List[String] = (ret: Return) => {
     ret.evals.flatMap {
       case x if x.expr.isEmpty => List.empty[String]
-      case x => getFieldsFromExpression(expr(x.expr).expr, List()).map(_.stripBackticks.addSurroundedBackticks)
+      case x => getFieldsFromExpression(expr(x.expr).expr, List()).map(_.stripBackticks().addSurroundedBackticks)
     }
   }
-  override def validateArgs = {
+  override def validateArgs(): Unit = {
     if (keywordsMap.isEmpty)
-      throw CustomException(7, sq.searchId, s"Command ${commandname} shoud have at least one argument", List(commandname))
+      throw CustomException(7, sq.searchId, s"Command $commandname shoud have at least one argument", List(commandname))
   }
   override def transform(_df: DataFrame): DataFrame = {
     val sch = _df.schema
     returns.evals.foldLeft(_df)((acc, eval) => eval match {
-      case StatsEval(newfield, expression) =>
-        acc.withColumn(newfield.strip("\"").strip("\'"), expr(expression.replaceFirst("""`\Q"""+ newfield +"""\E` *=""","").withPeriodReplace).withExtensions(sch))
+      case StatsEval(newfield, expression) => acc
+        .withColumn(newfield.strip("\"").strip("\'"), expr(expression.replaceFirst("""`\Q""" + newfield + """\E` *=""", "")
+          .withPeriodReplace()).withExtensions(sch))
       case _                               => acc
     }
     )

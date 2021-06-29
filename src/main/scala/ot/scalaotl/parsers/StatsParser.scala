@@ -5,10 +5,12 @@ import ot.scalaotl.static.StatsFunctions
 import ot.scalaotl.commands.OTLEval
 import ot.scalaotl.extensions.StringExt._
 
+import scala.util.matching.Regex
+
 trait StatsParser extends DefaultParser {
 
-  def rexSimpleStatsFunc(funcs: String) = (s"($funcs)" + """(\((\'.+?\'|\S+?)\))?( as ([^,\s]+))?(,|\s|$)""").r
-  def rexStatsEvalFunc(funcs: String) = (s"($funcs)" + """\(eval\((.*?)\)\) as ([a-zA-Z0-9]+)(\s|,|$)""").r
+  def rexSimpleStatsFunc(funcs: String): Regex = (s"($funcs)" + """(\((\'.+?\'|\S+?)\))?( as ([^,\s]+))?(,|\s|$)""").r
+  def rexStatsEvalFunc(funcs: String): Regex = (s"($funcs)" + """\(eval\((.*?)\)\) as ([a-zA-Z0-9]+)(\s|,|$)""").r
 
   def parseEvals(args: String, funclist: String = StatsFunctions.funclistString): (List[StatsEval], String) = {
     val evals = rexStatsEvalFunc(funclist).findAllIn(args)
@@ -36,22 +38,21 @@ trait StatsParser extends DefaultParser {
     )
   }
 
-  override def returnsParser = (args: String, seps: Set[String]) => {
+  override def returnsParser: (String, Set[String]) => Return = (args: String, seps: Set[String]) => {
     val argsFiltered = excludeKeywords(excludePositionals(args, seps), keywordsParser(args))    
     val (evals, argsNoEvals) = parseEvals(argsFiltered)    
     Return(fields = List(), parseSimple(argsNoEvals), evals)
   }
 
-  override def getFieldsUsed = (ret: Return) => {
+  override def getFieldsUsed: Return => List[String] = (ret: Return) => {
     val newEvalFields = ret.evals.map(_.newfield)
-    val funcFields = ret.funcs.map(_.field).filterNot(x => newEvalFields.contains(x.toString.stripBackticks))
+    val funcFields = ret.funcs.map(_.field).filterNot(x => newEvalFields.contains(x.stripBackticks()))
     val evalFields = ret.evals
-      .map(x => s"${x.newfield} = ${x.expr}")
-      .map(x => new OTLEval(SimpleQuery(x)).fieldsUsed).flatten
+      .map(x => s"${x.newfield} = ${x.expr}").flatMap(x => new OTLEval(SimpleQuery(x)).fieldsUsed)
     (funcFields ++ evalFields).distinct.filterNot(_ == "__fake__")
   }
 
-  override def getFieldsGenerated = (ret: Return) => {
+  override def getFieldsGenerated: Return => List[String] = (ret: Return) => {
     val newEvalFields = ret.evals.map(_.newfield)
     val newFuncFields = ret.funcs.map(_.newfield)
     (newFuncFields ++ newEvalFields).distinct

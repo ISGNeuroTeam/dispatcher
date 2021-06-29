@@ -14,11 +14,10 @@ class OTLDelta(sq: SimpleQuery) extends OTLBaseCommand(sq) with ReplaceParser {
     val p = getKeyword("p").getOrElse("1").toInt
     val win = Window.rowsBetween(-p, 0)
     returns.fields.foldLeft(_df) {
-      case (accum, ReturnField(newfield, field)) => {
+      case (accum, ReturnField(newfield, field)) =>
         val nf = if (newfield == field) s"delta($field)" else newfield
         accum.withColumn(nf, first(col(field)).over(win).alias(nf))
           .withColumn(nf, col(field) - col(nf))
-      }
     }
   }
 }

@@ -10,10 +10,10 @@ import org.apache.spark.sql.DataFrame
 class OTLForeach(sq: SimpleQuery) extends OTLBaseCommand(sq) with SubsearchParser with WildcardParser {
   val requiredKeywords= Set.empty[String]
   val optionalKeywords= Set("subsearch")
-  val passedSubsearches = sq.subsearches
-  val argsSubsearch = getSubsearch(args)
+  val passedSubsearches: Map[String, String] = sq.subsearches
+  val argsSubsearch: Option[String] = getSubsearch(args)
   
-  override val fieldsUsed = getFieldsUsed(returns)
+  override val fieldsUsed: List[String] = getFieldsUsed(returns)
     
   override def transform(_df: DataFrame): DataFrame = {
     val returnsWcFields: Return = returnsWithWc(_df.columns, returns)
@@ -27,13 +27,12 @@ class OTLForeach(sq: SimpleQuery) extends OTLBaseCommand(sq) with SubsearchParse
         argsSubsearch.getOrElse("")
     )
     returnsWcFields.flatFields.foldLeft(_df) {
-      case (accum, item) => {
+      case (accum, item) =>
         // .stripBackticks is required because new Converter() add another pair of backticks
         val replacedQuery: String = subsearchQuery
-          .replace("<<FIELD>>", item.stripBackticks)
+          .replace("<<FIELD>>", item.stripBackticks())
           .replace("<<MATCHSTR>>", matchstrMap.getOrElse(item, ""))
         new Converter(OTLQuery(replacedQuery)).setDF(accum).run
-      }
     }
   }
 }

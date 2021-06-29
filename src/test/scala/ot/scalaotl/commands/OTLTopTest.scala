@@ -130,6 +130,18 @@ class OTLTopTest extends CommandTest {
                      |]""".stripMargin
     assert(jsonCompare(actual, expected), f"Result : $actual\n---\nExpected : $expected")
   }
+
+  test("Test 8. Command: | top <num> <field>") {
+    val actual = execute("""|makeresults count=10 |eval x=1 | top 4""")
+    val expected = """[
+                     |{"random_Field":"50","count":4,"percent":20.0},
+                     |{"random_Field":"20","count":2,"percent":10.0},
+                     |{"random_Field":"10","count":2,"percent":10.0},
+                     |{"random_Field":"-90","count":1,"percent":5.0}
+                     |]""".stripMargin
+    println(actual)
+  }
+
 }
 
 

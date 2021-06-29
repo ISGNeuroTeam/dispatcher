@@ -18,7 +18,7 @@ class OTLHead(sq: SimpleQuery) extends OTLBaseCommand(sq) {
     if (returns.flatFields.isEmpty) {
       _df.limit(lim)
     } else {
-      val expression = returns.flatFields.mkString(" ").stripBackticks
+      val expression = returns.flatFields.mkString(" ").stripBackticks()
       if (isAllDigits(expression)) {
         _df.limit(expression.toInt)
       } else {

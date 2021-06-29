@@ -9,7 +9,7 @@ import org.apache.spark.sql.DataFrame
 class OTLFields(sq: SimpleQuery) extends OTLBaseCommand(sq) with WildcardParser {
   val requiredKeywords= Set.empty[String]
   val optionalKeywords= Set.empty[String]
-  override val fieldsUsed = if (returns.flatFields.contains("`-`")) List() else returns.flatFields.map(x=> x.strip("`").strip("\"").addSurroundedBackticks)
+  override val fieldsUsed: List[String] = if (returns.flatFields.contains("`-`")) List() else returns.flatFields.map(x=> x.strip("`").strip("\"").addSurroundedBackticks)
 
 
   override def transform(_df: DataFrame): DataFrame = {

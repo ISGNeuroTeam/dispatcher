@@ -30,9 +30,9 @@ trait OTLIndexes extends OTLConfig {
     FileSystem.get(conf)
   }
   
-  def getAllIndexes():ListBuffer[String]  = {
+  def getAllIndexes():ListBuffer[String] = {
     val indexes_name = ListBuffer[String]() 
-    fs_disk.listStatus(new Path(indexPathDisk)).map(x => indexes_name += x.getPath().getName())
+    fs_disk.listStatus(new Path(indexPathDisk)).map(x => indexes_name += x.getPath.getName)
     indexes_name
   }
 }

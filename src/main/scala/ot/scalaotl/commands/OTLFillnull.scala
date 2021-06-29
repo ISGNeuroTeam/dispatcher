@@ -14,14 +14,14 @@ import scala.Option
 class OTLFillnull(sq: SimpleQuery) extends OTLBaseCommand(sq) {
   val requiredKeywords= Set.empty[String]
   val optionalKeywords= Set("value")
-  val searchId = sq.searchId
+  val searchId: Int = sq.searchId
 
   override def transform(_df: DataFrame): DataFrame = {
     val fillValue = getKeyword("value").getOrElse("0")
     val schema = _df.schema
-    val fields = if (returns.flatFields.isEmpty) _df.columns.toList else returns.flatFields.toList
+    val fields = if (returns.flatFields.isEmpty) _df.columns.toList else returns.flatFields
     //val fieldsNoBcktck = fields.map(_.stripBackticks)
-    fields.map(_.stripBackticks).intersect(_df.columns)
+    fields.map(_.stripBackticks()).intersect(_df.columns)
         .foldLeft(_df) { (acc, name) =>
           val backtickedName =name.addSurroundedBackticks
           if (schema(name).dataType == StringType)
