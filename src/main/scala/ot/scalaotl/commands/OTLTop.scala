@@ -22,7 +22,7 @@ class OTLTop(sq: SimpleQuery) extends OTLBaseCommand(sq, _seps = Set("by")) {
       case _ => return _df
     }
 
-    val fields = returns.flatFields.filter(_ != limit.toString)
+    val fields = returns.flatFields.filter(_.stripBackticks() != limit.toString)
 
     val groups = getPositional("by") match {
       case None | Some(List()) => List()
@@ -30,9 +30,8 @@ class OTLTop(sq: SimpleQuery) extends OTLBaseCommand(sq, _seps = Set("by")) {
     }
 
     val dfCount = groups ++ fields match {
-      case head :: tail => {
+      case head :: tail =>
         _df.groupBy(head, tail: _*).agg(count("*").alias("count"))
-      }
       case _ => return _df
     }
 
@@ -47,14 +46,12 @@ class OTLTop(sq: SimpleQuery) extends OTLBaseCommand(sq, _seps = Set("by")) {
       .drop("rn")
 
     val dfJoined = groups match {
-      case h :: t => {
+      case h :: t =>
         val jdf = _df.groupBy(h, t: _*).agg(count("*").alias("total"))
         dfLimit.join(jdf, groups.toSeq)
-      }
-      case _ => {
+      case _ =>
         val jdf = _df.agg(count("*").alias("total"))
         dfLimit.crossJoin(jdf)
-      }
     }
 
     dfJoined
