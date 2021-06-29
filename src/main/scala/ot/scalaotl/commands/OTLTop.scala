@@ -8,11 +8,9 @@ import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.expressions.Window
 
 class OTLTop(sq: SimpleQuery) extends OTLBaseCommand(sq, _seps = Set("by")) {
-  val requiredKeywords= Set.empty[String]
-  val optionalKeywords= Set.empty[String]
+  val requiredKeywords = Set.empty[String]
+  val optionalKeywords = Set.empty[String]
   override val fieldsGenerated = List("percent")
-
-  //override def fieldsUsed: List[String] = List()
 
   override def transform(_df: DataFrame): DataFrame = {
 

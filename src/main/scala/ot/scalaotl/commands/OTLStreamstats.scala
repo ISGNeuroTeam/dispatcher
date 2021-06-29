@@ -14,8 +14,8 @@ import scala.util.{Failure, Success, Try}
 case class Stream(window: WindowSpec, df: DataFrame)
 
 class OTLStreamstats(sq: SimpleQuery) extends OTLBaseCommand(sq, _seps = Set("by")) with StatsParser with WildcardParser {
-  val requiredKeywords= Set.empty[String]
-  val optionalKeywords= Set("time_window","window","center")
+  val requiredKeywords = Set.empty[String]
+  val optionalKeywords = Set("time_window","window","center")
 
   override val fieldsUsed: List[String] = getFieldsUsed(returns) ++ getPositionalFieldUsed(positionals)
   override val fieldsGenerated: List[String] = getFieldsGenerated(returns)

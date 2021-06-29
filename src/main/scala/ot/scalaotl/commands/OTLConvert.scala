@@ -10,8 +10,8 @@ import ot.scalaotl.extensions.DataFrameExt._
 import org.apache.spark.sql.functions.{ col, from_unixtime }
 
 class OTLConvert(sq: SimpleQuery) extends OTLBaseCommand(sq) with StatsParser {
-  val requiredKeywords= Set.empty[String]
-  val optionalKeywords= Set("timeformat")
+  val requiredKeywords = Set.empty[String]
+  val optionalKeywords = Set("timeformat")
 
   override def returnsParser: (String, Set[String]) => Return = (args: String, seps: Set[String]) => {
     val argsFiltered = excludeKeywords(excludePositionals(args, seps), keywordsParser(args))

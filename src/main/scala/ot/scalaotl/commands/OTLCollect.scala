@@ -26,8 +26,8 @@ import ot.scalaotl.utils.logging.StatViewer
  * @param sq SimpleQuery object with search information.
  */
 class OTLCollect(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLIndexes {
-  val requiredKeywords= Set("index")
-  val optionalKeywords= Set("host","source","sourcetype")
+  val requiredKeywords = Set("index")
+  val optionalKeywords = Set("host","source","sourcetype")
 
   override val fieldsUsed = List()
 

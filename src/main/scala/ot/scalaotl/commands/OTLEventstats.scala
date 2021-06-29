@@ -7,8 +7,8 @@ import ot.scalaotl.extensions.StringExt._
 import org.apache.spark.sql.DataFrame
 
 class OTLEventstats(sq: SimpleQuery) extends OTLBaseCommand(sq, _seps = Set("by")) with StatsParser {
-  val requiredKeywords= Set.empty[String]
-  val optionalKeywords= Set.empty[String]
+  val requiredKeywords = Set.empty[String]
+  val optionalKeywords = Set.empty[String]
   val transformer = new OTLStats(SimpleQuery(args))
   override val fieldsUsed: List[String] = transformer.fieldsUsed
   override val fieldsGenerated: List[String] = transformer.fieldsGenerated.map(_.stripBackticks())

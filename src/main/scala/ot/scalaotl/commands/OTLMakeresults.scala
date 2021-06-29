@@ -8,8 +8,8 @@ import org.apache.spark.sql.types.{ StructType, StructField, ArrayType, LongType
 import org.apache.spark.sql.{ Row, DataFrame }
 
 class OTLMakeresults(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLSparkSession {
-  val requiredKeywords= Set.empty[String]
-  val optionalKeywords= Set("annotate","count")
+  val requiredKeywords = Set.empty[String]
+  val optionalKeywords = Set("annotate","count")
 
   override val fieldsGenerated: List[String] = if (getKeyword("annotate").getOrElse("f") == "t") {
     List("_raw", "host", "source", "sourcetype")

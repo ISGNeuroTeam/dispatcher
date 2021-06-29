@@ -5,8 +5,8 @@ import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.functions.{ udf, col, lit, collect_set, array, size, expr, array_min }
 
 class OTLTransaction(sq: SimpleQuery) extends OTLBaseCommand(sq) {
-  val requiredKeywords= Set.empty[String]
-  val optionalKeywords= Set.empty[String]
+  val requiredKeywords = Set.empty[String]
+  val optionalKeywords = Set.empty[String]
   def mapUdf = udf { (col: Seq[Seq[String]]) => col.map(x => (x(0), x(1))).toMap }
   def createMap(df: DataFrame, columns: List[String] = List()): DataFrame = {
     val cols = if (columns.isEmpty) df.columns.toList else columns

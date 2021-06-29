@@ -9,8 +9,8 @@ import org.apache.spark.sql.functions.lit
 import org.apache.spark.sql.DataFrame
 
 class OTLOutputlookup(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLLookups with OTLSparkSession {
-  val requiredKeywords= Set.empty[String]
-  val optionalKeywords= Set("append")
+  val requiredKeywords = Set.empty[String]
+  val optionalKeywords = Set("append")
   val lookupFileName: String = returns.flatFields.headOption.getOrElse("-1")
   override def fieldsUsed: List[String] = super.fieldsUsed.diff(List(lookupFileName))
   val inputPath: Option[String] = _getLookupPath(lookupFileName.stripBackticks())

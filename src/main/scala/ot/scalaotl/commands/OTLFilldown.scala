@@ -8,8 +8,8 @@ import ot.scalaotl.extensions.StringExt._
 import scala.util.{Try, Success, Failure}
 
 class OTLFilldown(sq: SimpleQuery) extends OTLBaseCommand(sq, _seps = Set("by")) {
-  val requiredKeywords= Set.empty[String]
-  val optionalKeywords= Set.empty[String]
+  val requiredKeywords = Set.empty[String]
+  val optionalKeywords = Set.empty[String]
   override def transform(_df: DataFrame): DataFrame = {
 
     val groups  = positionalsMap.get("by") match {

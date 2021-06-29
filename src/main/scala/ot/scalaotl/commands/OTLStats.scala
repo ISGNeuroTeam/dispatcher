@@ -9,8 +9,8 @@ import ot.scalaotl.extensions.StringExt._
 import org.apache.spark.sql.{DataFrame, Row}
 
 class OTLStats(sq: SimpleQuery) extends OTLBaseCommand(sq, _seps = Set("by")) with StatsParser with WildcardParser {
-  val requiredKeywords= Set.empty[String]
-  val optionalKeywords= Set.empty[String]
+  val requiredKeywords = Set.empty[String]
+  val optionalKeywords = Set.empty[String]
   
   override val fieldsUsed: List[String] = getFieldsUsed(returns) ++ getPositionalFieldUsed(positionals)
   override val fieldsGenerated: List[String] = getFieldsGenerated(returns)

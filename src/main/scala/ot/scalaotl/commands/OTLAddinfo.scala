@@ -5,8 +5,8 @@ import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.functions.lit
 
 class OTLAddinfo(sq: SimpleQuery) extends OTLBaseCommand(sq) {
-  val requiredKeywords= Set.empty[String]
-  val optionalKeywords= Set.empty[String]
+  val requiredKeywords = Set.empty[String]
+  val optionalKeywords = Set.empty[String]
   val id: Int = sq.searchId
   val tws: Int = sq.tws
   val twf: Int = sq.twf

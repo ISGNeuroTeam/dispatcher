@@ -6,8 +6,8 @@ import org.apache.spark.sql.functions.{ lit, row_number, array, col, when }
 import org.apache.spark.sql.expressions.Window
 
 class OTLAppendCols(sq: SimpleQuery) extends OTLBaseCommand(sq) {
-  val requiredKeywords= Set.empty[String]
-  val optionalKeywords= Set("subsearch")
+  val requiredKeywords = Set.empty[String]
+  val optionalKeywords = Set("subsearch")
   val cache: Map[String, DataFrame] = sq.cache
   override def transform(_df: DataFrame): DataFrame = {
 

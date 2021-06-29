@@ -8,8 +8,8 @@ import org.apache.spark.sql.expressions.Window
 import org.apache.spark.sql.functions.{ col, lit, concat, lag, monotonically_increasing_id, when }
 
 class OTLDedup(sq: SimpleQuery) extends OTLBaseCommand(sq, _seps = Set("sortby")) {
-  val requiredKeywords= Set.empty[String]
-  val optionalKeywords= Set.empty[String]
+  val requiredKeywords = Set.empty[String]
+  val optionalKeywords = Set.empty[String]
   override def transform(_df: DataFrame): DataFrame = {
     val dfDedup = keywordsMap.get("consecutive") match {
       case Some(Keyword("consecutive", "t")) =>

@@ -12,8 +12,8 @@ import ot.scalaotl.extensions.StringExt._
 import scala.Option
 
 class OTLFillnull(sq: SimpleQuery) extends OTLBaseCommand(sq) {
-  val requiredKeywords= Set.empty[String]
-  val optionalKeywords= Set("value")
+  val requiredKeywords = Set.empty[String]
+  val optionalKeywords = Set("value")
   val searchId: Int = sq.searchId
 
   override def transform(_df: DataFrame): DataFrame = {

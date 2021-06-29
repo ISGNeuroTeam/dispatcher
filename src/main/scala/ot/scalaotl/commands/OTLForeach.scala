@@ -8,8 +8,8 @@ import ot.scalaotl.extensions.StringExt._
 import org.apache.spark.sql.DataFrame
 
 class OTLForeach(sq: SimpleQuery) extends OTLBaseCommand(sq) with SubsearchParser with WildcardParser {
-  val requiredKeywords= Set.empty[String]
-  val optionalKeywords= Set("subsearch")
+  val requiredKeywords = Set.empty[String]
+  val optionalKeywords = Set("subsearch")
   val passedSubsearches: Map[String, String] = sq.subsearches
   val argsSubsearch: Option[String] = getSubsearch(args)
   

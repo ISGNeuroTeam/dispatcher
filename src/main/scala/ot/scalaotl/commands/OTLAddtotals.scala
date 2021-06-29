@@ -7,8 +7,8 @@ import org.apache.spark.sql.functions.{col, lit, sum}
 import ot.scalaotl.extensions.StringExt._
 
 class OTLAddtotals(sq: SimpleQuery) extends OTLBaseCommand(sq) {
-  val requiredKeywords= Set.empty[String]
-  val optionalKeywords= Set("row","col","fieldname","labelfield","label")
+  val requiredKeywords = Set.empty[String]
+  val optionalKeywords = Set("row","col","fieldname","labelfield","label")
   override def transform(_df: DataFrame): DataFrame = {
 
     val isRow = getKeyword("row").getOrElse("true").toBoolean

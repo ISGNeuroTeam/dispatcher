@@ -9,8 +9,8 @@ import ot.scalaotl.parsers.SubsearchParser
 import ot.scalaotl.extensions.DataFrameExt._
 
 class OTLAppendpipe(sq: SimpleQuery) extends OTLBaseCommand(sq) with SubsearchParser {
-  val requiredKeywords= Set.empty[String]
-  val optionalKeywords= Set("subsearch")
+  val requiredKeywords = Set.empty[String]
+  val optionalKeywords = Set("subsearch")
   val cache: Map[String, DataFrame] = sq.cache
   val subsearches: Map[String, String] = sq.subsearches
   val argsSubsearch: Option[String] = getSubsearch(args)

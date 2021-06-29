@@ -128,7 +128,7 @@ class RawRead(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLIndexes with E
 
     // Add columns which are used in query but does not exist in dataframe after read
     val emptyCols = fieldsUsedInFullQuery
-      .map(_.stripBackticks)
+      .map(_.stripBackticks())
       .distinct
       .filterNot(_.contains("*"))
       .diff(df.columns.toSeq)

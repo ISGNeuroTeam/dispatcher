@@ -13,8 +13,8 @@ object Range {
 }
 
 class OTLRangemap(sq: SimpleQuery) extends OTLBaseCommand(sq) {
-  val requiredKeywords= Set("field")
-  val optionalKeywords= Set.empty[String]
+  val requiredKeywords = Set("field")
+  val optionalKeywords = Set.empty[String]
 
   override def fieldsGenerated = List("range")
 

@@ -11,8 +11,8 @@ import org.apache.spark.sql.DataFrame
 case class OverBy(over: List[String], by: List[String])
 
 class OTLChart(sq: SimpleQuery) extends OTLBaseCommand(sq, _seps = Set("by", "over")) with StatsParser with WildcardParser {
-  val requiredKeywords= Set.empty[String]
-  val optionalKeywords= Set.empty[String]
+  val requiredKeywords = Set.empty[String]
+  val optionalKeywords = Set.empty[String]
 
   override val fieldsUsed: List[String] = getFieldsUsed(returns) ++ getPositionalFieldUsed(positionals)
   override val fieldsGenerated: List[String] = getFieldsGenerated(returns)

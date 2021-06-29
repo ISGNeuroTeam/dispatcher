@@ -10,8 +10,8 @@ case class ColumnNotFoundException(colname: String, columns: String)
   extends Exception(s"Column $colname does not exist in dataframe with columns $columns")
 
 class OTLReplace(sq: SimpleQuery) extends OTLBaseCommand(sq, _seps = Set("in")) with ReplaceParser {
-  val requiredKeywords= Set.empty[String]
-  val optionalKeywords= Set.empty[String]
+  val requiredKeywords = Set.empty[String]
+  val optionalKeywords = Set.empty[String]
 
   override def fieldsUsed: List[String] = getPositional("in").getOrElse(List[String]())
   override def transform(_df: DataFrame): DataFrame = {

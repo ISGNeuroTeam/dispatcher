@@ -10,8 +10,8 @@ import ot.scalaotl.utils.logging.StatViewer
 import ot.scalaotl.extensions.StringExt._
 
 class OTLInputlookup(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLLookups with OTLSparkSession {
-  val requiredKeywords= Set.empty[String]
-  val optionalKeywords= Set("append")
+  val requiredKeywords = Set.empty[String]
+  val optionalKeywords = Set("append")
   val cache: Map[String, DataFrame] = sq.cache
   val inputPath: Option[String] = _getLookupPath(
     returns.fields.headOption match {

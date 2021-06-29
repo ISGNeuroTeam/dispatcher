@@ -12,8 +12,8 @@ import org.apache.spark.sql.functions.expr
 import org.apache.spark.sql.DataFrame
 
 class OTLEval(sq: SimpleQuery) extends OTLBaseCommand(sq) with ExpressionParser {
-  val requiredKeywords= Set.empty[String]
-  val optionalKeywords= Set.empty[String]
+  val requiredKeywords = Set.empty[String]
+  val optionalKeywords = Set.empty[String]
   override def getFieldsUsed: Return => List[String] = (ret: Return) => {
     ret.evals.flatMap {
       case x if x.expr.isEmpty => List.empty[String]

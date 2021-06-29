@@ -6,8 +6,8 @@ import org.json4s._
 import org.json4s.native.JsonMethods._
 
 class OTLFilter(sq: SimpleQuery) extends OTLBaseCommand(sq) {
-  val requiredKeywords= Set.empty[String]
-  val optionalKeywords= Set("subsearch")
+  val requiredKeywords = Set.empty[String]
+  val optionalKeywords = Set("subsearch")
   val cache: Map[String, DataFrame] = sq.cache
 
   implicit val formats: DefaultFormats.type = org.json4s.DefaultFormats

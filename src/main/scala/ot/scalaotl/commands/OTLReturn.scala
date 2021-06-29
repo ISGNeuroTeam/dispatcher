@@ -7,8 +7,8 @@ import ot.scalaotl.extensions.StringExt._
 import org.apache.spark.sql.functions._
 
 class OTLReturn(sq: SimpleQuery) extends OTLBaseCommand(sq) {
-  val requiredKeywords= Set.empty[String]
-  val optionalKeywords= Set.empty[String]
+  val requiredKeywords = Set.empty[String]
+  val optionalKeywords = Set.empty[String]
 
   override def fieldsUsed: List[String] = getFieldsUsed(returns).map(_.stripBackticks().stripPrefix("$").addSurroundedBackticks)
   def isInteger(s: String): Boolean = Try(s.toInt).isSuccess

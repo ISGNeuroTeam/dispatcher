@@ -6,8 +6,8 @@ import org.apache.spark.sql.expressions.UserDefinedFunction
 import org.apache.spark.sql.functions._
 
 class OTLFieldSummary(sq: SimpleQuery) extends OTLBaseCommand(sq) {
-  val requiredKeywords= Set.empty[String]
-  val optionalKeywords= Set.empty[String]
+  val requiredKeywords = Set.empty[String]
+  val optionalKeywords = Set.empty[String]
   override val fieldsGenerated = List("summary")
   def zipUdf: UserDefinedFunction = udf((cols: Seq[String], vals: Seq[String]) => cols.zip(vals))
 

@@ -10,8 +10,8 @@ import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.functions.expr
 
 class OTLTimechart(sq: SimpleQuery) extends OTLBaseCommand(sq, _seps = Set("by")) with StatsParser {
-  val requiredKeywords= Set.empty[String]
-  val optionalKeywords= Set("span")
+  val requiredKeywords = Set.empty[String]
+  val optionalKeywords = Set("span")
 
   override val fieldsUsed: List[String] = getFieldsUsed(returns) ++ getPositionalFieldUsed(positionals)
   override val fieldsGenerated: List[String] = getFieldsGenerated(returns)

@@ -12,8 +12,8 @@ import ot.scalaotl.static.OtHash
 import scala.util.matching.Regex
 
 class OTLRex(sq: SimpleQuery) extends OTLBaseCommand(sq) {
-  val requiredKeywords= Set.empty[String]
-  val optionalKeywords= Set("field", "max_match", "mode")
+  val requiredKeywords = Set.empty[String]
+  val optionalKeywords = Set("field", "max_match", "mode")
   val keywordsRex: Map[String, String] = """(^|\s)(max_match|field|mode)=(\S+)""".r.findAllIn(args).matchData.map { x => x.group(2) -> x.group(3) }.toMap
   val regexStr: String = keywordsRex.map { case (k, v) => s"$k=$v" }.foldLeft(args) { (a, b) => a.replace(b, "") }.trim.drop(1).dropRight(1)
 

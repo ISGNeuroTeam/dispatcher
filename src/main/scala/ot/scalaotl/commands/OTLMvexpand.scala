@@ -9,8 +9,8 @@ import ot.scalaotl.extensions.StringExt._
 import ot.scalaotl.extensions.DataFrameExt._
 
 class OTLMvexpand(sq: SimpleQuery) extends OTLBaseCommand(sq) {
-  val requiredKeywords= Set.empty[String]
-  val optionalKeywords= Set("limit")
+  val requiredKeywords = Set.empty[String]
+  val optionalKeywords = Set("limit")
   override def transform(_df: DataFrame): DataFrame = {
     val limit = getKeyword("limit").getOrElse("0").toInt
     returns.flatFields match {

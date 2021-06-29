@@ -8,8 +8,8 @@ import org.apache.spark.sql.expressions.Window
 import org.apache.spark.sql.functions.{ sum, expr, when, col }
 
 class OTLHead(sq: SimpleQuery) extends OTLBaseCommand(sq) {
-  val requiredKeywords= Set.empty[String]
-  val optionalKeywords= Set("limit")
+  val requiredKeywords = Set.empty[String]
+  val optionalKeywords = Set("limit")
   override def fieldsUsed: List[String] = List()
 
   override def transform(_df: DataFrame): DataFrame = {

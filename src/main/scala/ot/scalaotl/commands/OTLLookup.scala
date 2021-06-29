@@ -10,8 +10,8 @@ import org.apache.spark.sql.functions.collect_set
 import org.apache.spark.sql.DataFrame
 
 class OTLLookup(sq: SimpleQuery) extends OTLBaseCommand(sq, _seps = Set("output", "outputnew")) with OTLLookups with ReplaceParser with OTLSparkSession {
-  val requiredKeywords= Set.empty[String]
-  val optionalKeywords= Set.empty[String]
+  val requiredKeywords = Set.empty[String]
+  val optionalKeywords = Set.empty[String]
   val lookupFile: Option[Option[String]] = args.split(" ").headOption.map(_getLookupPath)
   val inputs: Return = args.split(seps.map(_.addExtraSpaces).mkString("|")).toList match {
     case head :: tail => returnsParser(head.split(" ").drop(1).mkString(" "), Set.empty)

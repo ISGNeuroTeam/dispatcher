@@ -16,8 +16,8 @@ import org.apache.spark.sql.expressions.UserDefinedFunction
 import scala.collection.mutable.ListBuffer
 
 class OTLRead(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLIndexes with ExpressionParser with WildcardParser {
-  val requiredKeywords= Set.empty[String]
-  val optionalKeywords= Set("limit", "subsearch")
+  val requiredKeywords = Set.empty[String]
+  val optionalKeywords = Set("limit", "subsearch")
 
   val SimpleQuery(_args, searchId, cache, subsearches, tws, twf, stfe, preview) = sq
 
