@@ -7,6 +7,7 @@ import java.nio.file.Paths
 
 import org.apache.log4j.{Level, Logger}
 import ot.dispatcher.sdk.{PluginCommand, PluginUtils}
+import ot.dispatcher.sdk.core.CustomException.{E00016, E00015}
 import ot.dispatcher.sdk.proxy.{PluginBaseUtils, PluginProxyCommand}
 import ot.scalaotl.commands.OTLBaseCommand
 
@@ -29,7 +30,7 @@ object CommandFactory extends OTLSparkSession {
 
   def getCommandInstance(classname: String, param: SimpleQuery): OTLBaseCommand ={
     val x: Class[Nothing] = classLoader.tryToInitializeClass(classname).getOrElse(
-      throw CustomException(-1, param.searchId, s"Class with name '$classname' is not found in classpath")
+      throw E00015(param.searchId, classname)
     )
     val jarPath: String = x.getProtectionDomain.getCodeSource.getLocation.getPath
     try{
@@ -57,7 +58,7 @@ object CommandFactory extends OTLSparkSession {
   def getCommand(name: String, sq: SimpleQuery): OTLBaseCommand = {
     val className = commandMap.get(name) match {
       case Some(t) => t
-      case None => throw CustomException(-1, sq.searchId, s"Command with name '$name' is not found")
+      case None => throw E00016(sq.searchId, name)
     }
     getCommandInstance(className, sq)
   }

@@ -26,7 +26,7 @@ class OTLTop(sq: SimpleQuery) extends OTLBaseCommand(sq, _seps = Set("by")) {
 
     val groups = getPositional("by") match {
       case None | Some(List()) => List()
-      case Some(l)             => l
+      case Some(l)             => l.map(s => s.stripBackticks)
     }
 
     val dfCount = groups ++ fields match {

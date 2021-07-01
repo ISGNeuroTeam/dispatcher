@@ -4,7 +4,8 @@ import org.apache.spark.sql.types.{DoubleType, IntegerType, LongType, NullType, 
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import ot.AppConfig._
-import ot.scalaotl.CustomException
+import ot.dispatcher.sdk.core.CustomException.{E00007, E00011}
+import ot.dispatcher.sdk.core.CustomException
 
 import scala.reflect.io.File
 
@@ -58,7 +59,7 @@ class CacheManager(sparkSession: SparkSession) {
       }
     }
     log.error(f"Runtime error: ${exception.getMessage}" )
-    CustomException(-1, id, f"Runtime error: $exception", List("udf function", exception))
+    E00007(id, exception.getMessage, exception)
   }
 
   /** Removes cache files from RAM cache.
@@ -108,7 +109,7 @@ class CacheManager(sparkSession: SparkSession) {
             val fieldName = pair.group(1)
             val fieldType = pair.group(2)
             StructField(fieldName, typeMap(fieldType), nullable = true)
-          case _ => throw CustomException(3004, id, "Bad format of cache _SCHEME.")
+          case _ => throw E00011(id)
         }
       })
     val structType = StructType(sType)

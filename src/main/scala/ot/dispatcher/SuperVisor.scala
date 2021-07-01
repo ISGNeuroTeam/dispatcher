@@ -7,7 +7,8 @@ import org.apache.spark.sql.SparkSession
 import org.apache.log4j.{Level, Logger}
 import ot.AppConfig
 import ot.AppConfig._
-import ot.scalaotl.CustomException
+import ot.dispatcher.sdk.core.CustomException.E00017
+import ot.dispatcher.sdk.core.CustomException
 
 /** Gets settings from config file and then runs infinitive loop of user's and system's queries.
   *
@@ -63,6 +64,7 @@ class SuperVisor {
       .getOrCreate()
 
     AppConfig.updateConfigWith(spark.conf.getOption("spark.application.config"))
+    scala.util.Properties.setProp("files.log_localisation", AppConfig.config.getString("files.log_localisation"))
     log.setLevel(Level.toLevel(getLogLevel(config,"visor")))
 
     spark.sparkContext.setLogLevel(getLogLevel(config,"spark"))
@@ -185,7 +187,7 @@ class SuperVisor {
         case error: CustomException =>
           val jobState = superConnector.getJobState(otlQuery.id)
           if (jobState == "canceled") {
-            throw CustomException(3001, otlQuery.id, "Search was canceled because of timeout.")
+            throw E00017(otlQuery.id)
           } else {
             superConnector.setJobStateFailed(otlQuery.id, error.getLocalizedMessage)
             superConnector.unlockCaches(otlQuery.id)
