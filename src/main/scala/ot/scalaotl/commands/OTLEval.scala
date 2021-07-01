@@ -7,6 +7,7 @@ import ot.scalaotl.extensions.StringExt._
 import ot.scalaotl.extensions.DataFrameExt._
 
 import ot.dispatcher.OTLQuery
+import ot.dispatcher.sdk.core.CustomException.E00020
 
 import org.apache.spark.sql.functions.expr
 import org.apache.spark.sql.DataFrame
@@ -22,7 +23,7 @@ class OTLEval(sq: SimpleQuery) extends OTLBaseCommand(sq) with ExpressionParser 
   }
   override def validateArgs(): Unit = {
     if (keywordsMap.isEmpty)
-      throw CustomException(7, sq.searchId, s"Command $commandname shoud have at least one argument", List(commandname))
+      throw E00020(sq.searchId, commandname)
   }
   override def transform(_df: DataFrame): DataFrame = {
     val sch = _df.schema

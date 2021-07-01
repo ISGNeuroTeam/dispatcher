@@ -11,9 +11,11 @@ import scala.util.{Try, Success, Failure}
 import org.apache.spark.sql.AnalysisException
 import org.apache.commons.lang.StringEscapeUtils.escapeJava
 import ot.scalaotl.extensions.DataFrameExt._
+import ot.dispatcher.sdk.core.CustomException.{E00003, E00004, E00005, E00006}
+import ot.dispatcher.sdk.core.CustomException
 
 class IndexSearch(spark: SparkSession, log: Logger, item: (String, Map[String, String]), searchId: Int, fieldsUsedInFullQuery: Seq[String], preview: Boolean, fullReadFlag: Boolean = false) extends OTLIndexes
-{   
+{
 
   val index: String = item._1
   val sql: String = item._2("query")
@@ -44,16 +46,16 @@ class IndexSearch(spark: SparkSession, log: Logger, item: (String, Map[String, S
 
   def getException(ex1: Throwable, ex2: Throwable): Throwable =
   {(ex1, ex2) match {
-      case (ex1: AnalysisException, _) => CustomException(1, searchId, f"Error in 'read' command", List("read", ex1.getMessage()) )
-      case (e1: CustomException, e2: CustomException) =>  CustomException(3, searchId, f"Index not found: $index", List(index))
-      case ex => CustomException(3, searchId, f"Error in 'read' command for index=$index", ex._1, List(index, ex._1.getMessage()))
+      case (ex1: AnalysisException, _) => E00003(searchId, ex1.getMessage())
+      case (e1: CustomException, e2: CustomException) => E00004(searchId, index.toString)
+      case ex => E00005(searchId, index, ex._1.getMessage(), ex._1)
     }
   }
 
   def search(): DataFrame = {
 
     log.debug(s"[SearchID:$searchId] IndexSearch: indexPathDisk ='$indexPathDisk'; indexPathCache = '$indexPathCache'")
-    var result_disk: Try[DataFrame] = Failure(CustomException(-1, searchId, "Time window is in cache_duration"))
+    var result_disk: Try[DataFrame] = Failure(E00006(searchId))
     val delta = System.currentTimeMillis - tws.toLong * 1000
     val duration_cache_millis = duration_cache * 1000
     log.info(s"[SearchID:$searchId] IndexSearch: indexPathDisk ='$indexPathDisk'; indexPathCache = '$indexPathCache'; tws = '${tws.toLong}'; delta = '$delta'; duration_cache_millis = '$duration_cache_millis'")
@@ -67,7 +69,7 @@ class IndexSearch(spark: SparkSession, log: Logger, item: (String, Map[String, S
       case (Success(disk), Success(cache)) =>{getMergedDf(disk, cache) }
       case (Failure(disk), Success(cache)) => cache
       case (Success(disk), Failure(cache)) => disk
-      case (Failure(ex_disk), Failure(ex_cache)) => { throw getException(ex_disk, ex_cache)}//getException(ex_disk, ex_cache) 
+      case (Failure(ex_disk), Failure(ex_cache)) => { throw getException(ex_disk, ex_cache)}//getException(ex_disk, ex_cache)
     }
   }
 }

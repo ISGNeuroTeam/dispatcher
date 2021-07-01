@@ -6,6 +6,9 @@ import ot.scalaotl.static.StatsFunctions
 import ot.scalaotl.parsers.{StatsParser, WildcardParser}
 import ot.scalaotl.extensions.DataFrameExt._
 import ot.scalaotl.extensions.StringExt._
+
+import ot.dispatcher.sdk.core.CustomException.E00021
+
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.expressions.{Window, WindowSpec}
 
@@ -23,7 +26,7 @@ class OTLStreamstats(sq: SimpleQuery) extends OTLBaseCommand(sq, _seps = Set("by
     .replaceAll("^t$", "true")
     .replaceAll("^f$", "false").toBoolean) match {
     case Success(v) => v
-    case Failure(v) => throw CustomException(-1, sq.searchId, "Parameter 'center' should have one of values: [true,false]")
+    case Failure(v) => throw E00021(sq.searchId)
   }
 
   def getTimeWindow(kw: Map[String, Field], df: DataFrame): Option[Stream] = {
@@ -70,16 +73,16 @@ class OTLStreamstats(sq: SimpleQuery) extends OTLBaseCommand(sq, _seps = Set("by
 
     // Add partition to window, if needed
     val streamGrouped = positionalsMap.get("by") match {
-      case Some(Positional("by", posHead :: posTail)) => 
+      case Some(Positional("by", posHead :: posTail)) =>
         Stream(stream.window.partitionBy(posHead, posTail: _*), stream.df)
       case _ => stream
-    }    
+    }
 
     // Replace wildcards with actual column names
     val cols: Array[String] = dfWithEvals.columns
     val returnsWcFuncs: List[StatsFunc] = returnsWithWc(cols, returns).funcs
-    
-    // Apply functions over window    
+
+    // Apply functions over window
     returnsWcFuncs.foldLeft(streamGrouped.df) {
       case (accum, sf) => accum.withColumn(
         sf.newfield.stripBackticks(),

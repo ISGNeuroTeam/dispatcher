@@ -6,7 +6,7 @@ import java.nio.file.Paths
 import com.typesafe.config.{Config, ConfigFactory}
 import ot.AppConfig
 import ot.dispatcher.sdk.PluginConfig
-import ot.scalaotl.CustomException
+import ot.dispatcher.sdk.core.CustomException.E00001
 
 import scala.util.{Failure, Success, Try}
 
@@ -16,7 +16,7 @@ class PluginBaseConfig(jarPath: String) extends PluginConfig{
   def baseConfiguration = ConfigFactory.parseURL(getDefaultConfigUrl())
   def pluginName: String = Try(baseConfiguration.getString("pluginName")) match {
     case Success(n) => n
-    case Failure(_) => throw CustomException(0, -1, "pluginName variable not found in plugin.conf inside jar")
+    case Failure(_) => throw E00001()
   }
   def configuration = Try(ot.AppConfig.config.getString("plugins.path")) match{
     case Success(path) =>

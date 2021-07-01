@@ -6,6 +6,9 @@ import ot.scalaotl.extensions.StringExt._
 import ot.scalaotl.static.{EvalFunctions, OtHash}
 import ot.scalaotl.extensions.DataFrameExt._
 import ot.scalaotl.extensions.ColumnExt._
+
+import ot.dispatcher.sdk.core.CustomException.E00022
+
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{Column, DataFrame}
 
@@ -14,7 +17,7 @@ class OTLWhere(sq: SimpleQuery) extends OTLBaseCommand(sq) with ExpressionParser
   val optionalKeywords = Set.empty[String]
   override def validateArgs = {
     if (args.isEmpty)
-      throw CustomException(7, sq.searchId, s"Command ${commandname} shoud have at least one expression", List(commandname))
+      throw E00022(sq.searchId, commandname)
   }
 
   // Override from ExpressionParser to get rid of obstructive splitting by '='

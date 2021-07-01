@@ -12,6 +12,7 @@ import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.functions.lit
 import org.apache.spark.sql.types.{NullType, StructField}
 import ot.scalaotl.utils.logging.StatViewer
+import ot.dispatcher.sdk.core.CustomException.{E00014, E00001, E00013, E00012}
 
 abstract class OTLBaseCommand(sq: SimpleQuery, _seps: Set[String] = Set.empty) extends OTLSparkSession with DefaultParser {
   val args: String = sq.args
@@ -65,7 +66,7 @@ abstract class OTLBaseCommand(sq: SimpleQuery, _seps: Set[String] = Set.empty) e
     val notFoundArgs = requiredKeywords.diff(keywordsMap.keys.toSet)
     if(notFoundArgs.nonEmpty) {
       val notFoundString = notFoundArgs.mkString("['", "', '", "']")
-      throw new CustomException(4, sq.searchId, f"Required argument(s) $notFoundString not found", List(commandname, notFoundString))
+      throw E00012(sq.searchId, commandname, notFoundString)
     }
   }
 
@@ -74,7 +75,7 @@ abstract class OTLBaseCommand(sq: SimpleQuery, _seps: Set[String] = Set.empty) e
     val unknownKeywords = keywordsMap.keys.toSet.diff(requiredKeywords.union(optionalKeywords))
     if(unknownKeywords.nonEmpty) {
       val unknownKeysString = unknownKeywords.mkString("['", "', '", "']")
-      throw new CustomException(5, sq.searchId, f"Unknown argument(s) $unknownKeysString for command '$commandname'",List(commandname, unknownKeysString))
+      throw E00013(sq.searchId, commandname, unknownKeysString)
     }
   }
 
@@ -118,7 +119,7 @@ abstract class OTLBaseCommand(sq: SimpleQuery, _seps: Set[String] = Set.empty) e
     val ndf = nullFields.foldLeft(_df) { (acc, col) => acc.withColumn(col, lit(null)) }
     Try(loggedTransform(ndf)) match {
       case Success(df) => df
-      case Failure(ex: CustomException) =>
+      case Failure(ex) if (ex.getClass.getSimpleName.contains("CustomException")) =>
         log.error(ex.getMessage)
         throw ex
       //Working with udf exceptions when call df.show
@@ -131,10 +132,11 @@ abstract class OTLBaseCommand(sq: SimpleQuery, _seps: Set[String] = Set.empty) e
           }
         }
         log.error(f"Error in  '$commandname' command: ${exception.getMessage}" )
-        throw CustomException(1, sq.searchId, f"Error in  '$commandname' command",exception, List(commandname, exception.getMessage))
-      case Failure(ex) =>
+        throw E00014(sq.searchId, commandname, exception)
+      case Failure(ex) => {
         log.error(f"Error in  '$commandname' command: ${ex.getMessage}" )
-        throw CustomException(1, sq.searchId, f"Error in  '$commandname' command",ex, List(commandname, ex.getMessage))
+        throw E00014(sq.searchId, commandname, ex)
+      }
     }
   }
 }

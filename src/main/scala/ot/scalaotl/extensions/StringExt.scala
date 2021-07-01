@@ -121,6 +121,19 @@ object StringExt {
       res.asInstanceOf[A]
     }
 
+    // Carefully strip double quotes from the string
+    def withQuotesTrimmed(): String = {
+      {
+        s(0) match {
+          case '"' => s.drop(1)
+          case _ => s
+        }
+      } match {
+        case str: String if str.endsWith("\"") && !str.endsWith("\\\"") => str.dropRight(1)
+        case str: String => str
+      }
+    }
+
     // Strip string with both prefix and suffix
     def strip(seq: String): String = s.stripPrefix(seq).stripSuffix(seq)
     def strip(): String = strip(" ")

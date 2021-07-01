@@ -22,11 +22,11 @@ class OTLTop(sq: SimpleQuery) extends OTLBaseCommand(sq, _seps = Set("by")) {
       case _ => return _df
     }
 
-    val fields = returns.flatFields.filter(_ != limit.toString)
+    val fields = returns.flatFields.filter(_.stripBackticks() != limit.toString)
 
     val groups = getPositional("by") match {
       case None | Some(List()) => List()
-      case Some(l)             => l
+      case Some(l)             => l.map(s => s.stripBackticks())
     }
 
     val dfCount = groups ++ fields match {
