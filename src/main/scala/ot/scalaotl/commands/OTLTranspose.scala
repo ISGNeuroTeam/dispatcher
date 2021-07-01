@@ -2,6 +2,7 @@ package ot.scalaotl
 package commands
 
 import ot.scalaotl.extensions.DataFrameExt._
+import ot.scalaotl.extensions.StringExt._
 
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.functions.{ col, lit, explode, array, udf, first }
@@ -12,7 +13,7 @@ class OTLTranspose(sq: SimpleQuery) extends OTLBaseCommand(sq) {
   override def transform(_df: DataFrame): DataFrame = {
 
     val keys = returns.flatFields
-    val nrows = keys.headOption.getOrElse("5").toInt
+    val nrows = keys.headOption.getOrElse("5").stripBackticks.toInt
     val columnName = getKeyword("column_name").getOrElse("column")
     val headerField = getKeyword("header_field").getOrElse("id")
     val includeEmpty = getKeyword("include_empty").getOrElse("true")
