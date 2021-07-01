@@ -1,4 +1,4 @@
-# [1.``7.0] - The CustomException class from the Dispatcher SDK
+# [1.7.0] - The CustomException class from the Dispatcher SDK
 
 ### New
 The brand new CustomException class inherited from the Dispatcher SDK.
