@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - OTLCollect saves buckets in wrong format
 - OTLSort creates wrong columns based on ascending/descending syntax of args
-- OTLEventstats mistakenly creates 0-column 
+- OTLTimechart mistakenly creates 0-column 
 - Converter ignores fieldsUsed property set by command from a plugin. This results to unexpected columns in output
  dataset.
   
