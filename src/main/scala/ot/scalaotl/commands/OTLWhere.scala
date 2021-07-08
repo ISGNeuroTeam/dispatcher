@@ -61,17 +61,9 @@ class OTLWhere(sq: SimpleQuery) extends OTLBaseCommand(sq) with ExpressionParser
             val ncExpr = if (ex.contains("!=")) "not " + containsExpr else containsExpr
             accExpr.replace(ex, ncExpr)
           }else {
-            val expression = castFieldsToStr(ex, svs, acc)
-            accExpr.replace(ex, expression.withPeriodReplace)
+            accExpr.replace(ex, ex.withPeriodReplace)
           }})
         acc.filter( expr(replExpr).withExtensions(acc.schema))
     }
-  }
-  //converts field to string if it compares with string const
-  def castFieldsToStr(ex: String, fieldsInExpr: Seq[String], df: DataFrame): String = {
-    val existingFields = df.schema.toList.map(_.name).intersect(fieldsInExpr)
-     if(fieldsInExpr.diff(existingFields).length > 0)
-      existingFields.foldLeft(ex){(acc,f) => acc.replace(existingFields.head, s"cast(${existingFields.head} as string)")}
-    else ex
   }
 }
