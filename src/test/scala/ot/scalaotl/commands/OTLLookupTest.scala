@@ -79,7 +79,7 @@ class OTLLookupTest extends CommandTest {
     assert(jsonCompare(actual, expected),f"Result : $actual\n---\nExpected : $expected")
   }
 
-  test("Test 3. Command: | lookup name.csv col1") {
+  test("Test 3. Command: | working with fields inserted by lookup command") {
     val actual = execute("""makeresults
                            || eval a=1, b=2
                            || table - _time
