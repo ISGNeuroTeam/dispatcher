@@ -88,9 +88,9 @@ class Converter(otlQuery: OTLQuery, cache: Map[String, DataFrame]) extends OTLSp
   }
 
   def getFieldsUsedInQuery(transformers: Seq[OTLBaseCommand]): Seq[String] = {
-    val totalFieldsUsed = transformers.map {
-      case tr => tr.fieldsUsed.map(_.stripBackticks)
-    }.flatten
+    val totalFieldsUsed = transformers.flatMap {
+      tr => tr.fieldsUsed.map(_.stripBackticks())
+    }
     // val totalFieldsGenerated = transformers.map(_.fieldsGenerated.map(_.strip("`"))).flatten
     totalFieldsUsed.distinct
   }
@@ -98,7 +98,7 @@ class Converter(otlQuery: OTLQuery, cache: Map[String, DataFrame]) extends OTLSp
   def run = transformers.foldLeft(df) {
     (accum, tr) =>
       {
-        if (tr.getClass.getName.contains("OTLRead") || tr.getClass.getName.contains("OTLInputlookup") || tr.getClass.getName.contains("RawRead") || tr.getClass.getName.contains("FullRead")) tr.setFieldsUsedInFullQuery(fieldsUsed)
+        if (tr.getClass.getName.contains("OTLRead") || tr.getClass.getName.contains("OTLInputlookup") || tr.getClass.getName.contains("OTLLookup") || tr.getClass.getName.contains("RawRead") || tr.getClass.getName.contains("FullRead")) tr.setFieldsUsedInFullQuery(fieldsUsed)
         tr.safeTransform(accum)
       }
   }
