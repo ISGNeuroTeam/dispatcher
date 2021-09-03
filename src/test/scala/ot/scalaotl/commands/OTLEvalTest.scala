@@ -602,7 +602,7 @@ test("Test 21. Command: | eval \"Колонка с пробелами\" = \"123\
     assert(jsonCompare(actual, expected), f"Result : $actual\n---\nExpected : $expected")
   }
 
-  test("Test 26 Command: | eval a = \"please,   don't   eat    spaces\"") {//TODO
+  test("Test 26 Command: | eval a = \"please,   don't   eat    spaces\"") {
     val actual = execute("""makeresults | eval a = "please,   don't   eat    spaces" | fields - _time """)
     val expected = """[
                      |{"a":"please,   don't   eat    spaces"}
