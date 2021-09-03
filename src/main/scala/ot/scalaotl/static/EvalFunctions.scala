@@ -51,7 +51,7 @@ object EvalFunctions extends OTLSparkSession {
   }
 
   def argsReplace(_args: String): String = {
-    val mapRepl = """(\n)""".r.replaceAllIn(_args, " ").replace(" =", "=").replace("= ", "=")
+    val mapRepl = """(\n)""".r.replaceAllIn(_args.trim, " ").replace(" =", "=").replace("= ", "=")
       .replaceBackslash
       .withKeepQuotedText(_.roundUnresolvedTokensInQuotes())
       .replaceSingleQuotToBacktick
