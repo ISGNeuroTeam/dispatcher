@@ -27,7 +27,11 @@ class OTLOutputlookupTest extends CommandTest {
                             |"{\"serialField\": \"11\", \"random_Field\": \"100\", \"WordField\": \"qwe\", \"junkField\": \"q2W\"}",1568026476854""".stripMargin
     writeTextFile(exisiting_lookup,"/lookups/ol2")
     execute("""otoutputlookup ol2 append=true """)
-    val actual =  Source.fromFile(f"$tmpDir/lookups/ol2").getLines.mkString("\n")
+
+    val writtenLookupSource = Source.fromFile(f"$tmpDir/lookups/ol2")
+    val actual =  writtenLookupSource.getLines.mkString("\n")
+    writtenLookupSource.close()
+
     val expected =
       """_time,_raw
         |1568026476854,"{\"serialField\": \"0\", \"random_Field\": \"100\", \"WordField\": \"qwe\", \"junkField\": \"q2W\"}"
@@ -41,6 +45,20 @@ class OTLOutputlookupTest extends CommandTest {
         |1568026476854,"{\"serialField\": \"8\", \"random_Field\": \"0\", \"WordField\": \"MMM\", \"junkField\": \"112\"}"
         |1568026476854,"{\"serialField\": \"9\", \"random_Field\": \"10\", \"WordField\": \"USA\", \"junkField\": \"word\"}"
         |1568026476854,"{\"serialField\": \"11\", \"random_Field\": \"100\", \"WordField\": \"qwe\", \"junkField\": \"q2W\"}"""".stripMargin
+    assert(actual == expected, f"Result : $actual\n---\nExpected : $expected")
+  }
+
+  test("Test 2. Command: | otoutputlookup eating spaces") {
+
+    execute("""makeresults | eval text = "  a   cat   " | fields - _time | otoutputlookup  ol2""")
+
+    val writtenLookupSource =  Source.fromFile(f"$tmpDir/lookups/ol2")
+    val actual = writtenLookupSource.getLines.mkString("\n")
+    writtenLookupSource.close()
+
+    val expected =
+      """text
+        |  a   cat   """.stripMargin
     assert(actual == expected, f"Result : $actual\n---\nExpected : $expected")
   }
 

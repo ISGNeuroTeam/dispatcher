@@ -23,7 +23,6 @@ trait OTLLookups extends OTLConfig {
   def merge(srcPath: String, dstPath: String) = {
     val conf = new Configuration()
     conf.set("fs.defaultFS", "file:/")
-
     val hdfs: FileSystem = {
       FileSystem.get(conf)
     }
@@ -38,6 +37,8 @@ trait OTLLookups extends OTLConfig {
     _df.repartition(1)
       .write
       .format("csv")
+      .option("ignoreTrailingWhiteSpace","false")
+      .option("ignoreLeadingWhiteSpace","false")
       .option("header", "true")
       .mode("overwrite")
       .save(tmpFileName)
