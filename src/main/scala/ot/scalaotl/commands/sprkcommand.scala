@@ -8,8 +8,8 @@ import ot.scalaotl.parsers.ExpressionParser
 
 
 class SprkCommand(sq: SimpleQuery) extends OTLBaseCommand(sq) with ExpressionParser{
-  val requiredKeywords= Set.empty[String]
-  val optionalKeywords= Set("value")
+  val requiredKeywords = Set.empty[String]
+  val optionalKeywords = Set("value")
   val searchId = sq.searchId
   override def getFieldsUsed = (ret: Return) => {
     ret.evals.flatMap {

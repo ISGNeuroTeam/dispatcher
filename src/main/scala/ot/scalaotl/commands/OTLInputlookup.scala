@@ -10,21 +10,21 @@ import ot.scalaotl.utils.logging.StatViewer
 import ot.scalaotl.extensions.StringExt._
 
 class OTLInputlookup(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLLookups with OTLSparkSession {
-  val requiredKeywords= Set.empty[String]
-  val optionalKeywords= Set("append")
-  val cache = sq.cache
+  val requiredKeywords = Set.empty[String]
+  val optionalKeywords = Set("append")
+  val cache: Map[String, DataFrame] = sq.cache
   val inputPath: Option[String] = _getLookupPath(
     returns.fields.headOption match {
       case Some(ReturnField(k, v)) => k
       case _                       => "-1"
     })
 
-  val whereFilter = args.split("where")
+  val whereFilter: Array[String] = args.split("where")
 
   override def transform(_df: DataFrame): DataFrame = {
     log.debug(s"InputPath: $inputPath")
     val inputDf = inputPath match {
-      case Some(path) => {
+      case Some(path) =>
         log.debug(s"Lookup path: $path.")
         var df_add = spark.read.option("header", "true").option("inferSchema", "true").csv(path)
         val nullFields = fieldsUsedInFullQuery.diff(List(args)).diff(df_add.schema.names)
@@ -38,15 +38,13 @@ class OTLInputlookup(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLLookups
         } else {
           df_add
         }
-      }
       case _ => _df
     }
 
     args.split("where").drop(1) match {
-      case Array(f) => {
+      case Array(f) =>
         val otlQuery = OTLQuery(s"search ${f.mkString("").trim}")
         new Converter(otlQuery, cache).setDF(inputDf).run
-      }
       case Array() => inputDf
     }
   }

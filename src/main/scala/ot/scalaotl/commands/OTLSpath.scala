@@ -10,8 +10,8 @@ import org.apache.spark.sql.functions.json_tuple
 import scala.annotation.tailrec
 
 class OTLSpath(sq: SimpleQuery) extends OTLBaseCommand(sq) {
-  val requiredKeywords= Set.empty[String]
-  val optionalKeywords= Set("input", "path", "output")
+  val requiredKeywords = Set.empty[String]
+  val optionalKeywords = Set("input", "path", "output")
 
   override def transform(_df: DataFrame): DataFrame = {
     val inputField = getKeyword("input").getOrElse("_raw")
@@ -26,8 +26,8 @@ class OTLSpath(sq: SimpleQuery) extends OTLBaseCommand(sq) {
 }
 
 class OTLSpathNoUDF(sq: SimpleQuery) extends OTLBaseCommand(sq) {
-  val requiredKeywords= Set.empty[String]
-  val optionalKeywords= Set("input", "path", "output")
+  val requiredKeywords = Set.empty[String]
+  val optionalKeywords = Set("input", "path", "output")
 
   def getJsonField(df: DataFrame, input: String, output: String, path: List[String]): DataFrame = {
     @tailrec

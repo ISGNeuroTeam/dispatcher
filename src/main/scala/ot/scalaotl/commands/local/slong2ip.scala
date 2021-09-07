@@ -7,8 +7,8 @@ import org.apache.spark.sql.functions.{ col, udf }
 import org.apache.spark.sql.DataFrame
 
 class Long2IP(sq: SimpleQuery) extends OTLBaseCommand(sq) {
-  val requiredKeywords= Set.empty[String]
-  val optionalKeywords= Set.empty[String]
+  val requiredKeywords = Set.empty[String]
+  val optionalKeywords = Set.empty[String]
 
   val fields: List[String] = {
     val rexTextBetweenQuotes: Regex = """(?:".*?"|[^,\s])+""".r

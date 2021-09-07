@@ -3,27 +3,30 @@ package commands
 
 import org.apache.spark.sql.functions.{col, lit, typedLit, udf}
 import org.apache.spark.sql.DataFrame
+import org.apache.spark.sql.expressions.UserDefinedFunction
 import org.apache.spark.sql.types.ArrayType
 import ot.scalaotl.extensions.StringExt._
 import ot.scalaotl.extensions.DataFrameExt._
 import ot.scalaotl.static.OtHash
 
+import scala.util.matching.Regex
+
 class OTLRex(sq: SimpleQuery) extends OTLBaseCommand(sq) {
-  val requiredKeywords= Set.empty[String]
-  val optionalKeywords= Set("field", "max_match", "mode")
-  val keywordsRex = """(^|\s)(max_match|field|mode)=(\S+)""".r.findAllIn(args).matchData.map { x => (x.group(2) -> x.group(3)) }.toMap
+  val requiredKeywords = Set.empty[String]
+  val optionalKeywords = Set("field", "max_match", "mode")
+  val keywordsRex: Map[String, String] = """(^|\s)(max_match|field|mode)=(\S+)""".r.findAllIn(args).matchData.map { x => x.group(2) -> x.group(3) }.toMap
   val regexStr: String = keywordsRex.map { case (k, v) => s"$k=$v" }.foldLeft(args) { (a, b) => a.replace(b, "") }.trim.drop(1).dropRight(1)
 
   //Replaces allows the use of a symbol '_' in group names
-  val replMap= getGroupReplaces(regexStr)
-  val normalisedRegexStr = regexStr.replaceByMap(replMap)
-  val replBackMap = replMap.map(_.swap)
+  val replMap: Map[String, String] = getGroupReplaces(regexStr)
+  val normalisedRegexStr: String = regexStr.replaceByMap(replMap)
+  val replBackMap: Map[String, String] = replMap.map(_.swap)
 
-  val groupNamesIter = """\(\?<([a-zA-Z][a-zA-Z0-9]*)>""".r.findAllMatchIn(normalisedRegexStr)
-  val groupNames = groupNamesIter.map(i => i.group(1)).toArray
+  val groupNamesIter: Iterator[Regex.Match] = """\(\?<([a-zA-Z][a-zA-Z0-9]*)>""".r.findAllMatchIn(normalisedRegexStr)
+  val groupNames: Array[String] = groupNamesIter.map(i => i.group(1)).toArray
 
   object Udfs extends Serializable {//Needed to make serialisable udfs with calls from one function to another function
-    val parseNamedRegex = (line: String, rex: String, maxMatch: String, groupNames : Seq[String]) => {
+    val parseNamedRegex: (String, String, String, Seq[String]) => Map[String, Seq[String]] = (line: String, rex: String, maxMatch: String, groupNames : Seq[String]) => {
       if (line == null) Map[String, Seq[String]]()
       else {
         val matcher = java.util.regex.Pattern.compile(rex).matcher(line)
@@ -37,24 +40,24 @@ class OTLRex(sq: SimpleQuery) extends OTLBaseCommand(sq) {
       res
       }
     }
-    val parseMvNamedRegex = (lines: Seq[String], rex: String, maxMatch: String, groupNames: Seq[String]) => {
+    val parseMvNamedRegex: (Seq[String], String, String, Seq[String]) => Map[String, Seq[String]] = (lines: Seq[String], rex: String, maxMatch: String, groupNames: Seq[String]) => {
       val parseRegex = parseNamedRegex
       val merge = mergeMaps
       if (lines==null) Map[String, Seq[String]]()
       else lines.foldLeft(Map[String, Seq[String]]())((acc, line) => mergeMaps(acc, parseRegex(line, rex, maxMatch, groupNames))
       )
     }
-    val mergeMaps = (a: Map[String, Seq[String]], b: Map[String, Seq[String]]) => {
+    val mergeMaps: (Map[String, Seq[String]], Map[String, Seq[String]]) => Map[String, Seq[String]] = (a: Map[String, Seq[String]], b: Map[String, Seq[String]]) => {
       val merged = a.toSeq ++ b.toSeq
       val grouped = merged.groupBy(_._1)
       grouped.mapValues(_.foldLeft(Seq[String]())((acc, l) => acc ++ l._2).toSeq)
     }
   }
 
-  val extractUDF = udf(Udfs.parseNamedRegex)
-  val extractMultivalUDF = udf(Udfs.parseMvNamedRegex)
+  val extractUDF: UserDefinedFunction = udf(Udfs.parseNamedRegex)
+  val extractMultivalUDF: UserDefinedFunction = udf(Udfs.parseMvNamedRegex)
 
-  override val fieldsUsed = keywordsRex.get("field") match {
+  override val fieldsUsed: List[String] = keywordsRex.get("field") match {
     case Some(f) => List(f)
     case _       => List[String]()
   }
@@ -83,7 +86,7 @@ class OTLRex(sq: SimpleQuery) extends OTLBaseCommand(sq) {
     }.drop("dict")
   }
 
-  def getGroupReplaces(str : String) = {
+  def getGroupReplaces(str : String): Map[String, String] = {
     val rexStr = """\?<(([A-Za-z0-9_])*)>"""
-    rexStr.r.findAllIn(str).matchData.map { x => (x.group(1) -> ("x" + OtHash.md5(x.group(1)))) }.toMap }
+    rexStr.r.findAllIn(str).matchData.map { x => x.group(1) -> ("x" + OtHash.md5(x.group(1))) }.toMap }
 }

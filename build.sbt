@@ -2,7 +2,7 @@ name := "Dispatcher"
 
 organization := "ot.dispatcher"
 
-version := "1.6.0"
+version := "1.7.0"
 
 scalaVersion := "2.11.12"
 
@@ -12,7 +12,9 @@ retrieveManaged := true
 
 resolvers += Resolver.jcenterRepo
 
-libraryDependencies += "ot.dispatcher" % "dispatcher-sdk_2.11" % "1.1.0"% Compile
+resolvers += "Sonatype OSS Snapshots" at (sys.env.getOrElse("NEXUS_OTP_URL_HTTPS","")+"/repository/ot.platform-sbt-releases/")
+
+libraryDependencies += "ot.dispatcher" % "dispatcher-sdk_2.11" % "1.2.0"% Compile
 
 libraryDependencies += "net.totietje" %% "evaluator" % "1.1.0"
 

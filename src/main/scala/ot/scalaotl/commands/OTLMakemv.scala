@@ -6,8 +6,8 @@ import org.apache.spark.sql.functions.{ col, split }
 import ot.scalaotl.extensions.StringExt._
 
 class OTLMakemv(sq: SimpleQuery) extends OTLBaseCommand(sq) {
-  val requiredKeywords= Set.empty[String]
-  val optionalKeywords= Set("delim")
+  val requiredKeywords = Set.empty[String]
+  val optionalKeywords = Set("delim")
   override def transform(_df: DataFrame): DataFrame = {
     val delim = getKeyword("delim").getOrElse("\\s").strip("\"")
     returns.flatFields match {

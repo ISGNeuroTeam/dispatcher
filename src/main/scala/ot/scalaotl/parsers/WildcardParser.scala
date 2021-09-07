@@ -36,36 +36,35 @@ trait WildcardParser {
   }
 
   def replaceByMask(strArr: Array[String], inputMask: String, outputMask: String): Array[WcMatch] = {
-    strArr.map(x => replaceByMask(x, inputMask, outputMask)).flatten
+    strArr.flatMap(x => replaceByMask(x, inputMask, outputMask))
   }
   
-  def returnsWithWc = (columns: Array[String], returns: Return) => {
-    val columnsWithBackticks = columns.map(_.stripBackticks.addSurroundedBackticks)
-    val newReturns = returns.fields.map {
+  def returnsWithWc: (Array[String], Return) => Return = (columns: Array[String], returns: Return) => {
+    val columnsWithBackticks = columns.map(_.stripBackticks().addSurroundedBackticks)
+    val newReturns = returns.fields.flatMap {
       case ReturnField(newfieldMask, fieldMask) => replaceByMask(columnsWithBackticks, fieldMask, newfieldMask)
-        .map { case WcMatch(a, _, b) => ReturnField(b.stripBackticks, a) }
+        .map { case WcMatch(a, _, b) => ReturnField(b.stripBackticks(), a) }
         .sortBy(_.field)
-    }.flatten
+    }
 
-    val newFuncs = returns.funcs.map {
-      case StatsFunc(newfieldMask, func, fieldMask) => {
+    val newFuncs = returns.funcs.flatMap {
+      case StatsFunc(newfieldMask, func, fieldMask) =>
         replaceByMask(columnsWithBackticks, fieldMask, newfieldMask)
           .map { case WcMatch(a, _, b) => StatsFunc(b, func, a) }
           .sortBy(_.field)
-      }
-    }.flatten
+    }
 
     Return(newReturns, newFuncs, returns.evals)
   }
 
   def getMatches(columns: Array[String], returns: Return): List[(String, String)] = {
-    val columnsWithBackticks = columns.map(_.stripBackticks.addSurroundedBackticks)
-    val retMatches = returns.fields.map{
+    val columnsWithBackticks = columns.map(_.stripBackticks().addSurroundedBackticks)
+    val retMatches = returns.fields.flatMap {
       case ReturnField(newfieldMask, fieldMask) => replaceByMask(columnsWithBackticks, fieldMask, newfieldMask)
-    }.flatten
-    val funcMatches = returns.funcs.map {
-      case StatsFunc(newfieldMask, func, fieldMask) => replaceByMask(columnsWithBackticks, fieldMask, newfieldMask)
-    }.flatten
+    }
+    val funcMatches = returns.funcs.flatMap {
+      case StatsFunc(newFieldMask, _, fieldMask) => replaceByMask(columnsWithBackticks, fieldMask, newFieldMask)
+    }
     (retMatches ::: funcMatches).map{
       case WcMatch(initial, matchstr, _) => (initial, matchstr)
     }

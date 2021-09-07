@@ -9,17 +9,17 @@ import org.apache.spark.sql.functions.lit
 import org.apache.spark.sql.DataFrame
 
 class OTLOutputlookup(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLLookups with OTLSparkSession {
-  val requiredKeywords= Set.empty[String]
-  val optionalKeywords= Set("append")
-  val lookupFileName = returns.flatFields.headOption.getOrElse("-1")
+  val requiredKeywords = Set.empty[String]
+  val optionalKeywords = Set("append")
+  val lookupFileName: String = returns.flatFields.headOption.getOrElse("-1")
   override def fieldsUsed: List[String] = super.fieldsUsed.diff(List(lookupFileName))
-  val inputPath: Option[String] = _getLookupPath(lookupFileName.stripBackticks)
+  val inputPath: Option[String] = _getLookupPath(lookupFileName.stripBackticks())
 
   override def transform(_df: DataFrame): DataFrame = {
     inputPath match {
-      case Some(path) => {
-        val df_w = if (new java.io.File(URI.create(path).getPath()).exists()
-          & ((getKeyword("append").getOrElse("false").toLowerCase) == "true")) {
+      case Some(path) =>
+        val df_w = if (new java.io.File(URI.create(path).getPath).exists()
+          & (getKeyword("append").getOrElse("false").toLowerCase == "true")) {
           val df_add = spark.read
             .option("header", "true")
             .option("inferSchema", "true")
@@ -34,7 +34,6 @@ class OTLOutputlookup(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLLookup
         }
         write(df_w, path)
         df_w
-      }
       case _ => _df
     }
   }

@@ -17,7 +17,7 @@ trait DefaultParser {
    * @param args [[String]] - args string
    * @return List[[Keyword]] - list of keyword pairs
    */
-  def keywordsParser = (args: String) => {
+  def keywordsParser: String => List[Keyword] = (args: String) => {
     """(\S+)\s*=\s*(\S+)""".r.findAllIn(args)
       .matchData
       .map(x => 
@@ -29,7 +29,7 @@ trait DefaultParser {
       .toList
   }
 
-  def fieldsToMap = (vs: Seq[Field]) => vs.map(x => x.toMap).flatten.toMap.asInstanceOf[Map[String, Field]]
+  def fieldsToMap: Seq[Field] => Map[String, Field] = (vs: Seq[Field]) => vs.flatMap(x => x.toMap).toMap
 
   /** Parses positional arguments. Positionals are the arguments following separators specified in class instance.
    * 
@@ -43,7 +43,7 @@ trait DefaultParser {
    * @param seps [[Set[String]]] - set of separators
    * @return [[Seq[Positional]]] - sequence of positionals
    */
-  def positionalsParser = (args: String, seps: Set[String]) => {
+  def positionalsParser: (String, Set[String]) => Seq[Positional] = (args: String, seps: Set[String]) => {
     val sepsExtraSpaces = seps.map(_.addExtraSpaces)
     sepsExtraSpaces.map(
       x => if (args.contains(x)) Positional(
@@ -63,15 +63,15 @@ trait DefaultParser {
 
   /** Removes positionals and separators from arg string
    */
-  def excludePositionals = (args: String, seps: Set[String]) => if (seps.isEmpty) args else args.split(seps.mkString("|")).head
+  def excludePositionals: (String, Set[String]) => String = (args: String, seps: Set[String]) => if (seps.isEmpty) args else args.split(seps.mkString("|")).head
 
   /** Remove one specified keyword pair from arg string
    */
-  def excludeOneKeyword = (args: String, kw: Keyword) => args.replaceAllLiterally(s"${kw.key}=${kw.value}", "").removeExtraSpaces
+  def excludeOneKeyword: (String, Keyword) => String = (args: String, kw: Keyword) => args.replaceAllLiterally(s"${kw.key}=${kw.value}", "").removeExtraSpaces
 
   /** Removes all keyword pairs from arg string
    */
-  def excludeKeywords = (args: String, kws: List[Keyword]) => kws.foldLeft(args) { case (accum, item) => excludeOneKeyword(accum, item) }
+  def excludeKeywords: (String, List[Keyword]) => String = (args: String, kws: List[Keyword]) => kws.foldLeft(args) { case (accum, item) => excludeOneKeyword(accum, item) }
 
   /** Parses fields directly used in calculating and field names to return.
    * Also parses applied functions and eval expressions within arg string.
@@ -102,7 +102,7 @@ trait DefaultParser {
    * - [[List[StatsFunc]]] represents statistical functions applied to fields and new field names after transformation
    * - [[List[StatsEval]]] represents eval expressions calculated over dataframe fields before statistical transformations
    */
-  def returnsParser = (args: String, seps: Set[String]) => {
+  def returnsParser: (String, Set[String]) => Return = (args: String, seps: Set[String]) => {
     val argsFiltered = excludeKeywords(excludePositionals(args, seps), keywordsParser(args)) // TODO Make chain
     val splitSpaceCommaKeepQuotes: Regex = """(?:".*?"|[^,\s])+""".r
     Return(splitSpaceCommaKeepQuotes
@@ -114,13 +114,13 @@ trait DefaultParser {
 
   /** Returns list of fields used in command
    */
-  def getFieldsUsed = (ret: Return) => ret.flatFields
+  def getFieldsUsed: Return => List[String] = (ret: Return) => ret.flatFields
 
   /** Returns list of new fields created afer transformation
    */
-  def getFieldsGenerated = (ret: Return) => List[String]()
+  def getFieldsGenerated: Return => List[String] = (ret: Return) => List[String]()
 
   /** Returns list of positionals used in command
    */
-  def getPositionalFieldUsed = (pos: Seq[Positional]) => pos.map { case (Positional(_, v)) => v }.toList.flatten
+  def getPositionalFieldUsed: Seq[Positional] => List[String] = (pos: Seq[Positional]) => pos.map { case Positional(_, v) => v }.toList.flatten
 }

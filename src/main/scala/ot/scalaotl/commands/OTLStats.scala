@@ -9,11 +9,11 @@ import ot.scalaotl.extensions.StringExt._
 import org.apache.spark.sql.{DataFrame, Row}
 
 class OTLStats(sq: SimpleQuery) extends OTLBaseCommand(sq, _seps = Set("by")) with StatsParser with WildcardParser {
-  val requiredKeywords= Set.empty[String]
-  val optionalKeywords= Set.empty[String]
+  val requiredKeywords = Set.empty[String]
+  val optionalKeywords = Set.empty[String]
   
-  override val fieldsUsed = getFieldsUsed(returns) ++ getPositionalFieldUsed(positionals)
-  override val fieldsGenerated = getFieldsGenerated(returns)
+  override val fieldsUsed: List[String] = getFieldsUsed(returns) ++ getPositionalFieldUsed(positionals)
+  override val fieldsGenerated: List[String] = getFieldsGenerated(returns)
 
   override def transform(_df: DataFrame): DataFrame = {
     // Sort DF if "earliest" or "latest" functions
@@ -29,7 +29,7 @@ class OTLStats(sq: SimpleQuery) extends OTLBaseCommand(sq, _seps = Set("by")) wi
     val (rWcFunks, rdfWithEvals) = resolveAmbigousFields(returnsWcFuncs, dfWithEvals)
     // Calculate aggregations
     val dfCalculated = positionalsMap.get("by") match {
-      case Some(Positional("by", groups)) => {
+      case Some(Positional("by", groups)) =>
         var nullColumnFlag = false
         groups.foreach(column => if (dfWithEvals.getColumTypeName(column.stripBackticks()) == "null") nullColumnFlag = true)
         if (nullColumnFlag) {
@@ -41,27 +41,26 @@ class OTLStats(sq: SimpleQuery) extends OTLBaseCommand(sq, _seps = Set("by")) wi
           emptyDF
         } else {
           StatsFunctions.applyFuncs(rWcFunks, rdfWithEvals, groups)
-        }
-      } //.map(x => "`" + x + "`"))
+        } //.map(x => "`" + x + "`"))
       case _                              => StatsFunctions.applyFuncs(rWcFunks, rdfWithEvals)
     }
     val serviceFields = dfCalculated.columns.filter(x => x.matches("__.*__") || x.startsWith("__fake__"))
     dfCalculated.dropFake.drop(serviceFields: _*)
   }
 
-  def resolveAmbigousFields(funcs: List[StatsFunc], df: DataFrame) = {
+  def resolveAmbigousFields(funcs: List[StatsFunc], df: DataFrame): (List[StatsFunc], DataFrame) = {
     val generated_fiedls= funcs.map{case StatsFunc(out,_,in) => (out,in)}.filter(x => x._1 != x._2).map(_._1.stripBackticks()).toSet
     val inputCols = df.columns.toSet
     val ambigousFields = inputCols.intersect(generated_fiedls)
     val aliases = ambigousFields.map(f => (f, s"__${f}__"))
     val mdf = aliases.foldLeft(df)((acc, f) => acc.withSafeColumnRenamed(f._1, f._2))
-    val nfuncs = funcs.map(func => func match {
+    val nfuncs = funcs.map {
       case StatsFunc(out, func, in) if ambigousFields.contains(in.stripBackticks()) => if (out == in)
         StatsFunc(s"`__${in.stripBackticks()}__`", func, s"`__${in.stripBackticks()}__`")
-        else
+      else
         StatsFunc(out, func, s"`__${in.stripBackticks()}__`")
       case x => x
-    })
+    }
     (nfuncs, mdf)
   }
 }

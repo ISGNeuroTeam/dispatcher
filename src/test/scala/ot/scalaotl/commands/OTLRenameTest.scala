@@ -54,11 +54,11 @@ class OTLRenameTest extends CommandTest {
                      |  "_raw": "{\"serialField\": \"9\", \"random_Field\": \"10\", \"WordField\": \"USA\", \"junkField\": \"word\"}",
                      |  "sf": "9"
                      |}]""".stripMargin
-    assert(jsonCompare(actual, expected), f"Result : $actual\n---\nExpected : $expected")
+    assert(jsonCompare(actual, expected), f"Actual:\n$actual\n---\nExpected:\n$expected")
   }
 
   test("""Test 1. Command: | rename serialField as "sf" """) {
-    val actual = execute("""rename serialField as "sf" """)
+    val actual = execute("""rename serialField as "sf"""")
     val expected =
       """[{
         |  "_time": 1568026476854,
@@ -110,7 +110,7 @@ class OTLRenameTest extends CommandTest {
         |  "_raw": "{\"serialField\": \"9\", \"random_Field\": \"10\", \"WordField\": \"USA\", \"junkField\": \"word\"}",
         |  "sf": "9"
         |}]""".stripMargin
-    assert(jsonCompare(actual, expected), f"Result : $actual\n---\nExpected : $expected")
+    assert(jsonCompare(actual, expected), f"Actual:\n$actual\n---\nExpected:\n$expected")
   }
 
   test("""Test 2. Command: | rename serialField as "sf hk" """) {
@@ -166,7 +166,7 @@ class OTLRenameTest extends CommandTest {
         |  "_raw": "{\"serialField\": \"9\", \"random_Field\": \"10\", \"WordField\": \"USA\", \"junkField\": \"word\"}",
         |  "sf hk": "9"
         |}]""".stripMargin
-    assert(jsonCompare(actual, expected), f"Result : $actual\n---\nExpected : $expected")
+    assert(jsonCompare(actual, expected), f"Actual:\n$actual\n---\nExpected:\n$expected")
   }
 
 

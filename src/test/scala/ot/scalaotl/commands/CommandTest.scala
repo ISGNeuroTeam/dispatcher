@@ -17,13 +17,13 @@ abstract class CommandTest extends FunSuite with BeforeAndAfterAll {
 
   val log: Logger = Logger.getLogger("TestLogger")
 
-  val spark = SparkSession.builder()
+  val spark: SparkSession = SparkSession.builder()
     .appName(config.getString("spark.appName"))
     .master(config.getString("spark.master"))
-    .config("spark.sql.files.ignoreCorruptFiles", true)
+    .config("spark.sql.files.ignoreCorruptFiles", value = true)
     .getOrCreate()
 
-  val externalSchema = config.getString("schema.external_schema").toBoolean
+  val externalSchema: Boolean = config.getString("schema.external_schema").toBoolean
 
 
   val dataset: String = """[
@@ -72,9 +72,9 @@ abstract class CommandTest extends FunSuite with BeforeAndAfterAll {
     df.toJSON.collect().mkString("[\n",",\n","\n]")
   }
 
-  def getFieldsUsed(query: String) = {
+  def getFieldsUsed(query: String): String = {
     val otlQuery = OTLQuery(query)
-    val fieldsUsed = new Converter(otlQuery).fieldsUsed.map(_.stripBackticks).sorted
+    val fieldsUsed = new Converter(otlQuery).fieldsUsed.map(_.stripBackticks()).sorted
     fieldsUsed.mkString(", ")
   }
 
@@ -96,7 +96,7 @@ abstract class CommandTest extends FunSuite with BeforeAndAfterAll {
     otlQuery
   }
 
-  def jsonToDf(json :String) = {
+  def jsonToDf(json :String): DataFrame = {
     import spark.implicits._
     spark.read.json(Seq(json.stripMargin).toDS)
   }
@@ -109,7 +109,7 @@ abstract class CommandTest extends FunSuite with BeforeAndAfterAll {
     df.write.parquet(backetPath)
     if(externalSchema)
         new PrintWriter(backetPath + "/all.schema") {
-      write(df.schema.toDDL.replace(",","\n")); close
+      write(df.schema.toDDL.replace(",","\n")); close()
     }
   }
 
@@ -117,13 +117,13 @@ abstract class CommandTest extends FunSuite with BeforeAndAfterAll {
     val indexDir = new Directory(new File(f"$tmpDir/indexes/$test_index"))
     indexDir.deleteRecursively()
     val indexesPath = new File(f"$tmpDir/indexes")
-    if(! new Directory(indexesPath).list.nonEmpty) new Directory(indexesPath.getParentFile).deleteRecursively()
+    if(new Directory(indexesPath).list.isEmpty) new Directory(indexesPath.getParentFile).deleteRecursively()
   }
 
   def writeTextFile(content : String, relativePath :String) : Unit={
     val lookupFile = tmpDir + "/" + relativePath
     val directory = new Directory(new File(lookupFile).getParentFile)
     directory.createDirectory()
-    new PrintWriter(lookupFile) { write(content); close }
+    new PrintWriter(lookupFile) { write(content); close() }
   }
 }

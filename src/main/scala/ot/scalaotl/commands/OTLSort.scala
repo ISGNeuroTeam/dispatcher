@@ -7,11 +7,11 @@ import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.functions.{ asc, desc }
 
 class OTLSort(sq: SimpleQuery) extends OTLBaseCommand(sq) {
-  val requiredKeywords= Set.empty[String]
-  val optionalKeywords= Set.empty[String]
+  val requiredKeywords = Set.empty[String]
+  val optionalKeywords = Set.empty[String]
   override def fieldsUsed: List[String] = returns.flatFields.map(_.replace("+", "").replace("-", ""))
 
-  val order = "\\s+".r.replaceAllIn(
+  val order: Array[String] = "\\s+".r.replaceAllIn(
     "[-+,']".r.replaceAllIn(args, ""),
     " "
   )
@@ -21,13 +21,13 @@ class OTLSort(sq: SimpleQuery) extends OTLBaseCommand(sq) {
   override def transform(_df: DataFrame): DataFrame = {
     def sortBeautifier(s: String) = s.strip("'").addSurroundedBackticks
     val sortCols = returns.fields
-    .map(x => x.field.stripBackticks)
+    .map(x => x.field.stripBackticks())
     .map {
-      case field =>
+      field =>
         if (field.startsWith("-")) (sortBeautifier(field.drop(1)), "-")
-        else (if (field.startsWith("+")) (sortBeautifier(field.drop(1)), "+") else (sortBeautifier(field), "+"))
+        else if (field.startsWith("+")) (sortBeautifier(field.drop(1)), "+") else (sortBeautifier(field), "+")
     }.toMap
-    val sortList = (order.intersect(_df.columns.toList))
+    val sortList = order.intersect(_df.columns.toList)
       .map(x => x.addSurroundedBackticks)
       .map { x => if (sortCols(x) == "+") asc(x) else desc(x) }
       .toList

@@ -7,8 +7,8 @@ import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.functions.{ col, lit, explode, array, udf, first }
 
 class OTLTranspose(sq: SimpleQuery) extends OTLBaseCommand(sq) {
-  val requiredKeywords= Set.empty[String]
-  val optionalKeywords= Set("column_name", "header_field", "include_empty")
+  val requiredKeywords = Set.empty[String]
+  val optionalKeywords = Set("column_name", "header_field", "include_empty")
   override def transform(_df: DataFrame): DataFrame = {
 
     val keys = returns.flatFields

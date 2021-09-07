@@ -8,6 +8,7 @@ import org.apache.spark.sql.functions.{col, concat, lit}
 import org.apache.spark.sql.types.StructField
 import ot.scalaotl.static.OtDatetime
 import ot.scalaotl.utils.logging.StatViewer
+import ot.dispatcher.sdk.core.CustomException.E00019
 
 /**
  * Adds the results of a search to an index that you specify.
@@ -26,8 +27,8 @@ import ot.scalaotl.utils.logging.StatViewer
  * @param sq SimpleQuery object with search information.
  */
 class OTLCollect(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLIndexes {
-  val requiredKeywords= Set("index")
-  val optionalKeywords= Set("host","source","sourcetype")
+  val requiredKeywords = Set("index")
+  val optionalKeywords = Set("host","source","sourcetype")
 
   override val fieldsUsed = List()
 
@@ -75,7 +76,7 @@ class OTLCollect(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLIndexes {
 
       case _ =>
         log.error("Required argument 'index' not found")
-        throw new CustomException(4, sq.searchId, "Required argument 'index' not found",List(commandname, "index"))
+        throw E00019(sq.searchId, commandname)
     }
   }
 }

@@ -4,7 +4,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [UNRELEASED]
+## [1.7.0] - 2021-09-06
+### Added
+- CustomExceptions usage (dispatcher SDK successor class)
+### Fixed
+- OTLTop creates an empty and unexpected extra column named after the top number argument.
+- OTLTop works incorrectly with "by" argument.
+- OTLRex works incorrectly with complex regex, part of the expression is recognized as a subsearch.
+- OTLRename works incorrectly if the source column name contains a space.
 
 ## [1.6.0] - 2021-03-12
 ### Added
@@ -13,7 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - OTLCollect saves buckets in wrong format
 - OTLSort creates wrong columns based on ascending/descending syntax of args
-- OTLEventstats mistakenly creates 0-column 
+- OTLTimechart mistakenly creates 0-column 
 - Converter ignores fieldsUsed property set by command from a plugin. This results to unexpected columns in output
  dataset.
   

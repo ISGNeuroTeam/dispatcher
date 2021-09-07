@@ -11,11 +11,11 @@ import org.apache.spark.sql.DataFrame
 case class OverBy(over: List[String], by: List[String])
 
 class OTLChart(sq: SimpleQuery) extends OTLBaseCommand(sq, _seps = Set("by", "over")) with StatsParser with WildcardParser {
-  val requiredKeywords= Set.empty[String]
-  val optionalKeywords= Set.empty[String]
+  val requiredKeywords = Set.empty[String]
+  val optionalKeywords = Set.empty[String]
 
-  override val fieldsUsed = getFieldsUsed(returns) ++ getPositionalFieldUsed(positionals)
-  override val fieldsGenerated = getFieldsGenerated(returns)
+  override val fieldsUsed: List[String] = getFieldsUsed(returns) ++ getPositionalFieldUsed(positionals)
+  override val fieldsGenerated: List[String] = getFieldsGenerated(returns)
 
   override def transform(_df: DataFrame): DataFrame = {
     val sortNeeded = returns.funcs.map(_.func).intersect(List("earliest", "latest")).nonEmpty
@@ -47,18 +47,17 @@ class OTLChart(sq: SimpleQuery) extends OTLBaseCommand(sq, _seps = Set("by", "ov
     }    
 
     // Rename columns to OTP format: from <BYVAL>_<FUNC> to <FUNC>: <BYVAL>. If needless, remove the block below and return `dfres`
-    val newfields = returns.funcs.map(x => x.newfield.stripBackticks)
+    val newfields = returns.funcs.map(x => x.newfield.stripBackticks())
     val resCols = dfres.columns
-    newfields.map{
+    newfields.flatMap {
       nf => {
         resCols.filter(_.endsWith(s"_$nf"))
           .map(colName => {
             val byOnly = colName.replaceAllLiterally(s"_$nf", "")
-            (colName -> s"$nf: $byOnly")
+            colName -> s"$nf: $byOnly"
           })
       }
     }
-    .flatten
     .foldLeft(dfres){
       case (acc, (oldf, newf)) => acc.withSafeColumnRenamed(oldf, newf)
     }

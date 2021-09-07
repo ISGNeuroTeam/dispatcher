@@ -130,6 +130,7 @@ class OTLTopTest extends CommandTest {
                      |]""".stripMargin
     assert(jsonCompare(actual, expected), f"Result : $actual\n---\nExpected : $expected")
   }
+
 }
 
 

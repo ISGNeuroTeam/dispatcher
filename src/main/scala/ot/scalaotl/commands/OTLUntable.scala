@@ -6,8 +6,8 @@ import org.apache.spark.sql.functions.{ col, expr, explode }
 import ot.scalaotl.extensions.StringExt._
 
 class OTLUntable(sq: SimpleQuery) extends OTLBaseCommand(sq) {
-  val requiredKeywords= Set.empty[String]
-  val optionalKeywords= Set.empty[String]
+  val requiredKeywords = Set.empty[String]
+  val optionalKeywords = Set.empty[String]
 
   override def transform(_df: DataFrame): DataFrame = {
     val (fixed, field, value) = returns.flatFields match {
