@@ -21,10 +21,8 @@ class OTLReplace(sq: SimpleQuery) extends OTLBaseCommand(sq, _seps = Set("in")) 
       returns.fields.foldLeft(_df) {
         case (accum, ReturnField(replacement, rexStr)) =>
           val rex = rexStr.stripBackticks().stripPrefix("\"").stripSuffix("\"").replace("*", ".*")
-          val ifReplacementIsEmpty = "(\\\"[ ]*\\\")".r.pattern.matcher(replacement).matches()
 
-          val finalReplacement = if (ifReplacementIsEmpty) replacement.stripBackticks().stripPrefix("\"").stripSuffix("\"")
-          else replacement
+          val finalReplacement = replacement.stripBackticks().stripPrefix("\"").stripSuffix("\"")
 
           accum.withColumn(colToReplace.stripBackticks(), regexp_replace(col(colToReplace), rex, finalReplacement))
       }

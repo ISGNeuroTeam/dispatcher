@@ -30,4 +30,14 @@ class OTLReplaceTest extends CommandTest {
     assert(jsonCompare(actual, expected), f"Result : $actual\n---\nExpected : $expected")
   }
 
+  test("Test 2. Command: | replace \" \" with \" 2 \" in text") {
+    val actual = execute("""makeresults | eval text = "1 3" | replace " " with " 2 " in text | fields - _time """)
+    val expected =
+      """[
+        |{"text":"1 2 3"}
+        |]""".stripMargin
+
+    assert(jsonCompare(actual, expected), f"Result : $actual\n---\nExpected : $expected")
+  }
+
 }
