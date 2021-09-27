@@ -1,3 +1,13 @@
+# [1.7.1] - Bugfix
+### Bugfix
+We have fixed few bugs in the core OTL commands: where, fieldsummary, replace, lookup.
+- OTLWhere works incorrectly with casting INT to BIGINT
+- OTLFieldSummary returns DF with incorrect SCHEMA
+- OTLReplace throws exception on fields with null,
+  incorrectly replaces with empty string
+- OTLLookup throws "Error in 'lookup' command" if new columns are added after
+- CacheManager works incorrectly with types Decimal, Float
+
 # [1.7.0] - CustomException class from the Dispatcher SDK and few bugfixes
 
 ### New
