@@ -19,4 +19,21 @@ class OTLReplaceTest extends CommandTest {
     assert(jsonCompare(actual, expected), f"Result : $actual\n---\nExpected : $expected")
   }
 
+  test("Test 1. Command: | replace from field with null value") {
+
+    val actual =  execute(
+      """makeresults count=2
+         | streamstats count
+         | eval text = case(count=1, "a cat", count=2, null)
+         | eval text_new = replace(text, " ", "")
+         | fields count, text, text_new""")
+
+    val expected = """[
+                     |{"count":1,"text":"a cat","text_new":"acat"},
+                     |{"count":2}
+                     |]""".stripMargin
+
+    assert(jsonCompare(actual, expected), f"Result : $actual\n---\nExpected : $expected")
+  }
+
 }
