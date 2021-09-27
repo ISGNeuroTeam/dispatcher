@@ -4,14 +4,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.7.0] - 2021-07-01
+## [1.7.0] - 2021-09-06
 ### Added
 - CustomExceptions usage (dispatcher SDK successor class)
 ### Fixed
-- Rex subsearch issue: https://app.clickup.com/t/7uux1j
-- Top extra column issue: https://app.clickup.com/t/7uux0n
-- Top grouping issue: https://app.clickup.com/t/nb7fzk
-- Rename space issue: https://app.clickup.com/t/7uux0z
+- OTLTop creates an empty and unexpected extra column named after the top number argument.
+- OTLTop works incorrectly with "by" argument.
+- OTLRex works incorrectly with complex regex, part of the expression is recognized as a subsearch.
+- OTLRename works incorrectly if the source column name contains a space.
 
 ## [1.6.0] - 2021-03-12
 ### Added

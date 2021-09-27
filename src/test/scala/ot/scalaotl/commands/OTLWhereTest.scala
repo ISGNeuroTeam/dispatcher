@@ -193,4 +193,13 @@ class OTLWhereTest extends CommandTest {
                      |]""".stripMargin
     assert(jsonCompare(actual, expected), f"Result : $actual\n---\nExpected : $expected")
   }
+
+  test("Test 15. Command: |  where BIGINT > INT") {
+    val actual = execute(""" makeresults | eval a = 9876543210 | fields a | where a > 0 """)
+    val expected = """[
+                     |{"a":9876543210}
+                     |]""".stripMargin
+    assert(jsonCompare(actual, expected), f"Result : $actual\n---\nExpected : $expected")
+  }
+
 }
