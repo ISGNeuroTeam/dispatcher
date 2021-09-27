@@ -82,37 +82,11 @@ class CacheManager(sparkSession: SparkSession) {
     * @return [[DataFrame]] with cache data.
     */
   def loadCache(id: Int): DataFrame = {
-    val schema = File(s"$path" + s"search_$id.cache/data/_SCHEMA").bufferedReader().readLine()
-    val pattern = "`(.+?)` ([^,]+)".r
-    val typeMap = Map(
-      "STRING" -> StringType,
-      "DOUBLE" -> DoubleType,
-      "INTEGER" -> IntegerType,
-      "INT" -> IntegerType,
-      "LONG" -> LongType,
-      "BIGINT" -> LongType,
-      "NULL" -> NullType,
-      "BOOLEAN" -> BooleanType,
-      "ARRAY<STRING>" -> ArrayType(StringType),
-      "ARRAY<DOUBLE>" -> ArrayType(DoubleType),
-      "ARRAY<INTEGER>" -> ArrayType(IntegerType),
-      "ARRAY<INT>" -> ArrayType(IntegerType),
-      "ARRAY<LONG>" -> ArrayType(LongType),
-      "ARRAY<BIGINT>" -> ArrayType(LongType),
-      "ARRAY<NULL>" -> ArrayType(NullType)
-    )
-    val sType = schema.split(",").toList.map(
-      field => {
-        val pairMatch = pattern.findFirstMatchIn(field)
-        pairMatch match {
-          case Some(pair) =>
-            val fieldName = pair.group(1)
-            val fieldType = pair.group(2)
-            StructField(fieldName, typeMap(fieldType), nullable = true)
-          case _ => throw E00011(id)
-        }
-      })
-    val structType = StructType(sType)
+
+    val schema = File(s"${path}search_$id.cache/data/_SCHEMA").bufferedReader().readLine()
+
+    val structType = StructType.fromDDL(schema)
+    
     log.debug(s"Subsearch $id schema: $schema.")
     val df = sparkSession.read
       .format("json")
