@@ -147,7 +147,16 @@ object EvalFunctions extends OTLSparkSession {
         }
       }
   }
-  def replace = udf { (s: String, rex: String, replacement: String) => rex.r.replaceAllIn(s, replacement) }
+  def replace = udf { (s: String, rex: String, replacement: String) =>
+
+    Option(s) match {
+      case Some(_) =>
+        rex.r.replaceAllIn(s, replacement)
+      case None =>
+        s
+    }
+
+  }
   def sha1 = udf { OtHash.sha1 }
   def truefunc = udf { () => true }
   def tonumber = udf { (col: Any) => Try(col.toString.toDoubleSafe) match {

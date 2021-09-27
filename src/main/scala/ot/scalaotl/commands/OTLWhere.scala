@@ -70,8 +70,18 @@ class OTLWhere(sq: SimpleQuery) extends OTLBaseCommand(sq) with ExpressionParser
   //converts field to string if it compares with string const
   def castFieldsToStr(ex: String, fieldsInExpr: Seq[String], df: DataFrame): String = {
     val existingFields = df.schema.toList.map(_.name).intersect(fieldsInExpr)
-     if(fieldsInExpr.diff(existingFields).length > 0)
+    val fieldsDifference = fieldsInExpr.diff(existingFields)
+    val fieldsDifferenceLength = fieldsDifference.length
+    val fieldIsOneDigit = fieldsDifferenceLength == 1 && fieldIsDigit(fieldsDifference.head)
+
+    if(fieldsDifference.nonEmpty && !fieldIsOneDigit)
       existingFields.foldLeft(ex){(acc,f) => acc.replace(existingFields.head, s"cast(${existingFields.head} as string)")}
     else ex
   }
+
+  def fieldIsDigit(field: String): Boolean =
+    field.toIntSafe match {
+      case Some(_) => true
+      case None => false
+    }
 }

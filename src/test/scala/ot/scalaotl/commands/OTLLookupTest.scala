@@ -79,4 +79,25 @@ class OTLLookupTest extends CommandTest {
     assert(jsonCompare(actual, expected),f"Result : $actual\n---\nExpected : $expected")
   }
 
+  test("Test 3. Command: | working with fields inserted by lookup command") {
+    val actual = execute("""makeresults
+                           || eval a=1, b=2
+                           || table - _time
+                           || otoutputlookup stas_bug_lookup_1.csv
+                           || makeresults
+                           || eval a=1, c=3
+                           || table - _time
+                           || otoutputlookup stas_bug_lookup_2.csv
+                           || otinputlookup stas_bug_lookup_1.csv
+                           || lookup stas_bug_lookup_2.csv a
+                           || eval d = c
+                           """.stripMargin)
+    val expected = """[
+                     |{"a":1,"b":2,"c":[3],"d":[3]}
+                     |]
+                     |""".stripMargin
+
+    assert(jsonCompare(actual, expected),f"Result : $actual\n---\nExpected : $expected")
+  }
+
 }
