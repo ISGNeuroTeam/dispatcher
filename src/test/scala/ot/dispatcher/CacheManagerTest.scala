@@ -7,7 +7,7 @@ class CacheManagerTest extends CommandTest {
 
   test("Test 0. Make and load cache.") {
 
-    val ssQuery = createQuery("eval SF=serialField*10 | table serialField, SF, NCol")
+    val ssQuery = createQuery("eval SF=serialField*10 | eval nullField = null | table serialField, SF, NCol, nullField")
     val queryDF = new Converter(ssQuery).run
 
     val cacheManager = new CacheManager(spark)
