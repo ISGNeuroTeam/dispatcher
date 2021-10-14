@@ -1,3 +1,7 @@
+# [1.7.2] - Bugfix
+### Bugfix
+We changed the way the manager works, now it supports all spark types.
+
 # [1.7.1] - Bugfix
 ### Bugfix
 We have fixed few bugs in the core OTL commands: where, fieldsummary, replace, lookup.
