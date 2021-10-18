@@ -1,12 +1,14 @@
 package ot.dispatcher
 
-import org.apache.spark.sql.types.{ArrayType, BooleanType, DataType, DecimalType, DoubleType, IntegerType, LongType, NullType, StringType, StructField, StructType}
+import org.apache.spark.sql.types.{ArrayType, BooleanType, DoubleType, IntegerType, LongType, NullType, StringType, StructField, StructType}
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import ot.AppConfig._
 import ot.dispatcher.sdk.core.CustomException.{E00007, E00011}
+import ot.dispatcher.sdk.core.CustomException
 
 import scala.reflect.io.File
+import scala.util.{Failure, Success, Try}
 
 /** Makes all manipulations with Jobs result caches.
  * [[makeCache]] - Limits and saves result [[DataFrame]] to RAM cache.
@@ -81,47 +83,35 @@ class CacheManager(sparkSession: SparkSession) {
    * @return [[DataFrame]] with cache data.
    */
   def loadCache(id: Int): DataFrame = {
-    val schema = File(s"$path" + s"search_$id.cache/data/_SCHEMA").bufferedReader().readLine()
+
+    val schema = File(s"${path}search_$id.cache/data/_SCHEMA").bufferedReader().readLine()
     val pattern = "`([^`]+)` ([A-Za-z]+(\\([0-9]+,[0-9]+\\))?)".r //group1 - field name, group2 - field type, group3 - precision
-    val typeMap = Map(
-      "STRING" -> StringType,
-      "DOUBLE" -> DoubleType,
-      "INTEGER" -> IntegerType,
-      "INT" -> IntegerType,
-      "LONG" -> LongType,
-      "BIGINT" -> LongType,
-      "NULL" -> NullType,
-      "BOOLEAN" -> BooleanType,
-      "ARRAY<STRING>" -> ArrayType(StringType),
-      "ARRAY<DOUBLE>" -> ArrayType(DoubleType),
-      "ARRAY<INTEGER>" -> ArrayType(IntegerType),
-      "ARRAY<INT>" -> ArrayType(IntegerType),
-      "ARRAY<LONG>" -> ArrayType(LongType),
-      "ARRAY<BIGINT>" -> ArrayType(LongType),
-      "ARRAY<NULL>" -> ArrayType(NullType)
-    )
-    val sType = schema.split(",\\s*(?![^()]*\\))").toList.map( //split by comma without comma in parentheses
-      field => {
-        val pairMatch = pattern.findFirstMatchIn(field)
-        pairMatch match {
-          case Some(pairOrThreesome) =>
-            val fieldName = pairOrThreesome.group(1)
-            val fieldType = pairOrThreesome.group(2)
-            val precision = Option(pairOrThreesome.group(3)) match {
-              case Some(precisionString) => """\d+""".r.findAllIn(precisionString).toList.map(_.toInt)
-              case None => List.empty[Int]
+
+    val structFields = schema.split(",\\s*(?![^()]*\\))").map { //split by comma without comma in parentheses
+      structFieldDDLString =>
+        Try {
+          StructType.fromDDL(structFieldDDLString)
+        } match {
+          case Success(structType) => structType.fields.head
+          case Failure(exception) =>
+            log.debug(s"Caught exception '${exception.getMessage}' while parsing SCHEMA fields")
+
+            val structFieldMatch = pattern.findFirstMatchIn(structFieldDDLString)
+            structFieldMatch match {
+              case Some(fieldTypeMatch) =>
+                val fieldName = fieldTypeMatch.group(1)
+                val fieldType = fieldTypeMatch.group(2)
+
+                if (fieldType == "NULL") StructField(fieldName, NullType, nullable = true) // StructType.fromDDL do not support NULL type
+                else throw exception
+
+              case _ => throw exception
             }
-            log.debug(s"fieldName : $fieldName, fieldType : $fieldType, precision : $precision")
-
-            val finalFieldType = if (typeMap.contains(fieldType)) typeMap(fieldType)
-            else computeFieldTypeWithParameters(fieldType, precision, id)
-
-
-            StructField(fieldName, finalFieldType, nullable = true)
-          case _ => throw E00011(id)
         }
-      })
-    val structType = StructType(sType)
+    }
+
+    val structType = StructType(structFields)
+
     log.debug(s"Subsearch $id schema: $schema.")
     val df = sparkSession.read
       .format("json")
@@ -135,14 +125,5 @@ class CacheManager(sparkSession: SparkSession) {
     import scala.reflect.io.Directory
     val dirCaches = Directory(path)
     dirCaches.list.foreach(_.deleteRecursively())
-  }
-
-  private def computeFieldTypeWithParameters(fieldTypeName: String, precision: List[Int], id: Int): DataType with Product with Serializable = {
-    if (fieldTypeName.contains("DECIMAL") && precision.nonEmpty) DecimalType(precision.head, precision.tail.head)
-    else if (fieldTypeName.contains("DECIMAL") && precision.isEmpty) DecimalType.SYSTEM_DEFAULT
-    else {
-      log.warn(s"Unknown field type : $fieldTypeName")
-      throw E00011(id)
-    }
   }
 }
