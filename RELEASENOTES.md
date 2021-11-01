@@ -1,3 +1,7 @@
+# [1.7.3] - Hotfix
+### Hotfix
+- Dispatcher throws exception if delta in runInfiniteLoop is negative.
+
 # [1.7.2] - Bugfix
 ### Bugfix
 We changed the way the manager works, now it supports all spark types.
