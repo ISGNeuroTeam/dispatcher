@@ -86,16 +86,13 @@ class SuperVisor {
     while (true) {
       val delta = Calendar.getInstance().getTimeInMillis - loopEndTime
 
-      if (negativeDeltaCounter >= negativeWarnThreshold)
-        log.warn(s"WARNING delta value has been negative for the last $negativeWarnThreshold times. Please inform administrators.")
-
       if (delta < 0) {
         negativeDeltaCounter += 1
         log.info(s"Delta has a negative value: $delta. Work will be continued.")
-        Thread.sleep(1000)
 
-        systemMaintenance()
-        userMaintenance()
+        if (negativeDeltaCounter >= negativeWarnThreshold)
+          log.warn(s"WARNING delta value has been negative for the last $negativeWarnThreshold times. Please inform administrators.")
+
         loopEndTime = Calendar.getInstance().getTimeInMillis
       } else if (delta > pause) {
         negativeDeltaCounter = 0
