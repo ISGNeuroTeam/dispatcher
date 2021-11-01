@@ -79,9 +79,27 @@ class SuperVisor {
     log.debug("Infinite Loop started.")
     val pause = config.getInt("loop.pause")
     var loopEndTime = Calendar.getInstance().getTimeInMillis
+
+    var negativeDeltaCounter: Int = 0
+    val negativeWarnThreshold: Int = config.getInt("loop.negative_warn_threshold")
+
     while (true) {
       val delta = Calendar.getInstance().getTimeInMillis - loopEndTime
-      if (delta > pause) {
+
+      if (negativeDeltaCounter >= negativeWarnThreshold)
+        log.warn(s"WARNING delta value has been negative for the last $negativeWarnThreshold times. Please inform administrators.")
+
+      if (delta < 0) {
+        negativeDeltaCounter += 1
+        log.info(s"Delta has a negative value: $delta. Work will be continued.")
+        Thread.sleep(1000)
+
+        systemMaintenance()
+        userMaintenance()
+        loopEndTime = Calendar.getInstance().getTimeInMillis
+      } else if (delta > pause) {
+        negativeDeltaCounter = 0
+
         systemMaintenance()
         userMaintenance()
         loopEndTime = Calendar.getInstance().getTimeInMillis
