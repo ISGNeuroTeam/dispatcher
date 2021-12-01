@@ -13,6 +13,11 @@ import ot.scalaotl.extensions.StringExt._
 import ot.scalaotl.parsers.{ExpressionParser, WildcardParser}
 import ot.scalaotl.utils.searchinternals._
 
+/** Use the search command to retrieve events from indexes . You can retrieve events from your indexes, using keywords,
+ *  quoted phrases, wildcards, and field-value expressions.
+ *
+ * @param sq [[SimpleQuery]] search query object.
+ */
 class RawRead(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLIndexes with ExpressionParser with WildcardParser {
   val requiredKeywords = Set.empty[String]
   val optionalKeywords = Set("limit", "subsearch")
@@ -69,6 +74,11 @@ class RawRead(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLIndexes with E
     (i._1, i._2 + ("query" -> backtickedQuery))
   }
 
+  /** === I don't understand what's happened here ===
+   *
+   * @param i
+   * @return
+   */
   def getModifedQuery(i: (String, Map[String, String])) = {
     val query = i._2.getOrElse("query", "")
     fieldsUsedInFullQuery.foldLeft(query)((q, field) => {
@@ -80,15 +90,15 @@ class RawRead(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLIndexes with E
   }
 
   private def searchMap(query: Map[String, Map[String, String]]): DataFrame = {
-    /**
-      * Replace all {} symbols to [] in fieldnames in query.
-      * Then replaces all quotes around fieldnames to bacticktics.
-      * Then replaces fieldname=\"null\" substrings to 'fieldname is null'
-      * Fieldnames are taken from `fieldsUsedInFullQuery`
-      *
-      * @param i [[ String, Map[String, String] ]] - item with original query
-      * @return [[ String, Map[String, String] ]] - modified item
-      */
+//    /** ==== It seems to be wrong comment ====
+//      * Replace all {} symbols to [] in fieldnames in query.
+//      * Then replaces all quotes around fieldnames to bacticktics.
+//      * Then replaces fieldname=\"null\" substrings to 'fieldname is null'
+//      * Fieldnames are taken from `fieldsUsedInFullQuery`
+//      *
+//      * @param i [[ String, Map[String, String] ]] - item with original query
+//      * @return [[ String, Map[String, String] ]] - modified item
+//      */
 
 
     val (df, allExceptions) = query.foldLeft((spark.emptyDataFrame.asInstanceOf[DataFrame], List[Exception]())) {
@@ -97,7 +107,9 @@ class RawRead(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLIndexes with E
         log.debug(s"[SearchID:$searchId]Query is " + item)
         //log.debug(s"[SearchID:$searchId]Modified query is" + mItem)
         val modifiedQuery = getModifedQuery(item)
-        val nItem = (item._1, item._2 + ("query" -> ""))
+//        val nItem = (item._1, item._2 + ("query" -> ""))
+        val nItem = (item._1, item._2 + ("query" -> modifiedQuery))
+
 
         val s = new IndexSearch(spark, log, nItem, searchId, Seq[String](), preview)
         try {
@@ -112,7 +124,7 @@ class RawRead(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLIndexes with E
           val totalCols = (cols1 ++ cols2).toList
 
           def expr(myCols: Set[String], allCols: Set[String]) = {
-            allCols.toList.map(x => if (myCols.contains(x)) F.col(x).as(x.stripBackticks) else F.lit(null).as(x.stripBackticks))
+            allCols.toList.map(x => if (myCols.contains(x)) F.col(x).as(x.stripBackticks()) else F.lit(null).as(x.stripBackticks()))
           }
 
           totalCols match {
@@ -178,10 +190,17 @@ class RawRead(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLIndexes with E
     }.drop("__fields__", "stfe")
   }
 
-
+  /** Standard method called by [[Converter]] in each command.
+   *
+   *
+   * @param _df [[DataFrame]] May be used as incoming dataset but in generator-command like this one is ignored and
+   *            should be empty
+   * @return [[DataFrame]] Outgoing dataset
+   */
   override def transform(_df: DataFrame): DataFrame = {
 
     log.debug(s"searchId = $searchId queryMap: $indexQueriesMap")
+    // Step 1.
     val dfInit = searchMap(indexQueriesMap)
     val dfLimit = getKeyword("limit") match {
       case Some(lim) => {
