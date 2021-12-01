@@ -138,7 +138,7 @@ class FileSystemSearch(spark: SparkSession, log: Logger, searchId: Int, fieldsUs
     fdf
   }
 
-  private def searchInDataFrame(df: DataFrame): DataFrame =
+  private def searchInDataFrame(df: DataFrame): DataFrame = {
   {
     var fdf = df.withColumn("_time", F.col("_time").cast(LongType))
     val tws = _tws.toLong
@@ -161,17 +161,28 @@ class FileSystemSearch(spark: SparkSession, log: Logger, searchId: Int, fieldsUs
     fdf
   }
 
+    /** Gets index buckets, filters them, returns df with data required to filters.
+     * Step 1. Creates empty DataFrame because list of accepted buckets may be empty.
+     * Step 2. Checks if index presents.
+     * Step 3. Gets list of buckets filtered by time range.
+     * Step 4. Returns empty DataFrame if list is empty.
+     *
+     */
+  }
+
   def search(): Try[DataFrame] =
   {
     log.debug(s"$searchId FileSystem: $fs, indexPath: $indexPath, index: $index")
+    // Step 1. Creates empty DataFrame because list of accepted buckets may be empty.
     var fdf = spark.createDataFrame(spark.sparkContext.emptyRDD[Row], StructType(Seq(StructField("_raw", StringType), StructField("_time", LongType))))
-
+    // Step 2. Checks if index presents.
     if (!fs.exists(new Path(indexPath + index))){
       log.debug(s"Index in $fs: $index not found")
     return Failure(E00004(searchId, index))}
-
+    // Step 3. Gets list of buckets filtered by time range.
     val filesTime = Timerange.getBucketsByTimerange(fs, indexPath, index, _tws, _twf, isCache)
     log.debug(s"[SearchId:$searchId] Buckets by timerange $filesTime")
+    // Step 4. Returns empty DataFrame if list is empty.
     if (filesTime.isEmpty) return Success(fdf)
 
     var filesBloom = ListBuffer[String]()
