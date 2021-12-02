@@ -152,7 +152,9 @@ class FileSystemSearch(spark: SparkSession, log: Logger, searchId: Int, fieldsUs
       // if (!query.isEmpty) fdf = fdf.filter(query)
       if (query.nonEmpty) {
         val newFilter = fixFilter(F.expr(query).expr)
-        fdf = fdf.filter(F.expr(newFilter.sql))
+        if (fdf.schema.names.contains(newFilter.children.head.asInstanceOf[UnresolvedAttribute].name)) {
+          fdf = fdf.filter(F.expr(newFilter.sql))
+        }
       }
     }
     catch
@@ -182,13 +184,16 @@ class FileSystemSearch(spark: SparkSession, log: Logger, searchId: Int, fieldsUs
     // Step 3. Gets list of buckets filtered by time range.
     val filesTime = Timerange.getBucketsByTimerange(fs, indexPath, index, _tws, _twf, isCache)
     log.debug(s"[SearchId:$searchId] Buckets by timerange $filesTime")
+    log.info(s"[SearchId:$searchId] ${filesTime.length} Buckets by timerange")
     // Step 4. Returns empty DataFrame if list is empty.
     if (filesTime.isEmpty) return Success(fdf)
 
     var filesBloom = ListBuffer[String]()
     if (!query.isEmpty()){
         filesBloom = FilterBloom.getBucketsByFB(fs, indexPath, index, filesTime, query)
-        log.debug(s"[SearchId:$searchId] Buckets by BloomFilter $filesBloom")}
+        log.debug(s"[SearchId:$searchId] Buckets by BloomFilter $filesBloom")
+        log.info(s"[SearchId:$searchId] ${filesBloom.length} Buckets by BloomFilter")
+    }
     else
     {
         filesBloom = filesTime
