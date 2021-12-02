@@ -1,3 +1,7 @@
+# [1.7.4] - Hotfix
+### Hotfix
+Fixed Bloom filter support in search command. Now FTS and column filters are fast again on not indexed data. 
+
 # [1.7.3] - Hotfix
 ### Hotfix
 - Dispatcher throws exception if delta in runInfiniteLoop is negative.
