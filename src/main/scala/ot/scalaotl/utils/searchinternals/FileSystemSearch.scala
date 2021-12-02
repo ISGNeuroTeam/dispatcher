@@ -152,7 +152,7 @@ class FileSystemSearch(spark: SparkSession, log: Logger, searchId: Int, fieldsUs
       // if (!query.isEmpty) fdf = fdf.filter(query)
       if (query.nonEmpty) {
         val newFilter = fixFilter(F.expr(query).expr)
-        if (fdf.schema.names.contains(newFilter.children.head.asInstanceOf[UnresolvedAttribute].name)) {
+        if (fdf.schema.length > 2) {
           fdf = fdf.filter(F.expr(newFilter.sql))
         }
       }
