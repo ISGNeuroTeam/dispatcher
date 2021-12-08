@@ -2,23 +2,24 @@ package ot.dispatcher
 
 import java.sql.ResultSet
 import java.util.Calendar
-
 import org.apache.spark.sql.SparkSession
 import org.apache.log4j.{Level, Logger}
 import ot.AppConfig
 import ot.AppConfig._
 import ot.dispatcher.sdk.core.CustomException.E00017
 import ot.dispatcher.sdk.core.CustomException
+import ot.scalaotl.static.EvalFunctions._
 
 /** Gets settings from config file and then runs infinitive loop of user's and system's queries.
   *
-  * 1. Loads logger.
-  * 2. Loads Spark's session and update runtime configs.
-  * 3. Loads connector to DB.
-  * 4. Loads RAM cache manager.
-  * 5. Loads calculation manager.
-  * 6. Runs restoring actions after reboot or first start.
-  * 7. Runs infinitive loop of system maintenance and user's queries.
+  * 1.  Loads logger.
+  * 2.  Loads Spark's session and update runtime configs.
+  * 2.5 Register udfs for the Eval command.
+  * 3.  Loads connector to DB.
+  * 4.  Loads RAM cache manager.
+  * 5.  Loads calculation manager.
+  * 6.  Runs restoring actions after reboot or first start.
+  * 7.  Runs infinitive loop of system maintenance and user's queries.
   *
   * @author Andrey Starchenkov (astarchenkov@ot.ru)
   */
@@ -30,6 +31,25 @@ class SuperVisor {
   // Step 2. Loads Spark's session and runtime configs.
   val sparkSession: SparkSession = getSparkSession
   log.info("SparkSession started.")
+
+  // Step 2.5 - Registering udfs at this place is required for the Eval command to avoid serialization issues in Spark 3.1.2.
+  sparkSession.udf.register("mvindex", mvindex)
+  sparkSession.udf.register("mvzip", mvzip)
+  sparkSession.udf.register("mvfind", mvfind)
+  sparkSession.udf.register("mvcount", mvcount)
+  sparkSession.udf.register("len", len)
+  sparkSession.udf.register("now", now)
+  sparkSession.udf.register("match", matched) // TODO. Replace single backslash to double backslash within 'match'
+  sparkSession.udf.register("replace", replace) // TODO. Replace single backslash to double backslash within 'replace'
+  sparkSession.udf.register("sha1", sha1)
+  sparkSession.udf.register("true", truefunc)
+  sparkSession.udf.register("tonumber", tonumber)
+  sparkSession.udf.register("tostring", tostring)
+  sparkSession.udf.register("relative_time", relativeTime)
+  sparkSession.udf.register("cast_to_multival", castToMultival)
+  sparkSession.udf.register("strptime", strptime)
+  sparkSession.udf.register("mvrange", mvrange)
+
   // Step 3. Loads connector to DB.
   val superConnector = new SuperConnector()
   log.info("SuperConnector is ready.")

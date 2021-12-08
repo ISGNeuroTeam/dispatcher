@@ -2,26 +2,51 @@ package ot.scalaotl.commands
 
 import java.io.{File, PrintWriter}
 import java.util.UUID
-
 import org.apache.log4j.Logger
 import org.apache.spark.sql.{DataFrame, SparkSession}
-import org.scalatest.{BeforeAndAfterAll, FunSuite}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.BeforeAndAfterAll
 import ot.AppConfig.{config, getLogLevel}
 import ot.dispatcher.OTLQuery
 import ot.scalaotl.Converter
 import ot.scalaotl.extensions.StringExt._
+import ot.scalaotl.static.EvalFunctions._
 
 import scala.reflect.io.Directory
 
-abstract class CommandTest extends FunSuite with BeforeAndAfterAll {
+abstract class CommandTest extends AnyFunSuite with BeforeAndAfterAll {
 
   val log: Logger = Logger.getLogger("TestLogger")
 
+  val sparkMaster: String =
+    sys
+      .props
+      .getOrElse("master", config.getString("spark.master"))
+
   val spark: SparkSession = SparkSession.builder()
     .appName(config.getString("spark.appName"))
-    .master(config.getString("spark.master"))
+    .master(sparkMaster)
     .config("spark.sql.files.ignoreCorruptFiles", value = true)
+    .config("spark.executor.extraClassPath", "/home/mike/_repos/dispatcher/target/scala-2.12/dispatcher_2.12-2.0.0.jar:/home/mike/_repos/dispatcher/out/artifacts/Dispatcher_jar/json4s-native_2.12-3.5.5.jar")
     .getOrCreate()
+
+  //  Registering udfs at this place is required for the Eval command to avoid serialization issues in Spark 3.1.2.
+  spark.udf.register("mvindex", mvindex)
+  spark.udf.register("mvzip", mvzip)
+  spark.udf.register("mvfind", mvfind)
+  spark.udf.register("mvcount", mvcount)
+  spark.udf.register("len", len)
+  spark.udf.register("now", now)
+  spark.udf.register("match", matched) // TODO. Replace single backslash to double backslash within 'match'
+  spark.udf.register("replace", replace) // TODO. Replace single backslash to double backslash within 'replace'
+  spark.udf.register("sha1", sha1)
+  spark.udf.register("true", truefunc)
+  spark.udf.register("tonumber", tonumber)
+  spark.udf.register("tostring", tostring)
+  spark.udf.register("relative_time", relativeTime)
+  spark.udf.register("cast_to_multival", castToMultival)
+  spark.udf.register("strptime", strptime)
+  spark.udf.register("mvrange", mvrange)
 
   val externalSchema: Boolean = config.getString("schema.external_schema").toBoolean
 

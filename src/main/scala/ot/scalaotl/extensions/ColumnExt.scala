@@ -209,11 +209,12 @@ object ColumnExt {
 
     // If alias is not specified, transform function and force aliasing as "dc(col)" or "distinct_count(col)".
     // Otherwise column will be aliased as "count(col)" by Spark.
-    case UnresolvedFunction(func, children, _) => if (List("dc", "distinct_count").contains(func.funcName)) {
+    case UnresolvedFunction(func, children, _, filter) => if (List("dc", "distinct_count").contains(func.funcName)) {
       val agg = AggregateExpression(
         Count(Seq(children.head)),
         Complete,
-        true,
+        isDistinct = true,
+        filter,
         ExprId(0L)
       )
       if (checkAlias) {

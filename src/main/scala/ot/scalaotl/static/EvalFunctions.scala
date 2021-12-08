@@ -7,7 +7,7 @@ import org.apache.spark.sql.functions.udf
 import scala.collection.immutable.NumericRange
 import scala.util.{Success, Try}
 
-object EvalFunctions extends OTLSparkSession {
+object EvalFunctions {
   val commandsOTPToSpark: Map[String, String] = Map(
     "strftime" -> "from_unixtime",
     //    "strptime" -> "unix_timestamp",
@@ -210,24 +210,5 @@ object EvalFunctions extends OTLSparkSession {
     }
     output
   }
-
-  spark.udf.register("mvindex", mvindex)
-  spark.udf.register("mvzip", mvzip)
-  spark.udf.register("mvfind", mvfind)
-  spark.udf.register("mvcount", mvcount)
-  spark.udf.register("len", len)
-  spark.udf.register("now", now)
-  spark.udf.register("match", matched) // TODO. Replace single backslash to double backslash within 'match'
-  spark.udf.register("replace", replace) // TODO. Replace single backslash to double backslash within 'replace'
-  spark.udf.register("sha1", sha1)
-  spark.udf.register("true", truefunc)
-  spark.udf.register("tonumber", tonumber)
-  spark.udf.register("tostring", tostring)
-  spark.udf.register("relative_time", relativeTime)
-  spark.udf.register("cast_to_multival", castToMultival)
-  spark.udf.register("strptime", strptime)
-  spark.udf.register("mvrange", mvrange)
-
-
 }
 
