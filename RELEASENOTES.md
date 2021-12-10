@@ -1,10 +1,14 @@
+# [2.0.0] - Meet Spark 3.1.2/Scala 2.12!
+### New
+Now you can use all new Spark 3.1.2 and Scala 2.12 features!
+
 # [1.7.4] - Hotfix
 ### Hotfix
 Fixed Bloom filter support in search command. Now FTS and column filters are fast again on not indexed data. 
 
 # [1.7.3] - Hotfix
 ### Hotfix
-- Dispatcher throws exception if delta in runInfiniteLoop is negative.
+- Dispatcher throws exception after time synchronization in case the time was rolled back into the past.
 
 # [1.7.2] - Bugfix
 ### Bugfix

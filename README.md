@@ -10,9 +10,9 @@ You'd to `publish local` dispatcher-sdk lib in order not to use unmanaged libs.
 
 ### Prerequisites
 Install:
-* java 1.8
-* sbt 1.3.8
-* scala 2.11.12
+* java 11
+* sbt 1.5.5
+* scala 2.12.10
 
 ### Installing
 
@@ -104,11 +104,9 @@ See _Readme.md_ in [Software Development Kit](https://github.com/ISGNeuroTeam/di
 
 ## Built with
 
-config-1.3.4.jar  
-json4s-ast_2.11-3.5.5.jar  
-json4s-native_2.11-3.5.5.jar  
+json4s-native_2.12-3.5.5.jar  
 postgresql-42.2.5.jar  
-dispatcher-sdk_2.11-1.2.0.jar
+dispatcher-sdk_2.12-2.0.0.jar
 
 ## Compatible with
 

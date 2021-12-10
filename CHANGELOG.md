@@ -3,6 +3,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+## [2.0.0] - 2021-12-10
+### Added
+1. Upgraded dispatcher_sdk version to 2.0.0 in build.sbt.
+2. Upgraded spark-mllib version to 3.1.2 in build.sbt.
+3. Upgraded scala version to 2.12.10 in build.sbt.
+4. Upgraded scalatest version to 3.2.10 in build.sbt.
+5. Commented out some dependencies in build.sbt due to inheritance from dispatcher_sdk.
+6. Done refactoring due to new method signatures and to avoid serialization issues (Rex, Eval) in Spark 3.1.2.
+8. Added the ability to run tests in client mode on a cluster.
+
 ## [1.7.4] - 2021-12-02
 ### Fixed
 - Search command doesn't use Bloom Filter for FTS.
