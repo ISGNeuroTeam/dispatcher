@@ -2,7 +2,7 @@ name := "Dispatcher"
 
 organization := "ot.dispatcher"
 
-version := "1.7.4"
+version := "1.7.5"
 
 scalaVersion := "2.11.12"
 
@@ -12,7 +12,7 @@ retrieveManaged := true
 
 resolvers += Resolver.jcenterRepo
 
-resolvers += "Sonatype OSS Snapshots" at (sys.env.getOrElse("NEXUS_OTP_URL_HTTPS","")+"/repository/ot.platform-sbt-releases/")
+// resolvers += "Sonatype OSS Snapshots" at (sys.env.getOrElse("NEXUS_OTP_URL_HTTPS","")+"/repository/ot.platform-sbt-releases/")
 
 libraryDependencies += "ot.dispatcher" % "dispatcher-sdk_2.11" % "1.2.0"% Compile
 
@@ -24,9 +24,9 @@ libraryDependencies += "org.postgresql" % "postgresql" % "42.2.5"
 
 libraryDependencies += "org.apache.logging.log4j" %% "log4j-api-scala" % "11.0"
 
-libraryDependencies += "org.apache.logging.log4j" % "log4j-api" % "2.11.0"
+libraryDependencies += "org.apache.logging.log4j" % "log4j-api" % "2.16.0"
 
-libraryDependencies += "org.apache.logging.log4j" % "log4j-core" % "2.11.0" % Runtime
+libraryDependencies += "org.apache.logging.log4j" % "log4j-core" % "2.16.0" % Runtime
 
 libraryDependencies += "com.typesafe" % "config" % "1.3.4"
 
