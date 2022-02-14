@@ -13,6 +13,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 6. Done refactoring due to new method signatures and to avoid serialization issues (Rex, Eval) in Spark 3.1.2.
 8. Added the ability to run tests in client mode on a cluster.
 
+## [1.7.6] - 2021-12-27
+### Fixed
+- log4j 2.17.0.
+
+## [1.7.5] - 2021-12-16
+### Fixed
+- log4j RCE.
+
 ## [1.7.4] - 2021-12-02
 ### Fixed
 - Search command doesn't use Bloom Filter for FTS.

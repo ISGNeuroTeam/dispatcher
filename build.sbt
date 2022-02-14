@@ -27,9 +27,9 @@ libraryDependencies += "net.totietje" %% "evaluator" % "1.1.0"
 
 libraryDependencies += "org.postgresql" % "postgresql" % "42.2.5"
 
-libraryDependencies += "org.apache.logging.log4j" % "log4j-api" % "2.11.0"
+libraryDependencies += "org.apache.logging.log4j" % "log4j-api" % "2.17.0"
 
-libraryDependencies += "org.apache.logging.log4j" % "log4j-core" % "2.11.0" % Runtime
+libraryDependencies += "org.apache.logging.log4j" % "log4j-core" % "2.17.0" % Runtime
 
 libraryDependencies += "org.apache.zeppelin" % "zeppelin-interpreter" % "0.8.1"
 
