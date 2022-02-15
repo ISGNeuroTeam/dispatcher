@@ -11,22 +11,22 @@ import ot.dispatcher.sdk.core.CustomException.E00017
 import ot.dispatcher.sdk.core.CustomException
 
 /** Gets settings from config file and then runs infinitive loop of user's and system's queries.
-  *
-  * 1. Loads logger.
-  * 2. Loads Spark's session and update runtime configs.
-  * 3. Loads connector to DB.
-  * 4. Loads RAM cache manager.
-  * 5. Loads calculation manager.
-  * 6. Runs restoring actions after reboot or first start.
-  * 7. Runs infinitive loop of system maintenance and user's queries.
-  *
-  * @author Andrey Starchenkov (astarchenkov@ot.ru)
-  */
+ *
+ * 1. Loads logger.
+ * 2. Loads Spark's session and update runtime configs.
+ * 3. Loads connector to DB.
+ * 4. Loads RAM cache manager.
+ * 5. Loads calculation manager.
+ * 6. Runs restoring actions after reboot or first start.
+ * 7. Runs infinitive loop of system maintenance and user's queries.
+ *
+ * @author Andrey Starchenkov (astarchenkov@ot.ru)
+ */
 class SuperVisor {
 
   // Step 1. Loads logger.
   val log: Logger = Logger.getLogger("VisorLogger")
-  log.setLevel(Level.toLevel(getLogLevel(config,"visor")))
+  log.setLevel(Level.toLevel(getLogLevel(config, "visor")))
   // Step 2. Loads Spark's session and runtime configs.
   val sparkSession: SparkSession = getSparkSession
   log.info("SparkSession started.")
@@ -53,9 +53,9 @@ class SuperVisor {
   }
 
   /** Returns Spark session and loads config.
-    *
-    * @return Spark's session instance.
-    */
+   *
+   * @return Spark's session instance.
+   */
   def getSparkSession: SparkSession = {
 
     val spark = SparkSession.builder()
@@ -65,16 +65,16 @@ class SuperVisor {
 
     AppConfig.updateConfigWith(spark.conf.getOption("spark.application.config"))
     scala.util.Properties.setProp("files.log_localisation", AppConfig.config.getString("files.log_localisation"))
-    log.setLevel(Level.toLevel(getLogLevel(config,"visor")))
+    log.setLevel(Level.toLevel(getLogLevel(config, "visor")))
 
-    spark.sparkContext.setLogLevel(getLogLevel(config,"spark"))
+    spark.sparkContext.setLogLevel(getLogLevel(config, "spark"))
     spark
   }
 
   /** Starts infinitive loop with System's and User's maintenance.
-    * System's one consists of caches and buckets managing.
-    * User's one consists of search queries.
-    */
+   * System's one consists of caches and buckets managing.
+   * User's one consists of search queries.
+   */
   def runInfiniteLoop(): Unit = {
     log.debug("Infinite Loop started.")
     val pause = config.getInt("loop.pause")
@@ -101,7 +101,7 @@ class SuperVisor {
         userMaintenance()
         loopEndTime = Calendar.getInstance().getTimeInMillis
       } else {
-          Thread.sleep(delta)
+        Thread.sleep(delta)
       }
     }
   }
@@ -120,9 +120,9 @@ class SuperVisor {
   }
 
   /** Runs System's maintenance.
-    * For simple development time uses Map with all needed submodules as args for [[SystemMaintenance]] where you also
-    * can find list of jobs.
-    */
+   * For simple development time uses Map with all needed submodules as args for [[SystemMaintenance]] where you also
+   * can find list of jobs.
+   */
   def systemMaintenance(): Unit = {
     // TODO Remove initialization of sm and sM in each loop.
     log.trace("System Maintenance section started.")
@@ -137,11 +137,11 @@ class SuperVisor {
   }
 
   /** Runs User's maintenance.
-    * 1. Gets all new jobs from DB.
-    * 2. Marks Job as running.
-    * 3. Starts future with it's calculation.
-    * 4. Depending on state marks it failed or finished.
-    */
+   * 1. Gets all new jobs from DB.
+   * 2. Marks Job as running.
+   * 3. Starts future with it's calculation.
+   * 4. Depending on state marks it failed or finished.
+   */
   def userMaintenance(): Unit = {
     // Gets new Jobs.
     val res = superConnector.getNewQueries
@@ -171,11 +171,11 @@ class SuperVisor {
   }
 
   /** Returns Job ID for logging.
-    * Makes calculation, saves cache and works with exceptions.
-    *
-    * @param otlQuery Job object from DB.
-    * @return Job ID.
-    */
+   * Makes calculation, saves cache and works with exceptions.
+   *
+   * @param otlQuery Job object from DB.
+   * @return Job ID.
+   */
   def futureCalc(otlQuery: OTLQuery): Integer = {
 
     import scala.concurrent.blocking
@@ -231,11 +231,11 @@ class SuperVisor {
   )
 
   /** Returns instance of [[ot.dispatcher.OTLQuery]] case class from parsed SQL query.
-    * Parses DB response to Scala types.
-    *
-    * @param res [[org.postgresql.jdbc.PgResultSet]] from SQL query to DB.
-    * @return instance of case class with all needed information about Job.
-    */
+   * Parses DB response to Scala types.
+   *
+   * @param res [[org.postgresql.jdbc.PgResultSet]] from SQL query to DB.
+   * @return instance of case class with all needed information about Job.
+   */
   def getOTLQueryObject(res: ResultSet): OTLQuery = {
     val subsearches_array = if (res.getArray("subsearches") != null) res.getArray("subsearches").getArray.asInstanceOf[Array[String]] else Array[String]()
     var subsearches_map = Map[String, String]()

@@ -1,11 +1,10 @@
 package ot.dispatcher
 
-import org.apache.spark.sql.types.{ArrayType, BooleanType, DoubleType, IntegerType, LongType, NullType, StringType, StructField, StructType}
 import org.apache.log4j.{Level, Logger}
+import org.apache.spark.sql.types.{NullType, StructField, StructType}
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import ot.AppConfig._
-import ot.dispatcher.sdk.core.CustomException.{E00007, E00011}
-import ot.dispatcher.sdk.core.CustomException
+import ot.dispatcher.sdk.core.CustomException.E00007
 
 import scala.reflect.io.File
 import scala.util.{Failure, Success, Try}
