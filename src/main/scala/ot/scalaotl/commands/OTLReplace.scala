@@ -5,9 +5,7 @@ import ot.scalaotl.parsers.ReplaceParser
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.functions.{col, regexp_replace}
 import ot.scalaotl.extensions.StringExt._
-
-case class ColumnNotFoundException(colname: String, columns: String)
-  extends Exception(s"Column $colname does not exist in dataframe with columns $columns")
+import OTLReplace.ColumnNotFoundException
 
 class OTLReplace(sq: SimpleQuery) extends OTLBaseCommand(sq, _seps = Set("in")) with ReplaceParser {
   val requiredKeywords = Set.empty[String]
@@ -30,4 +28,9 @@ class OTLReplace(sq: SimpleQuery) extends OTLBaseCommand(sq, _seps = Set("in")) 
       throw ColumnNotFoundException(colToReplace, s"[${_df.columns.mkString(", ")}]")
     }
   }
+}
+
+object OTLReplace {
+  case class ColumnNotFoundException(colname: String, columns: String)
+    extends Exception(s"Column $colname does not exist in dataframe with columns $columns")
 }

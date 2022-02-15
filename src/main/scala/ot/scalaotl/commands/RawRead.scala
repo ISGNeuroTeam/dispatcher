@@ -4,7 +4,7 @@ package commands
 import org.apache.spark.sql.catalyst.expressions.Expression
 import org.apache.spark.sql.expressions.UserDefinedFunction
 import org.apache.spark.sql.functions._
-import org.apache.spark.sql.{DataFrame, functions => F}
+import org.apache.spark.sql.{Column, DataFrame, functions => F}
 import org.json4s._
 import org.json4s.native.JsonMethods._
 import ot.scalaotl.config.OTLIndexes
@@ -13,8 +13,10 @@ import ot.scalaotl.extensions.StringExt._
 import ot.scalaotl.parsers.{ExpressionParser, WildcardParser}
 import ot.scalaotl.utils.searchinternals._
 
+import scala.collection.mutable.ListBuffer
+
 /** Use the search command to retrieve events from indexes . You can retrieve events from your indexes, using keywords,
- *  quoted phrases, wildcards, and field-value expressions.
+ * quoted phrases, wildcards, and field-value expressions.
  *
  * @param sq [[SimpleQuery]] search query object.
  */
@@ -25,6 +27,7 @@ class RawRead(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLIndexes with E
   val SimpleQuery(_args, searchId, cache, subsearches, tws, twf, stfe, preview) = sq
 
   override def validateOptionalKeywords(): Unit = ()
+
   override def getFieldsFromExpression(expr: Expression, fields: List[String]): List[String] = {
     val newfields = if (expr.nodeName == "Literal") {
       expr.toString.stripPrefix("'") :: fields
@@ -42,9 +45,9 @@ class RawRead(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLIndexes with E
     parse(jsonStr).extract[Map[String, Map[String, String]]]
   }
 
-  val indexQueriesMapFirst = jsonStrToMap(excludeKeywords(_args.trim, List(Keyword("limit", "t"))))
-  var indexQueriesMap = indexQueriesMapFirst
-  val allIndexes = getAllIndexes()
+  val indexQueriesMapFirst: Map[String, Map[String, String]] = jsonStrToMap(excludeKeywords(_args.trim, List(Keyword("limit", "t"))))
+  var indexQueriesMap: Map[String, Map[String, String]] = indexQueriesMapFirst
+  val allIndexes: ListBuffer[String] = getAllIndexes()
   for (index <- indexQueriesMap) {
     if (index._1.contains("*")) {
       val regex_raw = index._1.replace("*", ".*").r
@@ -56,14 +59,14 @@ class RawRead(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLIndexes with E
     }
   }
 
-  override val fieldsUsed = indexQueriesMap.map {
+  override val fieldsUsed: List[String] = indexQueriesMap.map {
     case (_, singleIndexMap) => singleIndexMap.getOrElse("query", "").withKeepQuotedText[List[String]](
       (s: String) => """(?![!\(])(\S*?)\s*(=|>|<|like|rlike)\s*""".r.findAllIn(s).matchData.map(_.group(1)).toList
     )
-      .map(_.strip("!").strip("'").strip("\"").stripBackticks.addSurroundedBackticks)
+      .map(_.strip("!").strip("'").strip("\"").stripBackticks().addSurroundedBackticks)
   }.toList.flatten
 
-  def modifyItemQuery(i: (String, Map[String, String])) = {
+  def modifyItemQuery(i: (String, Map[String, String])): (String, Map[String, String]) = {
     val query = i._2.getOrElse("query", "")
     val backtickedQuery = fieldsUsedInFullQuery.foldLeft(query)((q, field) => {
       val nf = field.replace("{", "[").replace("}", "]").addSurroundedBackticks
@@ -79,10 +82,10 @@ class RawRead(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLIndexes with E
    * @param i
    * @return
    */
-  def getModifedQuery(i: (String, Map[String, String])) = {
+  def getModifedQuery(i: (String, Map[String, String])): String = {
     val query = i._2.getOrElse("query", "")
     fieldsUsedInFullQuery.foldLeft(query)((q, field) => {
-      val nf = field.addSurroundedBackticks//.replace("{", "[").replace("}", "]")
+      val nf = field.addSurroundedBackticks //.replace("{", "[").replace("}", "]")
       q.replaceAll("""(\(| )(['`]*\Q""" + field + """\E['`]*)\s*(=|>|<|!=| like| rlike)""", s"$$1$nf$$3")
         .replace(nf + "=\"null\"", s"$nf is null")
         .replace(nf + "!=\"null\"", s"$nf is not null")
@@ -90,47 +93,49 @@ class RawRead(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLIndexes with E
   }
 
   private def searchMap(query: Map[String, Map[String, String]]): DataFrame = {
-//    /** ==== It seems to be wrong comment ====
-//      * Replace all {} symbols to [] in fieldnames in query.
-//      * Then replaces all quotes around fieldnames to bacticktics.
-//      * Then replaces fieldname=\"null\" substrings to 'fieldname is null'
-//      * Fieldnames are taken from `fieldsUsedInFullQuery`
-//      *
-//      * @param i [[ String, Map[String, String] ]] - item with original query
-//      * @return [[ String, Map[String, String] ]] - modified item
-//      */
+    //    /** ==== It seems to be wrong comment ====
+    //      * Replace all {} symbols to [] in fieldnames in query.
+    //      * Then replaces all quotes around fieldnames to bacticktics.
+    //      * Then replaces fieldname=\"null\" substrings to 'fieldname is null'
+    //      * Fieldnames are taken from `fieldsUsedInFullQuery`
+    //      *
+    //      * @param i [[ String, Map[String, String] ]] - item with original query
+    //      * @return [[ String, Map[String, String] ]] - modified item
+    //      */
 
 
-    val (df, allExceptions) = query.foldLeft((spark.emptyDataFrame.asInstanceOf[DataFrame], List[Exception]())) {
+    val (df, allExceptions) = query.foldLeft((spark.emptyDataFrame, List[Exception]())) {
       case (accum, item) => {
-       // val mItem = modifyItemQuery(item)
+        // val mItem = modifyItemQuery(item)
         log.debug(s"[SearchID:$searchId]Query is " + item)
         //log.debug(s"[SearchID:$searchId]Modified query is" + mItem)
         val modifiedQuery = getModifedQuery(item)
-//        val nItem = (item._1, item._2 + ("query" -> ""))
+        //        val nItem = (item._1, item._2 + ("query" -> ""))
         val nItem = (item._1, item._2 + ("query" -> modifiedQuery))
 
 
         val s = new IndexSearch(spark, log, nItem, searchId, Seq[String](), preview)
         try {
           val fdfe: DataFrame = extractFields(s.search())
-          val ifdfe = if(fieldsUsedInFullQuery.contains("index"))
+          val ifdfe = if (fieldsUsedInFullQuery.contains("index"))
             fdfe.drop("index").withColumn("index", lit(item._1))
           else
             fdfe
-          val fdf = if(modifiedQuery == "") ifdfe else ifdfe.filter(modifiedQuery)
+          val fdf = if (modifiedQuery == "") ifdfe else ifdfe.filter(modifiedQuery)
           val cols1 = fdf.columns.map(_.stripBackticks().addSurroundedBackticks).toSet
           val cols2 = accum._1.columns.map(_.stripBackticks().addSurroundedBackticks).toSet
           val totalCols = (cols1 ++ cols2).toList
 
-          def expr(myCols: Set[String], allCols: Set[String]) = {
+          def expr(myCols: Set[String], allCols: Set[String]): List[Column] = {
             allCols.toList.map(x => if (myCols.contains(x)) F.col(x).as(x.stripBackticks()) else F.lit(null).as(x.stripBackticks()))
           }
 
-          totalCols match {
+          /*totalCols match {
             case head :: tail => (fdf.select(expr(cols1, totalCols.toSet): _*).union(accum._1.select(expr(cols2, totalCols.toSet): _*)), accum._2)
             case _ => accum
-          }
+          }*/
+          if (totalCols.nonEmpty) (fdf.select(expr(cols1, totalCols.toSet): _*).union(accum._1.select(expr(cols2, totalCols.toSet): _*)), accum._2)
+          else accum
         } catch {
           case ex: Exception => (accum._1, ex +: accum._2)
         }
@@ -157,7 +162,7 @@ class RawRead(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLIndexes with E
     log.debug(s"[SearchID:$searchId] Search-time field extraction: $stfeFields")
     val valueFields = stfeFields.filter(!_.contains("{}"))
     val multiValueFields = stfeFields.filter(_.contains("{}"))
-    val feDf = makeFieldExtraction(df,stfeFields, FieldExtractor.extractUDF)
+    val feDf = makeFieldExtraction(df, stfeFields, FieldExtractor.extractUDF)
     // makeFieldExtraction(feDf, multiValueFields, FieldExtractor.extractMVUDF)
     feDf
   }
@@ -170,7 +175,7 @@ class RawRead(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLIndexes with E
     val stfeFieldsStr = extractedFields.map(x => s""""${x.replaceAll("\\{(\\d+)\\}", "{}")}"""").mkString(", ")
     val mdf = df.withColumn("__fields__", expr(s"""array($stfeFieldsStr)"""))
       .withColumn("stfe", udf(col("_raw"), col("__fields__")))
-    val fields : Seq[String] = if(extractedFields.exists(_.contains("*"))){
+    val fields: Seq[String] = if (extractedFields.exists(_.contains("*"))) {
       val sdf = mdf.agg(flatten(collect_set(map_keys(col("stfe")))).as("__schema__"))
       sdf.first.getAs[Seq[String]](0)
     } else extractedFields
@@ -192,7 +197,6 @@ class RawRead(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLIndexes with E
 
   /** Standard method called by [[Converter]] in each command.
    *
-   *
    * @param _df [[DataFrame]] May be used as incoming dataset but in generator-command like this one is ignored and
    *            should be empty
    * @return [[DataFrame]] Outgoing dataset
@@ -203,20 +207,19 @@ class RawRead(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLIndexes with E
     // Step 1.
     val dfInit = searchMap(indexQueriesMap)
     val dfLimit = getKeyword("limit") match {
-      case Some(lim) => {
-        log.debug(s"[SearchID:$searchId] Dataframe is limited"); dfInit.limit(100000)
-      }
+      case Some(lim) =>
+        log.debug(s"[SearchID:$searchId] Dataframe is limited")
+        dfInit.limit(100000)
       case _ => dfInit
     }
 
     val dfStfe = dfLimit
     getKeyword("subsearch") match {
-      case Some(str) => {
+      case Some(str) =>
         cache.get(str) match {
           case Some(jdf) => new OTLJoin(SimpleQuery(s"""type=inner max=1 ${jdf.columns.toList.mkString(",")} subsearch=$str""", cache)).transform(dfStfe)
           case None => dfStfe
         }
-      }
       case None => dfStfe
     }
   }

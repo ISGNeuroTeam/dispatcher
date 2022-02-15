@@ -6,6 +6,7 @@ import ot.scalaotl.static.StatsFunctions
 import ot.scalaotl.parsers.{StatsParser, WildcardParser}
 import ot.scalaotl.extensions.DataFrameExt._
 import ot.scalaotl.extensions.StringExt._
+import OTLStreamstats.Stream
 
 import ot.dispatcher.sdk.core.CustomException.E00021
 
@@ -13,8 +14,6 @@ import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.expressions.{Window, WindowSpec}
 
 import scala.util.{Failure, Success, Try}
-
-case class Stream(window: WindowSpec, df: DataFrame)
 
 class OTLStreamstats(sq: SimpleQuery) extends OTLBaseCommand(sq, _seps = Set("by")) with StatsParser with WildcardParser {
   val requiredKeywords = Set.empty[String]
@@ -92,4 +91,8 @@ class OTLStreamstats(sq: SimpleQuery) extends OTLBaseCommand(sq, _seps = Set("by
       .dropFake
       .dropIndex()
   }
+}
+
+object OTLStreamstats {
+  case class Stream(window: WindowSpec, df: DataFrame)
 }

@@ -2,19 +2,22 @@ package ot.scalaotl
 package commands
 
 import org.apache.spark.sql.DataFrame
-import org.apache.spark.sql.functions.{ udf, col, lit, collect_set, array, size, expr, array_min }
+import org.apache.spark.sql.expressions.UserDefinedFunction
+import org.apache.spark.sql.functions.{array, array_min, col, collect_set, expr, lit, size, udf}
 
 class OTLTransaction(sq: SimpleQuery) extends OTLBaseCommand(sq) {
   val requiredKeywords = Set.empty[String]
   val optionalKeywords = Set.empty[String]
-  def mapUdf = udf { (col: Seq[Seq[String]]) => col.map(x => (x(0), x(1))).toMap }
+
+  def mapUdf: UserDefinedFunction = udf { (col: Seq[Seq[String]]) => col.map(x => (x.head, x(1))).toMap }
+
   def createMap(df: DataFrame, columns: List[String] = List()): DataFrame = {
     val cols = if (columns.isEmpty) df.columns.toList else columns
     val dfArr = cols.foldLeft(df) {
       case (accum, colname) => accum.withColumn(colname, array(lit(colname), col(colname)))
     }
     val colStr = cols.mkString(", ")
-    val dfTotal = dfArr.withColumn("total", expr(s"""array(${colStr})"""))
+    val dfTotal = dfArr.withColumn("total", expr(s"""array($colStr)"""))
     dfTotal.withColumn("total", mapUdf(col("total"))).select("total")
   }
 
@@ -31,7 +34,7 @@ class OTLTransaction(sq: SimpleQuery) extends OTLBaseCommand(sq) {
     }
   }
 
-  override def transform(_df: DataFrame) = {
+  override def transform(_df: DataFrame): DataFrame = {
     val s = SimpleQuery(s"values(*) as * by $args")
     val dfTransaction = convertArraysToSingle(new OTLStats(s).transform(_df))
     if (dfTransaction.columns.contains("_time")) {

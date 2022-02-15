@@ -1,7 +1,7 @@
 package ot.scalaotl
 package commands
 
-import org.apache.spark.sql.types.{NullType, StringType, StructField, StructType}
+import org.apache.spark.sql.types.{StringType, StructField, StructType}
 import ot.scalaotl.parsers.{StatsParser, WildcardParser}
 import ot.scalaotl.static.StatsFunctions
 import ot.scalaotl.extensions.DataFrameExt._
@@ -11,7 +11,7 @@ import org.apache.spark.sql.{DataFrame, Row}
 class OTLStats(sq: SimpleQuery) extends OTLBaseCommand(sq, _seps = Set("by")) with StatsParser with WildcardParser {
   val requiredKeywords = Set.empty[String]
   val optionalKeywords = Set.empty[String]
-  
+
   override val fieldsUsed: List[String] = getFieldsUsed(returns) ++ getPositionalFieldUsed(positionals)
   override val fieldsGenerated: List[String] = getFieldsGenerated(returns)
 
@@ -35,21 +35,21 @@ class OTLStats(sq: SimpleQuery) extends OTLBaseCommand(sq, _seps = Set("by")) wi
         if (nullColumnFlag) {
           val emptyDF: DataFrame = spark.createDataFrame(spark.sparkContext.emptyRDD[Row],
             StructType(Seq(StructField("_raw", StringType))
-//              ++ fieldsUsed.filterNot(_ == "`__fake__`").map(f => StructField(f.stripBackticks(), NullType))
-//              ++ fieldsGenerated.map(f => StructField(f.stripBackticks(), NullType))
+              //              ++ fieldsUsed.filterNot(_ == "`__fake__`").map(f => StructField(f.stripBackticks(), NullType))
+              //              ++ fieldsGenerated.map(f => StructField(f.stripBackticks(), NullType))
             ))
           emptyDF
         } else {
           StatsFunctions.applyFuncs(rWcFunks, rdfWithEvals, groups)
         } //.map(x => "`" + x + "`"))
-      case _                              => StatsFunctions.applyFuncs(rWcFunks, rdfWithEvals)
+      case _ => StatsFunctions.applyFuncs(rWcFunks, rdfWithEvals)
     }
     val serviceFields = dfCalculated.columns.filter(x => x.matches("__.*__") || x.startsWith("__fake__"))
     dfCalculated.dropFake.drop(serviceFields: _*)
   }
 
   def resolveAmbigousFields(funcs: List[StatsFunc], df: DataFrame): (List[StatsFunc], DataFrame) = {
-    val generated_fiedls= funcs.map{case StatsFunc(out,_,in) => (out,in)}.filter(x => x._1 != x._2).map(_._1.stripBackticks()).toSet
+    val generated_fiedls = funcs.map { case StatsFunc(out, _, in) => (out, in) }.filter(x => x._1 != x._2).map(_._1.stripBackticks()).toSet
     val inputCols = df.columns.toSet
     val ambigousFields = inputCols.intersect(generated_fiedls)
     val aliases = ambigousFields.map(f => (f, s"__${f}__"))

@@ -2,15 +2,8 @@ package ot.scalaotl
 package commands
 
 import org.apache.spark.sql.DataFrame
-import org.apache.spark.sql.functions.{ lit, when, col }
-
-case class Range(lower: Double, upper: Double)
-object Range {
-  def apply(arr: Array[Double]): Range = arr.toList match {
-    case first :: second :: tail => new Range(first, second)
-    case _                       => new Range(0, Double.MaxValue)
-  }
-}
+import org.apache.spark.sql.functions.{lit, when, col}
+import OTLRangemap._
 
 class OTLRangemap(sq: SimpleQuery) extends OTLBaseCommand(sq) {
   val requiredKeywords = Set("field")
@@ -21,7 +14,9 @@ class OTLRangemap(sq: SimpleQuery) extends OTLBaseCommand(sq) {
   override def transform(_df: DataFrame): DataFrame = {
     val field = keywordsMap.get("field").map { case Keyword(k, v) => v }.getOrElse(return _df)
     if (_df.columns.contains(field)) {
-      val kwMapDef = if (keywordsMap.contains("default")) keywordsMap else { keywordsMap + ("default" -> Keyword("default", "None")) }
+      val kwMapDef = if (keywordsMap.contains("default")) keywordsMap else {
+        keywordsMap + ("default" -> Keyword("default", "None"))
+      }
       val default = kwMapDef.get("default").map { case Keyword(k, v) => v }.getOrElse("default")
       val valMap = (kwMapDef - "field" - "default").map { case (k, Keyword(_, v)) => k -> Range(v.split("-").map(_.toDouble)) } // TODO. Add NumberFormatException handling
       valMap.foldLeft(_df.withColumn("range", lit(default))) {
@@ -30,4 +25,16 @@ class OTLRangemap(sq: SimpleQuery) extends OTLBaseCommand(sq) {
       }
     } else _df
   }
+}
+
+object OTLRangemap {
+  case class Range(lower: Double, upper: Double)
+
+  object Range {
+    def apply(arr: Array[Double]): Range = arr.toList match {
+      case first :: second :: tail => new Range(first, second)
+      case _ => new Range(0, Double.MaxValue)
+    }
+  }
+
 }

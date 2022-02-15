@@ -8,6 +8,7 @@ import org.apache.spark.sql.types.NumericType
 class OTLAddcoltotals(sq: SimpleQuery) extends OTLBaseCommand(sq) {
   val requiredKeywords = Set.empty[String]
   val optionalKeywords = Set("labelfield", "label")
+
   override def transform(_df: DataFrame): DataFrame = {
 
     val labelfield = getKeyword("labelfield").getOrElse("None")

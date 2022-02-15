@@ -33,7 +33,7 @@ class OTLFilter(sq: SimpleQuery) extends OTLBaseCommand(sq) {
       case Some(str) =>
         cache.get(str) match {
           case Some(jdf) => new OTLJoin(SimpleQuery(s"""type=inner max=1 ${jdf.columns.toList.mkString(",")} subsearch=$str""", cache)).transform(initDf)
-          case None      => initDf
+          case None => initDf
         }
       case None => initDf
     }

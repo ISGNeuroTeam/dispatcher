@@ -16,7 +16,7 @@ class OTLInputlookup(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLLookups
   val inputPath: Option[String] = _getLookupPath(
     returns.fields.headOption match {
       case Some(ReturnField(k, v)) => k
-      case _                       => "-1"
+      case _ => "-1"
     })
 
   val whereFilter: Array[String] = args.split("where")

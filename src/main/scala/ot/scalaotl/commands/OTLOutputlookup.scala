@@ -12,7 +12,9 @@ class OTLOutputlookup(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLLookup
   val requiredKeywords = Set.empty[String]
   val optionalKeywords = Set("append")
   val lookupFileName: String = returns.flatFields.headOption.getOrElse("-1")
+
   override def fieldsUsed: List[String] = super.fieldsUsed.diff(List(lookupFileName))
+
   val inputPath: Option[String] = _getLookupPath(lookupFileName.stripBackticks())
 
   override def transform(_df: DataFrame): DataFrame = {

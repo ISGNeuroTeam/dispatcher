@@ -3,13 +3,14 @@ package commands
 
 import ot.scalaotl.extensions.StringExt._
 
-import org.apache.spark.sql.{ DataFrame, Column }
+import org.apache.spark.sql.{DataFrame, Column}
 import org.apache.spark.sql.expressions.Window
-import org.apache.spark.sql.functions.{ col, lit, concat, lag, monotonically_increasing_id, when }
+import org.apache.spark.sql.functions.{col, lit, concat, lag, monotonically_increasing_id, when}
 
 class OTLDedup(sq: SimpleQuery) extends OTLBaseCommand(sq, _seps = Set("sortby")) {
   val requiredKeywords = Set.empty[String]
   val optionalKeywords = Set.empty[String]
+
   override def transform(_df: DataFrame): DataFrame = {
     val dfDedup = keywordsMap.get("consecutive") match {
       case Some(Keyword("consecutive", "t")) =>
@@ -24,7 +25,7 @@ class OTLDedup(sq: SimpleQuery) extends OTLBaseCommand(sq, _seps = Set("sortby")
 
     positionalsMap.get("sortby") match {
       case Some(Positional("sortby", sf)) => new OTLSort(SimpleQuery(sf.map(_.stripBackticks()).mkString(" "))).transform(dfDedup)
-      case _                              => dfDedup
+      case _ => dfDedup
     }
   }
 }
