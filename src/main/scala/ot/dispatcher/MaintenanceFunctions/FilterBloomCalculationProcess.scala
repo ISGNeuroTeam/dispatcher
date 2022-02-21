@@ -4,22 +4,23 @@ import org.apache.spark.sql.SparkSession
 import ot.scalaotl.config.OTLIndexes
 import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.hadoop.conf.Configuration
+
 import java.io.BufferedOutputStream
 import java.io.FileOutputStream
 import java.time.Instant
-
 import org.apache.log4j.{Level, Logger}
 import ot.AppConfig.getLogLevel
 
 import scala.concurrent.{Await, ExecutionContext, Future}
 import ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
+import scala.language.postfixOps
 import scala.util.{Failure, Success}
 
 object FilterBloomCalculationProcess extends OTLIndexes {
 
   val log: Logger = Logger.getLogger("FBCPLogger")
-  log.setLevel(Level.toLevel(getLogLevel(otlconfig,"fbcp")))
+  log.setLevel(Level.toLevel(getLogLevel(otlconfig, "fbcp")))
   var timeFutureStarted: Long = 0
 
   def calculate(systemMaintenanceArgs: Map[String, Any]): Unit = {
@@ -44,7 +45,7 @@ object FilterBloomCalculationProcess extends OTLIndexes {
           for (d <- dirs if d isDirectory) {
             val subpath = f"${d.getPath}/bloom".substring(5)
             try {
-              if (new java.io.File(subpath).exists == false) {
+              if (!new java.io.File(subpath).exists) {
                 val df = spark.read.parquet(f"${d.getPath}")
                 val df2 = df.select("_raw").rdd.flatMap(f => f.getString(0).split(" ")).distinct().toDF()
                 val bloom = df2.stat.bloomFilter($"value", 10000000, 0.01)
@@ -55,7 +56,7 @@ object FilterBloomCalculationProcess extends OTLIndexes {
                 target.close()
                 fos.close()
               }
-            } 
+            }
             catch {
               case _: Throwable => log.warn(s"Exception from parquet $subpath")
 

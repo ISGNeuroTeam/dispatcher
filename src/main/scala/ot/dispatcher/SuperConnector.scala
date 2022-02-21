@@ -4,27 +4,27 @@ import java.sql.{Connection, DriverManager, ResultSet}
 import ot.AppConfig.config
 
 /** Provides all operations with DB.
-  * [[getDBConnection]] - Returns connection to DB.
-  * == Job Section ==
-  * [[getNewQueries]] - Returns all new Jobs.
-  * [[setJobStateRunning]] - Sets Job state to running.
-  * [[setJobStateFinished]] - Sets Job state to finished.
-  * [[setJobStateFailed]] - Sets Job state to failed.
-  * == Cache Section ==
-  * [[deleteOldCache]] - Removes old cache (depending on expire date an lock status) rows from DB.
-  * [[addNewCache]] - Registers new Job calculated cache.
-  * [[lockCache]] - Sets lock on Job cache removing because of subsearches.
-  * [[unlockCache]] - Removes lock on Job cache removing.
-  * == Subsearch section ==
-  * [[getSubsearchStatus]] - Returns subsearch Job ID.
-  * == Restoration Section ==
-  * [[interruptJobs]] - Set all running or new jobs to failed state.
-  * [[clearCaches]] - Deletes all caches.
-  * [[unlockCaches]] - Unlocks all caches.
-  * [[sql_without_results]] - Uses for creating statements if DB scheme is empty.
-  *
-  * @author Andrey Starchenkov (astarchenkov@ot.ru)
-  */
+ * [[getDBConnection]] - Returns connection to DB.
+ * == Job Section ==
+ * [[getNewQueries]] - Returns all new Jobs.
+ * [[setJobStateRunning]] - Sets Job state to running.
+ * [[setJobStateFinished]] - Sets Job state to finished.
+ * [[setJobStateFailed]] - Sets Job state to failed.
+ * == Cache Section ==
+ * [[deleteOldCache]] - Removes old cache (depending on expire date an lock status) rows from DB.
+ * [[addNewCache]] - Registers new Job calculated cache.
+ * [[lockCache]] - Sets lock on Job cache removing because of subsearches.
+ * [[unlockCache]] - Removes lock on Job cache removing.
+ * == Subsearch section ==
+ * [[getSubsearchStatus]] - Returns subsearch Job ID.
+ * == Restoration Section ==
+ * [[interruptJobs]] - Set all running or new jobs to failed state.
+ * [[clearCaches]] - Deletes all caches.
+ * [[unlockCaches]] - Unlocks all caches.
+ * [[sql_without_results]] - Uses for creating statements if DB scheme is empty.
+ *
+ * @author Andrey Starchenkov (astarchenkov@ot.ru)
+ */
 class SuperConnector {
 
   private val dbConnection = getDBConnection
@@ -172,9 +172,9 @@ class SuperConnector {
   }
 
   /** Uses for creating statements if DB scheme is empty.
-    *
-    * @param sql Sting with SQL query.
-    */
+   *
+   * @param sql Sting with SQL query.
+   */
   def sql_without_results(sql: String): Unit = {
     dbConnection.prepareStatement(sql).execute()
   }

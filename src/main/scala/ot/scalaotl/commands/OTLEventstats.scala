@@ -14,11 +14,11 @@ class OTLEventstats(sq: SimpleQuery) extends OTLBaseCommand(sq, _seps = Set("by"
   override val fieldsGenerated: List[String] = transformer.fieldsGenerated.map(_.stripBackticks())
 
   override def transform(_df: DataFrame): DataFrame = {
-    val _df_out = transformer.transform(_df)    
+    val _df_out = transformer.transform(_df)
     val res = positionalsMap.get("by") match {
-      case Some(Positional("by", List())) => _df.drop(fieldsGenerated:_*).crossJoin(_df_out)
-      case Some(Positional("by", byList)) => _df.drop(fieldsGenerated:_*).join(_df_out, byList.map(_.stripBackticks()))
-      case _                              => _df_out
+      case Some(Positional("by", List())) => _df.drop(fieldsGenerated: _*).crossJoin(_df_out)
+      case Some(Positional("by", byList)) => _df.drop(fieldsGenerated: _*).join(_df_out, byList.map(_.stripBackticks()))
+      case _ => _df_out
     }
     res
   }

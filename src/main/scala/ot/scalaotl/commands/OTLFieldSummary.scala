@@ -9,6 +9,7 @@ class OTLFieldSummary(sq: SimpleQuery) extends OTLBaseCommand(sq) {
   val requiredKeywords = Set.empty[String]
   val optionalKeywords = Set.empty[String]
   override val fieldsGenerated = List("summary")
+
   def zipUdf: UserDefinedFunction = udf((cols: Seq[String], vals: Seq[String]) => cols.zip(vals))
 
   override def transform(_df: DataFrame): DataFrame = {

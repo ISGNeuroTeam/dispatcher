@@ -7,8 +7,8 @@ import ot.dispatcher.sdk.core.SimpleQuery
 import ot.scalaotl.commands.OTLBaseCommand
 
 /**
-  * @param sq [[SimpleQuery]] - query passed to command
-  */
+ * @param sq [[SimpleQuery]] - query passed to command
+ */
 class PluginProxyCommand(command: PluginCommand, sq: ot.scalaotl.SimpleQuery) extends OTLBaseCommand(sq, command.separators) {
 
   override val requiredKeywords: Set[String] = Set()

@@ -8,7 +8,7 @@ import ot.scalaotl.Converter
 import ot.dispatcher.sdk.core.CustomException.E00002
 import ot.scalaotl.utils.logging.StatViewer
 
-class PluginBaseUtils(sparkSession: SparkSession, jarPath: String) extends PluginBaseConfig(jarPath) with PluginUtils{
+class PluginBaseUtils(sparkSession: SparkSession, jarPath: String) extends PluginBaseConfig(jarPath) with PluginUtils {
 
   override def getLoggerFor(classname: String): Logger = {
     val log = Logger.getLogger(classname)
@@ -17,19 +17,19 @@ class PluginBaseUtils(sparkSession: SparkSession, jarPath: String) extends Plugi
     log
   }
 
-  override def logLevelOf(name: String) = getLoglevel(name)
+  override def logLevelOf(name: String): String = getLoglevel(name)
 
-  override def printDfHeadToLog(log: Logger, id: Int, df: DataFrame) =  if (log.getLevel == Level.DEBUG) {
-    log.debug(f"[SearchId:${id}]\n" + StatViewer.getPreviewString(df))
+  override def printDfHeadToLog(log: Logger, id: Int, df: DataFrame): Unit = if (log.getLevel == Level.DEBUG) {
+    log.debug(f"[SearchId:$id]\n" + StatViewer.getPreviewString(df))
   }
 
   override def sendError(id: Int, message: String) = throw E00002(id, message)
 
   override def spark: SparkSession = sparkSession
 
-  override def executeQuery(query: String, df: DataFrame) = new Converter(OTLQuery(query)).setDF(df).run
+  override def executeQuery(query: String, df: DataFrame): DataFrame = new Converter(OTLQuery(query)).setDF(df).run
 
-  override def executeQuery(query: String, index: String, startTime: Int, finishTime: Int) = {
+  override def executeQuery(query: String, index: String, startTime: Int, finishTime: Int): DataFrame = {
     val otlQuery = new OTLQuery(
       id = -1,
       original_otl = s"genrated by command",

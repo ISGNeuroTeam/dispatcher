@@ -6,13 +6,13 @@ import ot.AppConfig._
 import ot.dispatcher.SuperConnector
 
 /** Removes cache files from RAM cache and DB rows.
-  *
-  * @author Andrey Starchenkov (astarchenkov@ot.ru)
-  */
+ *
+ * @author Andrey Starchenkov (astarchenkov@ot.ru)
+ */
 object Canceller {
 
   val log: Logger = Logger.getLogger("CancellerLogger")
-  log.setLevel(Level.toLevel(getLogLevel(config,"canceller")))
+  log.setLevel(Level.toLevel(getLogLevel(config, "canceller")))
 
 
   def cancelJobs(systemMaintenanceArgs: Map[String, Any]): Unit = {

@@ -11,7 +11,7 @@ class OTLXyseries(sq: SimpleQuery) extends OTLBaseCommand(sq) {
   override def transform(_df: DataFrame): DataFrame = {
     returns.flatFields match {
       case fixed :: groups :: values :: tail => _df.groupBy(fixed).pivot(groups).agg(first(values))
-      case _                                 => _df
+      case _ => _df
     }
   }
 }

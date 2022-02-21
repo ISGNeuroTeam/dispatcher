@@ -7,11 +7,12 @@ import ot.scalaotl.extensions.StringExt._
 import ot.scalaotl.parsers.ExpressionParser
 
 
-class SprkCommand(sq: SimpleQuery) extends OTLBaseCommand(sq) with ExpressionParser{
+class SprkCommand(sq: SimpleQuery) extends OTLBaseCommand(sq) with ExpressionParser {
   val requiredKeywords = Set.empty[String]
   val optionalKeywords = Set("value")
-  val searchId = sq.searchId
-  override def getFieldsUsed = (ret: Return) => {
+  val searchId: Int = sq.searchId
+
+  override def getFieldsUsed: Return => List[String] = (ret: Return) => {
     ret.evals.flatMap {
       case x if x.expr.strip("\"").isEmpty => List.empty[String]
       case x => getFieldsFromExpression(expr(x.expr.strip("\"")).expr, List()).map(_.addSurroundedBackticks)

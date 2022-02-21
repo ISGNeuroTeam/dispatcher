@@ -4,28 +4,27 @@ import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.DataFrame
 import ot.AppConfig._
 import ot.scalaotl.Converter
-import ot.dispatcher.sdk.core.CustomException
 import ot.dispatcher.sdk.core.CustomException.{E00008, E00009, E00010}
 
 /** Represents the start point of main calculation process for Job.
-  *
-  * @param cacheManager   [[CacheManager]] instance for manipulations with RAM cache.
-  * @param superConnector [[SuperVisor]] instance for DB updates depending on Job states.
-  * @author Andrey Starchenkov (astarchenkov@ot.ru)
-  */
+ *
+ * @param cacheManager   [[CacheManager]] instance for manipulations with RAM cache.
+ * @param superConnector [[SuperVisor]] instance for DB updates depending on Job states.
+ * @author Andrey Starchenkov (astarchenkov@ot.ru)
+ */
 class SuperCalculator(cacheManager: CacheManager, superConnector: SuperConnector) {
 
   val log: Logger = Logger.getLogger("CalculatorLogger")
-  log.setLevel(Level.toLevel(getLogLevel(config,"calculator")))
+  log.setLevel(Level.toLevel(getLogLevel(config, "calculator")))
 
   /** Calculation conveyor.
-    * 1. Gets Map of Subsearches' cache [[DataFrame]]s if they present and lock them to prevent ttl removing.
-    * 2. Makes calculation.
-    * 3. Save result [[DataFrame]] of calculations to RAM cache.
-    * 4. Unlock subsearches' caches.
-    *
-    * @param otlQuery [[OTLQuery]] Job data instance.
-    */
+   * 1. Gets Map of Subsearches' cache [[DataFrame]]s if they present and lock them to prevent ttl removing.
+   * 2. Makes calculation.
+   * 3. Save result [[DataFrame]] of calculations to RAM cache.
+   * 4. Unlock subsearches' caches.
+   *
+   * @param otlQuery [[OTLQuery]] Job data instance.
+   */
   def calc(otlQuery: OTLQuery): Unit = {
     log.debug(s"Job ${otlQuery.id}. Calculations are in progress.")
 
@@ -51,10 +50,10 @@ class SuperCalculator(cacheManager: CacheManager, superConnector: SuperConnector
   }
 
   /** Calculates hash for subsearch ID based on it's query.
-    *
-    * @param text subsearch query.
-    * @return sha256 hash [[String]].
-    */
+   *
+   * @param text subsearch query.
+   * @return sha256 hash [[String]].
+   */
   def sha256Hash(text: String): String = String.format(
     "%064x", new java.math.BigInteger(1, java.security.MessageDigest.getInstance("SHA-256")
       .digest(text.trim.getBytes("UTF-8"))
@@ -62,15 +61,15 @@ class SuperCalculator(cacheManager: CacheManager, superConnector: SuperConnector
   )
 
   /** Returns Map with subsearches' caches [[DataFrame]]s and List of IDs for locking.
-    *
-    * 1. Waits for IDs of registered subsearches' caches.
-    * 2. Locks subsearches' caches.
-    * 3. Waits for ready state of all caches.
-    * 4. Loads caches to [[DataFrame]]s.
-    *
-    * @param otlQuery [[OTLQuery]] Job data.
-    * @return caches.
-    */
+   *
+   * 1. Waits for IDs of registered subsearches' caches.
+   * 2. Locks subsearches' caches.
+   * 3. Waits for ready state of all caches.
+   * 4. Loads caches to [[DataFrame]]s.
+   *
+   * @param otlQuery [[OTLQuery]] Job data.
+   * @return caches.
+   */
   def getSubsearchesCache(otlQuery: OTLQuery): (Map[String, DataFrame], List[Int]) = {
 
     log.debug(s"Job ${otlQuery.id}. Checking for subsearches.")

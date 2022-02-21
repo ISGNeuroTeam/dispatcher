@@ -4,7 +4,7 @@ package commands
 import ot.scalaotl.static.OtJsonParser
 
 import org.apache.spark.sql.DataFrame
-import org.apache.spark.sql.functions.{ col, lit }
+import org.apache.spark.sql.functions.{col, lit}
 import org.apache.spark.sql.functions.json_tuple
 
 import scala.annotation.tailrec
@@ -33,8 +33,9 @@ class OTLSpathNoUDF(sq: SimpleQuery) extends OTLBaseCommand(sq) {
     @tailrec
     def getJsonInner(dfInner: DataFrame, colname: String, path: List[String]): DataFrame = path match {
       case head :: tail => getJsonInner(dfInner.withColumn(colname, json_tuple(col(colname), head)), colname, tail)
-      case _            => dfInner
+      case _ => dfInner
     }
+
     getJsonInner(df.withColumn(output, col(input)), output, path)
   }
 

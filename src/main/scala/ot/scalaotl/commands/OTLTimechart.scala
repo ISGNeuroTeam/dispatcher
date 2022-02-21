@@ -16,7 +16,7 @@ class OTLTimechart(sq: SimpleQuery) extends OTLBaseCommand(sq, _seps = Set("by")
   override val fieldsUsed: List[String] = getFieldsUsed(returns) ++ getPositionalFieldUsed(positionals)
   override val fieldsGenerated: List[String] = getFieldsGenerated(returns)
 
-  override def transform(_df: DataFrame): DataFrame = {    
+  override def transform(_df: DataFrame): DataFrame = {
     val span = OtDatetime.getSpanInSeconds(getKeyword("span").getOrElse("1d"))
     log.debug(f"[SearchId:${sq.searchId}] Counted span in seconds: $span")
     val dfTime = _df.withColumn("_time", expr(s"""floor(_time / $span) * $span""").cast("long"))
@@ -27,7 +27,7 @@ class OTLTimechart(sq: SimpleQuery) extends OTLBaseCommand(sq, _seps = Set("by")
 
     val by = getPositional("by") match {
       case Some(List()) | None => ""
-      case Some(list)          => s"""by ${list.map(_.stripBackticks()).mkString(" ")}"""
+      case Some(list) => s"""by ${list.map(_.stripBackticks()).mkString(" ")}"""
     }
     val chartArgs = s"$argsClear over _time $by".trim
     log.debug(f"[SearchId:${sq.searchId}] Args for chart: $chartArgs")
