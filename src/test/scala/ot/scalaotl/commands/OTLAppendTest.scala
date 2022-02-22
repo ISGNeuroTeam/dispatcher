@@ -29,15 +29,4 @@ class OTLAppendTest extends CommandTest{
     assert(jsonCompare(actual, expected), f"Result : $actual\n---\nExpected : $expected")
   }
 
-  test("test") {
-    //makeresults | eval a = 1 | eval b = 2 | eval c = 3 | append [makeresults | eval a = 4 | eval b = 5 | eval c = 6] | fields a,b,c
-    val subsearchQuery = createQuery("makeresults | eval a = 4 | eval b = 5 | eval c = 6")
-    val cacheDF = new Converter(subsearchQuery).run
-    val cacheMap = Map("id1" -> cacheDF)
-
-    val otlQuery = createQuery("makeresults | eval a = 1 | eval b = 2 | eval c = 3 | append subsearch = id1 | fields a,b,c")
-    val resultDF = new Converter(otlQuery, cacheMap).run
-    resultDF.show()
-  }
-
 }
