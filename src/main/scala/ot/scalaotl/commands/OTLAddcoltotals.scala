@@ -10,6 +10,8 @@ import org.apache.spark.sql.types.NumericType
  *
  * __'''addcoltotals'''__ adds the sum of each numeric field to the end of the set.
  *
+ * __'''addcoltotals'''__ takes two optional arguments - __labelfield__ (any word), __label__ (any word).
+ *
  * If the __labelfield__ argument is specified,
  * column with the specified name is added to the result table.
  *
