@@ -45,7 +45,7 @@ class OTLAddcoltotals(sq: SimpleQuery) extends OTLBaseCommand(sq) {
    *Tries to get the __label__ and __labelfield__ keywords,
    * if they are not specified, then they are taken by default as __labelfield__=None, __label__=Total
    *
-   * @param _df - input __dataframe__, passed by the [[Converter]] when executing an OTL query
+   * @param _df input __dataframe__, passed by the [[Converter]] when executing an OTL query
    * @return _df with the sum of each numeric field added to the end
    */
   override def transform(_df: DataFrame): DataFrame = {
