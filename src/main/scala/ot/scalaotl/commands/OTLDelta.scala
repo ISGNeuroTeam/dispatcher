@@ -14,9 +14,9 @@ import org.apache.spark.sql.expressions.Window
  *
  * __'''delta'''__ takes two required and one optional argument:
  *
- *  i. the name of the field for which the delta should be calculated, written after __'''delta'''__
- *  i. the name of the new field in which the results will be written, indicated after __as__
- *  i. __p__ argument - the difference is calculated by subtraction between the element numbered '''n''' and '''n-p''',
+ *  1. the name of the field for which the delta should be calculated, written after __'''delta'''__
+ *  1. the name of the new field in which the results will be written, indicated after __as__
+ *  1. __p__ argument - the difference is calculated by subtraction between the element numbered '''n''' and '''n-p''',
  * if there is no element n-p, then element n-p+1 is taken and so on, by default '''p''' = 1
  *
  * =Usage example=
