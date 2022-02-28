@@ -6,6 +6,14 @@ import ot.scalaotl.extensions.StringExt._
 
 import org.apache.spark.sql.DataFrame
 
+/** =Abstract=
+ * This class provides support of __'''eventstats'''__ otl command.
+ *
+ * __'''eventstats'''__ calculates statistics on field values and saves the result in a new field.
+ *
+ * @constructor creates new instance of [[OTLDelta]]
+ * @param sq [[SimpleQuery]]
+ */
 class OTLEventstats(sq: SimpleQuery) extends OTLBaseCommand(sq, _seps = Set("by")) with StatsParser {
   val requiredKeywords = Set.empty[String]
   val optionalKeywords = Set.empty[String]
