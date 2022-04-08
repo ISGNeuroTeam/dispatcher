@@ -3,7 +3,7 @@ package commands
 
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.expressions.Window
-import org.apache.spark.sql.functions.{col, last, lit, monotonically_increasing_id}
+import org.apache.spark.sql.functions.{col, count, last, lit, monotonically_increasing_id}
 import ot.scalaotl.extensions.StringExt._
 
 class OTLFilldown(sq: SimpleQuery) extends OTLBaseCommand(sq, _seps = Set("by")) {
@@ -22,9 +22,14 @@ class OTLFilldown(sq: SimpleQuery) extends OTLBaseCommand(sq, _seps = Set("by"))
     } else {
       groups.head.stripBackticks()
     }
-
     val ws = Window.partitionBy(by).orderBy("__idx__").rowsBetween(Window.unboundedPreceding, Window.currentRow)
-    val filldownColumns = returns.flatFields.map(_.stripBackticks()).intersect(_df.columns)
+    val dfColumns = _df.columns
+    val fields = if (returns.flatFields.isEmpty) {
+      dfColumns.filter(c => !(_df.select(col(c)).filter(row => row.isNullAt(0)).isEmpty)).toList
+    } else {
+      returns.flatFields
+    }
+    val filldownColumns = fields.map(_.stripBackticks()).intersect(_df.columns)
     log.debug(s"filldownColumns $filldownColumns")
     val df_grouped = _df.withColumn("__internal__", lit(0))
     filldownColumns.foldLeft(df_grouped.withColumn("__idx__", monotonically_increasing_id)) {
