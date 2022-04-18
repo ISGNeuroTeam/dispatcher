@@ -88,18 +88,15 @@ class OTLFilldown(sq: SimpleQuery) extends OTLBaseCommand(sq, _seps = Set("by"))
    * @return _df with events combined by specified field
    */
   override def transform(_df: DataFrame): DataFrame = {
-
     val groups = positionalsMap.get("by") match {
       case Some(Positional("by", groups)) => groups
       case _ => List("__internal__")
     }
-
     val by = if (groups.isEmpty) {
       "__internal__"
     } else {
       groups.head.stripBackticks()
     }
-    val ws = Window.partitionBy(by).orderBy("__idx__").rowsBetween(Window.unboundedPreceding, Window.currentRow)
     val dfColumns = _df.columns
     val fields = if (returns.flatFields.isEmpty) {
       dfColumns.filter(c => !(_df.select(col(c)).filter(row => row.isNullAt(0)).isEmpty)).toList
@@ -109,8 +106,12 @@ class OTLFilldown(sq: SimpleQuery) extends OTLBaseCommand(sq, _seps = Set("by"))
     val filldownColumns = fields.map(_.stripBackticks()).intersect(dfColumns)
     log.debug(s"filldownColumns $filldownColumns")
     val df_grouped = _df.withColumn("__internal__", lit(0))
+    val ws = Window.partitionBy(by).orderBy("__idx__").rowsBetween(Window.unboundedPreceding, Window.currentRow)
     filldownColumns.foldLeft(df_grouped.withColumn("__idx__", monotonically_increasing_id)) {
-      case (accum, item) => accum.withColumn(item, last(col(item), ignoreNulls = true).over(ws))
+      case (accum, item) => {
+        val column = last(col(item), ignoreNulls = true).over(ws)
+        accum.withColumn(item, column)
+      }
     }
       .drop("__idx__", "__internal__")
   }
