@@ -70,32 +70,42 @@ class OTLTopTest extends CommandTest {
     assert(jsonCompare(actual, expected), f"Result : $actual\n---\nExpected : $expected")
   }
 
-  // проблема с бэктиками
-  ignore("Test 4. Command: | top random_Field by _time") {
+  test("Test 4. Command: | top random_Field by _time") {
     val actual = execute("""top random_Field by _time""")
     val expected = """[
-                     |{"random_Field":"50","second_Field":"cc","count":3,"percent":30.0},
-                     |{"random_Field":"20","second_Field":"aa","count":2,"percent":20.0},
-                     |{"random_Field":"60","second_Field":"aa","count":1,"percent":10.0},
-                     |{"random_Field":"100","second_Field":"aa","count":1,"percent":10.0},
-                     |{"random_Field":"-90","second_Field":"bb","count":1,"percent":10.0},
-                     |{"random_Field":"10","second_Field":"ee","count":1,"percent":10.0},
-                     |{"random_Field":"0","second_Field":"dd","count":1,"percent":10.0}
+                     |{"_time":1568026476854,"random_Field":"50","count":4,"percent":20.0},
+                     |{"_time":1568026476854,"random_Field":"10","count":2,"percent":10.0},
+                     |{"_time":1568026476854,"random_Field":"20","count":2,"percent":10.0},
+                     |{"_time":1568026476854,"random_Field":"30","count":1,"percent":5.0},
+                     |{"_time":1568026476854,"random_Field":"5","count":1,"percent":5.0},
+                     |{"_time":1568026476854,"random_Field":"70","count":1,"percent":5.0},
+                     |{"_time":1568026476854,"random_Field":"0","count":1,"percent":5.0},
+                     |{"_time":1568026476854,"random_Field":"80","count":1,"percent":5.0},
+                     |{"_time":1568026476854,"random_Field":"110","count":1,"percent":5.0},
+                     |{"_time":1568026476854,"random_Field":"60","count":1,"percent":5.0}
                      |]""".stripMargin
     assert(jsonCompare(actual, expected), f"Result : $actual\n---\nExpected : $expected")
   }
 
-  // проблема с бэктиками
-  ignore("Test 5. Command: | top random_Field by second_Field") {
-    val actual = execute("""top random_Field by second_Field""")
+  test("Test 5. Command: | top random_Field by second_Field | table random_Field, second_Field") {
+    val actual = execute("""top random_Field by second_Field | table random_Field, second_Field, count, percent""")
     val expected = """[
-                     |{"random_Field":"50","second_Field":"cc","count":3,"percent":30.0},
-                     |{"random_Field":"20","second_Field":"aa","count":2,"percent":20.0},
-                     |{"random_Field":"60","second_Field":"aa","count":1,"percent":10.0},
-                     |{"random_Field":"100","second_Field":"aa","count":1,"percent":10.0},
-                     |{"random_Field":"-90","second_Field":"bb","count":1,"percent":10.0},
-                     |{"random_Field":"10","second_Field":"ee","count":1,"percent":10.0},
-                     |{"random_Field":"0","second_Field":"dd","count":1,"percent":10.0}
+                     |{"random_Field":"50","second_Field":"cc","count":3,"percent":100.0},
+                     |{"random_Field":"-90","second_Field":"bb","count":1,"percent":100.0},
+                     |{"random_Field":"10","second_Field":"ee","count":2,"percent":20.0},
+                     |{"random_Field":"70","second_Field":"ee","count":1,"percent":10.0},
+                     |{"random_Field":"30","second_Field":"ee","count":1,"percent":10.0},
+                     |{"random_Field":"-50","second_Field":"ee","count":1,"percent":10.0},
+                     |{"random_Field":"80","second_Field":"ee","count":1,"percent":10.0},
+                     |{"random_Field":"50","second_Field":"ee","count":1,"percent":10.0},
+                     |{"random_Field":"120","second_Field":"ee","count":1,"percent":10.0},
+                     |{"random_Field":"-40","second_Field":"ee","count":1,"percent":10.0},
+                     |{"random_Field":"110","second_Field":"ee","count":1,"percent":10.0},
+                     |{"random_Field":"5","second_Field":"dd","count":1,"percent":50.0},
+                     |{"random_Field":"0","second_Field":"dd","count":1,"percent":50.0},
+                     |{"random_Field":"20","second_Field":"aa","count":2,"percent":50.0},
+                     |{"random_Field":"100","second_Field":"aa","count":1,"percent":25.0},
+                     |{"random_Field":"60","second_Field":"aa","count":1,"percent":25.0}
                      |]""".stripMargin
     assert(jsonCompare(actual, expected), f"Result : $actual\n---\nExpected : $expected")
   }
@@ -108,8 +118,7 @@ class OTLTopTest extends CommandTest {
     assert(jsonCompare(actual, expected), f"Result : $actual\n---\nExpected : $expected")
   }
 
-  //По идее, когда ставишь "top 0 fieldname" то запрос должен выводить все результаты (а не 10 по-умолчанию), но при 0, он выдает просто пустой датафрейм.
-  ignore("Test 7. Command: | top 0 <field>") {
+  test("Test 7. Command: | top 0 <field>") {
     val actual = execute("""top 0 random_Field""")
     val expected = """[
                      |{"random_Field":"50","count":4,"percent":20.0},
@@ -132,5 +141,3 @@ class OTLTopTest extends CommandTest {
   }
 
 }
-
-
