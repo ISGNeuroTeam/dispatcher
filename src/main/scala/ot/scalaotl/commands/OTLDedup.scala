@@ -79,6 +79,7 @@ class OTLDedup(sq: SimpleQuery) extends OTLBaseCommand(sq, _seps = Set("sortby")
           .drop("dedupcol", "prevdedup", "idx")
       case _ => _df.dropDuplicates(returns.flatFields.map(_.stripBackticks()))
     }
+    //Sorting if sortby param exists
     positionalsMap.get("sortby") match {
       case Some(Positional("sortby", sf)) => {
         val sq = SimpleQuery(sf.map(_.stripBackticks()).mkString(" "))
