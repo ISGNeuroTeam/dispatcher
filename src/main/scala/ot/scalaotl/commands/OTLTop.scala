@@ -66,6 +66,20 @@ import ot.scalaotl.extensions.StringExt._
 |   20|300|     1|    12.5|
 |   20|700|     1|    12.5|
 +-----+---+------+--------+}}}
+ * OTL 4:
+ * {{{| makeresults | eval a = 10,b=200 | append [makeresults | eval a =20,b=300] | append [makeresults | eval a =40,b=400]
+ * | append [makeresults | eval a =30,b=400] | append [makeresults | eval a =20,b=700] | append [makeresults | eval a =10,b=300]
+ * | append [makeresults | eval a =30,b=200] | append [makeresults | eval a =10,b=500] | top 0 b}}}
+ * Result:
+ * {{{+------+--------+
+|    b| count| percent|
++---  +------+--------+
+|  300|     2|      25|
+|  400|     2|      25|
+|  200|     2|    12.5|
+|  500|     1|    12.5|
+|  700|     1|    12.5|
++-----+------+--------+}}}
  * @constructor creates new instance of [[OTLTop]]
  * @param sq [[SimpleQuery]]
  */
