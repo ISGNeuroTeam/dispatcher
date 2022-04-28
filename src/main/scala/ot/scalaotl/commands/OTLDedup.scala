@@ -15,11 +15,16 @@ import ot.scalotl.commands.commonconstructions.SortTransformer
  *
  * __'''dedup'''__ takes 1 required and 2 optional argument:
  *
+ *    Required argument:
+ *
  *    1.  _'''field-list'''_ - field or list of fields on which deduplication is performed
- *    2. _'''consecutive'''_ - parameter, the value of which is "true", sequential deduplication is performed -
+ *
+ *    Optional arguments:
+ *
+ *    1. _'''consecutive'''_ - parameter, the value of which is "true", sequential deduplication is performed -
  *      only duplicates in adjacent rows are deleted.
  *      A value of this parameter that is not equal to "true" is equivalent to the absence of the parameter.
- *    3. __'''sortby'''__ - a field for sorting the deduplication result in ascending order
+ *    2. __'''sortby'''__ - a field for sorting the deduplication result in ascending order
  *      (if the '+' prefix is specified) or descending (if the '-' prefix is specified).
  *
  * =Usage examples=
@@ -84,7 +89,8 @@ class OTLDedup(sq: SimpleQuery) extends OTLBaseCommand(sq, _seps = Set("sortby")
     positionalsMap.get("sortby") match {
       case Some(Positional("sortby", sf)) => {
         val sq = SimpleQuery(sf.map(_.stripBackticks()).mkString(" "))
-        new SortTransformer(sq).transform(dfDedup)
+        val sortTransformer = new SortTransformer(sq)
+        sortTransformer.transform(dfDedup)
       }
       case _ => dfDedup
     }

@@ -45,10 +45,7 @@ class OTLDedupTest extends CommandTest {
                      |]""".stripMargin
     assert(jsonCompare(actual, expected), f"Result : $actual\n---\nExpected : $expected")
   }
-  //При выполнении "Test 3. Command: | dedup with consecutive option"  результат идентичен выполнению dedup без ключей (тест 1)
-  //В то же время, насколько понимаю, consecutive реализован у нас.
-  //Внимание-1!  Сейчас в качестве EXPECTED вставлен пустой датасет, т.к. неизвестно, как должна работать опция consecutive. Тому, кто будет исправлять баг, надо поправить тест.
-  //Внимание-2! Дописать документацию - добавить описание опции consecutive после исправления бага.
+
   test("Test 4. Command: | dedup with 'consecutive' option ") {
     val actual = execute(""" | dedup dest_country consecutive=true """)
     val expected = """[
@@ -91,11 +88,6 @@ class OTLDedupTest extends CommandTest {
     assert(jsonCompare(actual, expected), f"Result : $actual\n---\nExpected : $expected")
   }
 
-  //Тоже самое, что и баг выше. но проверка с связке с sort by.
-  //При выполнении "Test 3. Command: | dedup with consecutive option"  результат идентичен выполнению dedup без ключей (тест 1)
-  //В то же время, насколько понимаю, consecutive реализован у нас.
-  //Внимание-1!  Сейчас в качестве EXPECTED вставлен пустой датасет, т.к. неизвестно, как должна работать опция consecutive. Тому, кто будет исправлять баг, надо поправить тест.
-  //Внимание-2! Дописать документацию - добавить описание опции consecutive после исправления бага.
   test("Test 7. Command: | dedup with 'consecutive' and 'sort by' options ") {
     val actual = execute(""" | dedup dest_country consecutive=true sortby sum | table dest_country, text, sum """)
     val expected = """[
