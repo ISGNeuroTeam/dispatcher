@@ -21,6 +21,7 @@ import ot.scalaotl.extensions.StringExt._
  * Optional arguments:
  *
  *    1. __'''number'''__ - the number of top rows to be output in the result. The default is 10.
+ *    If value of this argument is 0, than all rows will be output in the result.
  *
  *    2.__'''by'''__ - defines the field by which grouping occurs in the table.
  *
