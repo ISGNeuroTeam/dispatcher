@@ -5,6 +5,7 @@ import org.apache.spark.sql.expressions.Window
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{Column, DataFrame}
 import ot.scalaotl.extensions.StringExt._
+import ot.scalotl.commands.commonconstructions.SortTransformer
 
 /** =Abstract=
  * This class provides support of __'''dedup'''__ otl command.
@@ -83,7 +84,7 @@ class OTLDedup(sq: SimpleQuery) extends OTLBaseCommand(sq, _seps = Set("sortby")
     positionalsMap.get("sortby") match {
       case Some(Positional("sortby", sf)) => {
         val sq = SimpleQuery(sf.map(_.stripBackticks()).mkString(" "))
-        new OTLSort(sq).transform(dfDedup)
+        new SortTransformer(sq).transform(dfDedup)
       }
       case _ => dfDedup
     }
