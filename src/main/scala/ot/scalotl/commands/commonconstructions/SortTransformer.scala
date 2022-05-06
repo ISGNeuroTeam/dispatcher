@@ -6,12 +6,21 @@ import ot.scalaotl.extensions.StringExt._
 import ot.scalaotl.parsers.DefaultParser
 import ot.scalaotl.{Field, Keyword, ReturnField, SimpleQuery}
 
+/**
+ * Class, containing transforming function for structured data sorting.
+ *  @param sq instance of sorting query
+ *  @param context context class with fields, need for sorting work
+ */
 class SortTransformer(sq: SimpleQuery, context: Option[SortContext] = None) extends DefaultParser{
   val (args: String, returnFields: List[ReturnField], keywordsMap: Map[String, Field]) = context match {
     case Some(SortContext(a, r, k)) => (a, r, k)
     case _ => (sq.args, returnsParser(sq.args, Set.empty).fields, fieldsToMap(keywordsParser(sq.args)))
   }
 
+  /**
+   * @param _df input dataframe
+   * @return _df, sorted by field, specified in query
+   */
   def transform(_df: DataFrame): DataFrame = {
     val order: Array[String] = "\\s+".r.replaceAllIn(
       "[-+,']".r.replaceAllIn(args, ""),

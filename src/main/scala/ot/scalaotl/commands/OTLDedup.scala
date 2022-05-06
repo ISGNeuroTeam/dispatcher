@@ -69,7 +69,7 @@ class OTLDedup(sq: SimpleQuery) extends OTLBaseCommand(sq, _seps = Set("sortby")
 
   /**
    * @param _df input __dataframe__, passed by the [[Converter]] when executing an OTL query
-   * @return _df with events combined by specified field
+   * @return _df with deleted duplicate fields
    */
   override def transform(_df: DataFrame): DataFrame = {
     //Deduping work depending on the consecutive option

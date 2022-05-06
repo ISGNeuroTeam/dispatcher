@@ -85,7 +85,7 @@ class OTLFilldown(sq: SimpleQuery) extends OTLBaseCommand(sq, _seps = Set("by"))
 
   /**
    * @param _df input __dataframe__, passed by the [[Converter]] when executing an OTL query
-   * @return _df with events combined by specified field
+   * @return _df with not null values instead of null values, where it's exists
    */
   override def transform(_df: DataFrame): DataFrame = {
     //Define field for grouping. If by-param not exists, this field is fictive.
