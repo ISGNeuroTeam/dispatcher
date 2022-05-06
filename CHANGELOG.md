@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added documentation for OTLDedup command.
 - Problem with unworked consecutive parameter in OTLDedup solved.
 - OTLDedup dependency from OTLSort deleted.
+- OTLTop command refactored
+- Problem with non-work 0 limit solved
+- OTLTop tests extended and some of them corrected
+
 
 ## [1.7.7] - 2021-02-16
 ### Fixed
