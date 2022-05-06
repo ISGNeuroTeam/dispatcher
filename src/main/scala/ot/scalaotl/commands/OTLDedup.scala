@@ -4,8 +4,8 @@ package commands
 import org.apache.spark.sql.expressions.Window
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{Column, DataFrame}
+import ot.scalaotl.commands.commonconstructions.SortTransformer
 import ot.scalaotl.extensions.StringExt._
-import ot.scalotl.commands.commonconstructions.SortTransformer
 
 /** =Abstract=
  * This class provides support of __'''dedup'''__ otl command.
@@ -33,33 +33,34 @@ import ot.scalotl.commands.commonconstructions.SortTransformer
  * | mvexpand a | dedup b}}}
  * Result:
  * {{{+----------+---+---+
-|     _time|  b|  a|
-+----------+---+---+
-|1650352465 | 2|90|
-|1650352466	| 1|10|
-+----------+---+---+}}}
+*|     _time|  b|  a|
+*+----------+---+---+
+*|1650352465 | 2|90|
+*|1650352466	| 1|10|
+*+----------+---+---+}}}
  * OTL 2:
  * {{{| makeresults | eval a = mvappend(10,20,20),b=1 | append [makeresults | eval a = mvappend(90,90,80),b=2]
  * | mvexpand a | dedup a consecutive=true}}}
  * Result:
  * {{{+----------+---+---+
-|     _time|  b|  a|
-+----------+---+---+
-|1650352069	| 1|10|
-|1650352048	| 2|90|
-|1650352069	| 1|20|
-|1650352048	| 2|80|
-+----------+---+---+}}}
+*|     _time|  b|  a|
+*+----------+---+---+
+*|1650352069	| 1|10|
+*|1650352048	| 2|90|
+*|1650352069	| 1|20|
+*|1650352048	| 2|80|
+*+----------+---+---+}}}
  * OTL 3:
  * {{{| makeresults | eval a = mvappend(10,20,20),b=1 | append [makeresults | eval a = mvappend(90,90,80),b=2]
  * | mvexpand a | dedup b sortby a}}}
  * Result:
  * {{{+----------+---+---+
-|     _time|  b|  a|
-+----------+---+---+
-|1650352636	| 1|10|
-|1650352636	| 2|90|
-+----------+---+---+}}}
+*|     _time|  b|  a|
+*+----------+---+---+
+*|1650352636	| 1|10|
+*|1650352636	| 2|90|
+*+----------+---+---+}}}
+ *
  * @constructor creates new instance of [[OTLDedup]]
  * @param sq [[SimpleQuery]]
  */

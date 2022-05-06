@@ -1,4 +1,4 @@
-package ot.scalotl.commands.commonconstructions
+package ot.scalaotl.commands.commonconstructions
 
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.functions.{asc, desc}

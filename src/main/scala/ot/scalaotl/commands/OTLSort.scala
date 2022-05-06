@@ -2,7 +2,7 @@ package ot.scalaotl
 package commands
 
 import org.apache.spark.sql.DataFrame
-import ot.scalotl.commands.commonconstructions.{SortContext, SortTransformer}
+import ot.scalaotl.commands.commonconstructions.{SortContext, SortTransformer}
 
 class OTLSort(sq: SimpleQuery) extends OTLBaseCommand(sq) {
   val requiredKeywords = Set.empty[String]
