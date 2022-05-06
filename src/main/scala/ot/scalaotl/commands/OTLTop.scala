@@ -89,6 +89,10 @@ class OTLTop(sq: SimpleQuery) extends OTLBaseCommand(sq, _seps = Set("by")) {
   val optionalKeywords = Set.empty[String]
   override val fieldsGenerated = List("count", "percent")
 
+  /**
+   * @param _df input __dataframe__, passed by the [[Converter]] when executing an OTL query
+   * @return _df with count and percentage for most frequently occurring values in the selected fields of event
+   */
   override def transform(_df: DataFrame): DataFrame = {
     //Define limit
     val limit = args.split(" ").headOption match {
