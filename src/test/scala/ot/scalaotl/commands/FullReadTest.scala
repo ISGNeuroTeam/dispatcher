@@ -66,11 +66,11 @@ class FullReadTest extends CommandTest {
       """ eval a = if (new == 1, 1, -1) | table _time, new, a """
     )
     val expected = """[
-      {"_time":1570007900,"a":-1},
-      {"_time":1570008000,"a":-1},
-      {"_time":1570008100,"a":-1},
-      {"_time":1570008200,"a":-1},
-      {"_time":1570008300,"a":-1}
+      {"_time":1570007900,"a":-1,"new":null},
+      {"_time":1570008000,"a":-1,"new":null},
+      {"_time":1570008100,"a":-1,"new":null},
+      {"_time":1570008200,"a":-1,"new":null},
+      {"_time":1570008300,"a":-1,"new":null}
     ]"""
     assert(jsonCompare(actual, expected), f"\nResult : $actual\n---\nExpected : $expected")
   }

@@ -5,6 +5,7 @@ import org.apache.spark.sql.catalyst.expressions.Expression
 import org.apache.spark.sql.expressions.UserDefinedFunction
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{Column, DataFrame, functions => F}
+import org.apache.spark.sql.types.{NullType, StringType}
 import org.json4s._
 import org.json4s.native.JsonMethods._
 import ot.scalaotl.config.OTLIndexes
@@ -49,7 +50,7 @@ class RawRead(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLIndexes with E
     implicit val formats: DefaultFormats.type = org.json4s.DefaultFormats
     parse(jsonStr).extract[Map[String, Map[String, String]]]
   }
-
+  //  println(_args)
   // Get a list of available indexes (allIndexes)
   val allIndexes: ListBuffer[String] = getAllIndexes()
   // Search in the query for all indexes containing * and look for similar ones among the available indexes
@@ -104,8 +105,10 @@ class RawRead(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLIndexes with E
     val (df, allExceptions) = query.foldLeft((spark.emptyDataFrame, List[Exception]())) {
       case (accum, item) =>
         log.debug(s"[SearchID:$searchId]Query is " + item)
+        //println (item)
         val modifiedQuery = getModifedQuery(item)
         val nItem = (item._1, item._2 + ("query" -> modifiedQuery))
+        //println(nItem)
         log.debug(s"[SearchID:$searchId]Modified query is" + nItem)
 
         val s = new IndexSearch(spark, log, nItem, searchId, Seq[String](), preview)
@@ -115,11 +118,11 @@ class RawRead(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLIndexes with E
             fdfe.drop("index").withColumn("index", lit(item._1))
           else
             fdfe
-          val fdf = if (modifiedQuery == "") ifdfe else ifdfe.filter(modifiedQuery)
+          val fdf :DataFrame = if (modifiedQuery == "") ifdfe else ifdfe.filter(modifiedQuery)
           val cols1 = fdf.columns.map(_.stripBackticks().addSurroundedBackticks).toSet
           val cols2 = accum._1.columns.map(_.stripBackticks().addSurroundedBackticks).toSet
           val totalCols = (cols1 ++ cols2).toList
-
+          //          print(s"total cols ${totalCols} | cols1 ${cols1} | cols2 ${cols2}")
           def expr(myCols: Set[String], allCols: Set[String]): List[Column] = {
             allCols.toList.map(x => if (myCols.contains(x)) F.col(x).as(x.stripBackticks()) else F.lit(null).as(x.stripBackticks()))
           }
@@ -132,6 +135,11 @@ class RawRead(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLIndexes with E
     }
     if (query.size == allExceptions.size) throw allExceptions.head
 
+
+    //    println(s"used in query $fieldsUsedInFullQuery")
+    //    println(s"df  ${df.columns.toList.mkString(",")} | ${df.notNullColumns.toList.mkString(",")}")
+    //    println(df.show)
+    // println(df.schema)
     // Add columns which are used in query but does not exist in dataframe after read (as null values)
     val emptyCols = fieldsUsedInFullQuery
       .map(_.stripBackticks())
@@ -141,7 +149,12 @@ class RawRead(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLIndexes with E
     log.debug(s"""[SearchID:$searchId] Add null cols to dataframe: [${emptyCols.mkString(", ")}]""")
     emptyCols.foldLeft(df) {
       (acc, col) => acc.withColumn(col, F.lit(null))
+      //      (acc, col) => acc.withColumn(col, F.lit(null)).withColumn(col, F.col(col).cast(NullType))
     }
+    //    println(df.show)
+    //println(df.schema)
+    //println(s"df  ${df.columns.toList.mkString(",")} | ${df.notNullColumns.toList.mkString(",")}")
+    df
   }
 
   /**
@@ -155,11 +168,16 @@ class RawRead(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLIndexes with E
    */
   private def extractFields(df: DataFrame): DataFrame = {
     import ot.scalaotl.static.FieldExtractor
-
+    //    println(s"df  ${df.columns.toList.mkString(",")} | ${df.notNullColumns.toList.mkString(",")}")
+    //        println(df.show)
+    //        println(df.schema)
     val stfeFields = fieldsUsedInFullQuery.diff(df.notNullColumns)
+    //    println(stfeFields.toList)
     log.debug(s"[SearchID:$searchId] Search-time field extraction: $stfeFields")
     val feDf = makeFieldExtraction(df, stfeFields, FieldExtractor.extractUDF)
+    //    println(s"feFf  ${feDf.columns.toList.mkString(",")} | ${feDf.notNullColumns.toList.mkString(",")}")
     feDf
+
   }
 
   /**
@@ -180,6 +198,8 @@ class RawRead(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLIndexes with E
       val sdf = mdf.agg(flatten(collect_set(map_keys(col("stfe")))).as("__schema__"))
       sdf.first.getAs[Seq[String]](0)
     } else extractedFields
+    //    println(s"mdf  ${mdf.columns.toList.mkString(",")} | ${mdf.notNullColumns.toList.mkString(",")}")
+    //    println(fields)
     val existedFields = mdf.notNullColumns
     fields.foldLeft(mdf) { (acc, f) => {
       if (!existedFields.contains(f)) {
@@ -190,6 +210,12 @@ class RawRead(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLIndexes with E
           var index = if (m.find()) m.group(1).toInt - 1 else 0
           index = if (index < 0) 0 else index
           acc.withColumn(f, col("stfe")(f.replaceFirst("\\{\\d+}", "{}"))(index))
+        //          if (m.matches()) {
+        //            var index = if (m.find()) m.group(1).toInt - 1 else 0
+        //            index = if (index < 0) 0 else index
+        //            acc.withColumn(f, col("stfe")(f.replaceFirst("\\{\\d+}", "{}"))(index))
+        //          }
+        //          else acc.withColumn(f, F.lit(null)).withColumn(f, F.col(f).cast(NullType))
         }
       } else acc
     }
@@ -199,26 +225,45 @@ class RawRead(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLIndexes with E
   /**
    * Standard method called by [[Converter]] in each command.
    *
-   * @param _df [[DataFrame]] - incoming dataset. But in generator-command like this one is ignored and
-   *            should be empty
+   * @param _df [[DataFrame]] - incoming dataset (in generator-command like this one is ignored and should be empty)
    * @return [[DataFrame]]  - outgoing dataset
    */
   override def transform(_df: DataFrame): DataFrame = {
-
     log.debug(s"searchId = $searchId queryMap: $indexQueriesMap")
     val dfInit = searchMap(indexQueriesMap)
     val dfLimit = getKeyword("limit") match {
       case Some(lim) => log.debug(s"[SearchID:$searchId] Dataframe is limited to $lim"); dfInit.limit(100000)
       case _ => dfInit
     }
-    val dfStfe = if (stfe) extractFields(dfLimit) else dfLimit
-    getKeyword("subsearch") match {
+    val dfStfe = dfLimit
+//    println("Transform print df")
+//    dfStfe.show()
+//    println(dfStfe.schema)
+    val (df_sub, s): (DataFrame, String) = getKeyword("subsearch") match {
       case Some(str) =>
         cache.get(str) match {
-          case Some(jdf) => new OTLJoin(SimpleQuery(s"""type=inner max=1 ${jdf.columns.toList.mkString(",")} subsearch=$str""", cache)).transform(dfStfe)
-          case None => dfStfe
+          case Some(jdf) => (jdf, str)
+          case None => (null, null)
         }
-      case None => dfStfe
+      case None => (null, null)
     }
+    if (df_sub != null)
+      println("subsearch")
+    val ans: DataFrame = if (df_sub != null) new OTLJoin(SimpleQuery(s"""type=inner max=1 ${df_sub.columns.toList.mkString(",")} subsearch=$s""", cache)).transform(dfStfe)
+    else dfStfe
+    ans
+
+
+    //    println(s"transform ${ans.columns.toList.mkString(",")} | ${ans.notNullColumns.toList.mkString(",")}")
+    //    ans.show()
+    //    val emptyCols = fieldsUsedInFullQuery.diff(ans.notNullColumns)
+    //    val ans2 = emptyCols.foldLeft(ans) {
+    //      (acc, col) => acc.withColumn(col, F.col(col).cast(StringType))
+    //    }
+    //    print(ans2.schema)
+    //    print(ans.na.fill("null").toJSON.collect().mkString("[\n",",\n","\n]"))
+    //    print(ans2.na.fill("null").toJSON.collect().mkString("[\n",",\n","\n]"))
+
+
   }
 }
