@@ -1,8 +1,8 @@
 package ot.scalaotl
 package commands
 
-import org.apache.spark.sql.functions.{concat_ws, col}
 import org.apache.spark.sql.DataFrame
+import org.apache.spark.sql.functions.{col, concat_ws}
 import ot.scalaotl.extensions.StringExt._
 
 /** =Abstract=
@@ -43,9 +43,10 @@ class OTLNomv(sq: SimpleQuery) extends OTLBaseCommand(sq) {
    * @param _df input __dataframe__, passed by the [[Converter]] when executing an OTL query
    */
   override def transform(_df: DataFrame): DataFrame = {
-    returns.flatFields.headOption match {
+    val result = returns.flatFields.headOption match {
       case Some(field) => _df.withColumn(field.stripBackticks(), concat_ws(" ", col(field)))
       case _ => _df
     }
+    result
   }
 }
