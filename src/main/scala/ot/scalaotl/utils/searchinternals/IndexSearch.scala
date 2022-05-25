@@ -75,6 +75,7 @@ class IndexSearch(spark: SparkSession, log: Logger, item: (String, Map[String, S
     val search_cache = new FileSystemSearch(spark, log, searchId, fieldsUsedInFullQuery, fs_cache, indexPathCache,
       index, sql, tws, twf, preview, isCache = true, fullReadFlag = fullReadFlag)
     val result_cache = search_cache.search()
+
     (result_disk, result_cache) match {
       case (Success(disk), Success(cache)) => getMergedDf(disk, cache)
       case (Failure(disk), Success(cache)) => cache

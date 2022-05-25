@@ -40,6 +40,7 @@ object Timerange extends OTLIndexes {
       val t_array = bucket.split("-")
       val t1 = t_array(1).toLong
       val t2 = t_array(2).toLong
+
       if ((t1 <= twf) && (t2 >= tws)) {
         return true
       }
