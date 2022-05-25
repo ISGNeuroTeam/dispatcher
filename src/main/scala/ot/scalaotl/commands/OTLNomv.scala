@@ -43,10 +43,9 @@ class OTLNomv(sq: SimpleQuery) extends OTLBaseCommand(sq) {
    * @param _df input __dataframe__, passed by the [[Converter]] when executing an OTL query
    */
   override def transform(_df: DataFrame): DataFrame = {
-    val result = returns.flatFields.headOption match {
+    returns.flatFields.headOption match {
       case Some(field) => _df.withColumn(field.stripBackticks(), concat_ws(" ", col(field)))
       case _ => _df
     }
-    result
   }
 }
