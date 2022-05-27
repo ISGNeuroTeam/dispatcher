@@ -100,7 +100,9 @@ class FullRead(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLIndexes with 
       .filter(!_.matches("""^[0-9]*$"""))
       .foldLeft(query)((q, field) => {
         val nf = field.replace("{", "[").replace("}", "]").addSurroundedBackticks
-        q.replaceAll("""([\(| ]*)(['`]*\Q""" + field + """\E['`]*)\s*(=|>|<|!=| like| rlike)""", s"$$1$nf$$3")
+        // Here a regular expression is used instead of a simple replacement,
+        // because the name of one field can be a substring of another field
+        q.replaceAll("""([\(| ])(['`]*\Q""" + field + """\E['`]*)\s*(=|>|<|!=| like| rlike)""", s"$$1$nf$$3")
           .replace(nf + "=\"null\"", s"$nf is null")
           .replace(nf + "!=\"null\"", s"$nf is not null")
       })

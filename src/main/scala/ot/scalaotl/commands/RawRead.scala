@@ -78,7 +78,8 @@ class RawRead(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLIndexes with E
   // Then strip backtics and add surrounded backticks
   override val fieldsUsed: List[String] = indexQueriesMap.map {
     case (_, singleIndexMap) => singleIndexMap.getOrElse("query", "").withKeepQuotedText[List[String]](
-      // может ли регулярка сломаться? что если имя поля будет начинаться с ^ или ?
+      // Here a regular expression is used instead of a simple replacement,
+      // because the name of one field can be a substring of another field
       (s: String) => """(?![!(])(\S*?)\s*(=|>|<|like|rlike)\s*""".r.findAllIn(s).matchData.map(_.group(1)).toList
     )
       .map(_.strip("!").strip("'").strip("\"").stripBackticks().addSurroundedBackticks)
@@ -100,9 +101,10 @@ class RawRead(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLIndexes with E
     val query = i._2.getOrElse("query", "")
     fieldsUsedInFullQuery.foldLeft(query)((q, field) => {
       val nf = field.addSurroundedBackticks
-      // почему тут не просто replace
+      // Here a regular expression is used instead of a simple replacement,
+      // because the name of one field can be a substring of another field
       // начинается со скобки или пробела, затем кавычка или бэктик
-      q.replaceAll("""([\(| ]*)(['`]*\Q""" + field + """\E['`]*)\s*(=|>|<|!=| like| rlike)""", s"$$1$nf$$3")
+      q.replaceAll("""([\(| ])(['`]*\Q""" + field + """\E['`]*)\s*(=|>|<|!=| like| rlike)""", s"$$1$nf$$3")
         .replace(nf + "=\"null\"", s"$nf is null")
         .replace(nf + "!=\"null\"", s"$nf is not null")
     })

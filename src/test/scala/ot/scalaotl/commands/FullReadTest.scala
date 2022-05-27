@@ -231,4 +231,32 @@ class FullReadTest extends CommandTest {
     compareDataFrames(actual, expected)
   }
 
+  test("READ => TEST 10.Read index with filter on existing field and space") {
+    val query = new OTLQuery(
+      id = 0,
+      original_otl = s"""search index=$test_index-1 met.ric_name="temperature_celsius" value>15.0 | table _time, floor, room, metric_name, value, index, _raw""",
+      service_otl = s""" | otstats {"$test_index-1": {"query": "met.ric_name=\\\"temperature_celsius\\\" AND value>15.0 AND metric_long_name=\\\"test_metric\\\"", "tws": 0, "twf": 0}}  | table _time, floor, room, metric_name, value, index, _raw""",
+      tws = 0,
+      twf = 0,
+      cache_ttl = 0,
+      indexes = Array(test_index),
+      subsearches = Map(),
+      username = "admin",
+      field_extraction = true,
+      preview = false
+    )
+    var actual = new Converter(query).run
+    var expected = spark.read.options(Map("inferSchema"->"true","delimiter"->",","header"->"true"))
+      .csv(f"$dataDir/sensors-1.csv")
+      .withColumn("index", F.lit(f"$test_index-1"))
+      .withColumn("_time", col("_time").cast(LongType))
+      .filter((F.col("metric_name") === "temperature_celsius") && (F.col("value") > 15.0))
+      .select(F.col("_time"), F.col("floor"), F.col("room"), F.col("metric_name"),
+        F.col("value"), F.col("_raw"), F.col("index"))
+    expected = setNullableStateOfColumn(expected, "index", true)
+    actual = actual.select(actual.columns.sorted.toSeq.map(c => col(c)):_*)
+    expected = expected.select(expected.columns.sorted.toSeq.map(c => col(c)):_*)
+    compareDataFrames(actual, expected)
+  }
+
 }

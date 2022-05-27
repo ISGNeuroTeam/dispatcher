@@ -118,11 +118,10 @@ class FileSystemSearch(spark: SparkSession, log: Logger, searchId: Int, fieldsUs
         val fdd = searchInDataFrame(fd)
         fdf = fdf.append(fdd)
 
-        if (fdf.count() > 100000)
-          {
+        if (fdf.count() > 100000) {
             log.debug(s"[SearchId:$searchId] search stopped")
             break
-          }
+        }
       }
     }
     fdf
@@ -146,9 +145,9 @@ class FileSystemSearch(spark: SparkSession, log: Logger, searchId: Int, fieldsUs
         }
       }
     }
-    catch
-    {
-    case ex: AnalysisException => throw ex}
+    catch {
+      case ex: AnalysisException => throw ex
+    }
     fdf
   }
 
@@ -162,8 +161,7 @@ class FileSystemSearch(spark: SparkSession, log: Logger, searchId: Int, fieldsUs
    * Step 6. Returns empty DataFrame if list is empty.
    * Step 7. Read the parquets in series or in parallel depending on the preview parameter
    */
-  def search(): Try[DataFrame] =
-  {
+  def search(): Try[DataFrame] = {
     log.debug(s"$searchId FileSystem: $fs, indexPath: $indexPath, index: $index")
     // Step 1. Creates empty DataFrame because list of accepted buckets may be empty.
     var fdf = spark.createDataFrame(spark.sparkContext.emptyRDD[Row], StructType(Seq(StructField("_raw", StringType), StructField("_time", LongType))))
@@ -184,8 +182,7 @@ class FileSystemSearch(spark: SparkSession, log: Logger, searchId: Int, fieldsUs
       log.debug(s"[SearchId:$searchId] Buckets by BloomFilter $bucketsBloomFilter")
       log.info(s"[SearchId:$searchId] ${bucketsBloomFilter.length} Buckets by BloomFilter")
     }
-    else
-    {
+    else {
       bucketsBloomFilter = bucketsTimeRange
       log.debug(s"[SearchId:$searchId] Query is empty. No BloomFilter used ")
     }
@@ -194,12 +191,10 @@ class FileSystemSearch(spark: SparkSession, log: Logger, searchId: Int, fieldsUs
     val files = bucketsBloomFilter.map(x => s"""file:$indexPath$index/$x/""")
     log.debug(s"[SearchId:$searchId] FilesPath $files")
 
-    if (preview)
-    {
+    if (preview) {
       log.debug(s"[SearchId:$searchId] Enable Preview Mode")
       fdf = readParquetSequential(files)}
-    else
-    {
+    else {
       log.debug(s"[SearchId:$searchId] Enable Parallel Mode")
       fdf = readParquetParallel(files)
     }
