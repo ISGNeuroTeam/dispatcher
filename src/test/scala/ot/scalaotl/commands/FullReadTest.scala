@@ -28,7 +28,7 @@ class FullReadTest extends CommandTest {
     otlQuery
   }
 
-  test("READ => TEST 1. Simple correct read _time and _raw") {
+  test("READ => TEST 1. Simple read only _time and _raw fields") {
     val otlQuery = createQuery(""" table _time, _raw  """)
     val actual = new Converter(otlQuery).run
     val expected = spark.read.options(Map("inferSchema"->"true","delimiter"->",","header"->"true"))
@@ -42,7 +42,7 @@ class FullReadTest extends CommandTest {
   test("READ => TEST 2. Apply time range") {
     val start_time = 1649145660
     val finish_time = 1663228860
-    val otlQuery = createQuery(""" fields _time, _raw """, start_time, finish_time)
+    val otlQuery = createQuery(""" table _time, _raw """, start_time, finish_time)
     val actual = new Converter(otlQuery).run
 
     val expected = spark.read.options(Map("inferSchema"->"true","delimiter"->",","header"->"true"))
@@ -63,7 +63,7 @@ class FullReadTest extends CommandTest {
       .withColumn("index", F.lit(f"$test_index-1"))
       .withColumn("_time", col("_time").cast(LongType))
       .select(F.col("_time"))
-      .withColumn("new", F.lit(null))
+      .withColumn("new", F.lit(null).cast(StringType))
       .withColumn("a" , F.lit(-1))
     compareDataFrames(actual, expected)
   }
@@ -218,7 +218,7 @@ class FullReadTest extends CommandTest {
   }
 
   test("READ => TEST 9. Read fields with wildcards") {
-    val otlQuery = createQuery(""" fields _time, metric*, *iption, *oo*  """)
+    val otlQuery = createQuery(""" table _time, metric*, *iption, *oo*  """)
     var actual = new Converter(otlQuery).run
     var expected = spark.read.options(Map("inferSchema"->"true","delimiter"->",","header"->"true"))
       .csv(f"$dataDir/sensors-1.csv")
@@ -231,32 +231,5 @@ class FullReadTest extends CommandTest {
     compareDataFrames(actual, expected)
   }
 
-  test("READ => TEST 10.Read index with filter on existing field and space") {
-    val query = new OTLQuery(
-      id = 0,
-      original_otl = s"""search index=$test_index-1 met.ric_name="temperature_celsius" value>15.0 | table _time, floor, room, metric_name, value, index, _raw""",
-      service_otl = s""" | otstats {"$test_index-1": {"query": "met.ric_name=\\\"temperature_celsius\\\" AND value>15.0 AND metric_long_name=\\\"test_metric\\\"", "tws": 0, "twf": 0}}  | table _time, floor, room, metric_name, value, index, _raw""",
-      tws = 0,
-      twf = 0,
-      cache_ttl = 0,
-      indexes = Array(test_index),
-      subsearches = Map(),
-      username = "admin",
-      field_extraction = true,
-      preview = false
-    )
-    var actual = new Converter(query).run
-    var expected = spark.read.options(Map("inferSchema"->"true","delimiter"->",","header"->"true"))
-      .csv(f"$dataDir/sensors-1.csv")
-      .withColumn("index", F.lit(f"$test_index-1"))
-      .withColumn("_time", col("_time").cast(LongType))
-      .filter((F.col("metric_name") === "temperature_celsius") && (F.col("value") > 15.0))
-      .select(F.col("_time"), F.col("floor"), F.col("room"), F.col("metric_name"),
-        F.col("value"), F.col("_raw"), F.col("index"))
-    expected = setNullableStateOfColumn(expected, "index", true)
-    actual = actual.select(actual.columns.sorted.toSeq.map(c => col(c)):_*)
-    expected = expected.select(expected.columns.sorted.toSeq.map(c => col(c)):_*)
-    compareDataFrames(actual, expected)
-  }
 
 }

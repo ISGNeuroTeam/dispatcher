@@ -104,7 +104,6 @@ class FileSystemSearch(spark: SparkSession, log: Logger, searchId: Int, fieldsUs
     fdd
   }
 
-
   private def readParquetSequential(files: ListBuffer[String]): DataFrame = {
     log.debug(s"[SearchId:$searchId] Fields in query: $fieldsUsedInFullQuery")
     var fdf = spark.emptyDataFrame

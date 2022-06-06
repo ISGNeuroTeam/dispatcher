@@ -38,21 +38,39 @@ class FieldExtractor extends Serializable {
    * @return [[ Map[String, String] ]] - map with extracted fields
    */
   def parseKV(line: String, fields: Set[String]): Map[String, String] = {
-    val rex = """(("([^\s,;"]+)")|('([^\s,;']+)')|([^\s,;"]+))([=:])("(.*?)"|'(.*?)'|([^\s,;]+))""".r
-    val regexes = fields.map(_.replace("{}","\\{\\d+\\}").replace("*",".*").r)
-    val res = rex.findAllMatchIn(line)
+
+//    val rex = """(("([^\s,;"]+)")|('([^\s,;']+)')|([^\s,;"]+))([=:])("(.*?)"|'(.*?)'|([^\s,;]+))""".r
+//    val regexes = fields.map(_.stripPrefix("\"").stripSuffix("\"").replace("{}","\\{\\d+\\}").replace("*",".*").r)
+//    val res = rex.findAllMatchIn(line)
+//    res.toArray.flatMap((m: Match) => {
+//      val field = Option(m.group(3))
+//        .orElse(Option(m.group(5)))
+//        .orElse(Option(m.group(6)))
+//        .get
+//      val resMap: Map[String, String] = if (regexes.exists(_.pattern.matcher(field).matches()))
+//        Map(field -> Option(m.group(9))
+//          .orElse(Option(m.group(10)))
+//          .orElse(Option(m.group(11))).get)
+//      else Map.empty
+//      resMap
+//    }).toMap
+
+    val rex = """(("([^\s,;"]+)")|('([^\s,;']+)')|([^\s,;"]+))(( *)([=:])( *))("(.*?)"|'(.*?)'|([^\s,;]+))""".r
+    val regexes = fields.map(_.stripPrefix("\"").stripSuffix("\"").replace("{}","\\{\\d+\\}").replace("*",".*").r)
+    val res = rex.findAllMatchIn(line.replaceAll("\"", "\\\""))
     res.toArray.flatMap((m: Match) => {
       val field = Option(m.group(3))
         .orElse(Option(m.group(5)))
         .orElse(Option(m.group(6)))
         .get
       val resMap: Map[String, String] = if (regexes.exists(_.pattern.matcher(field).matches()))
-        Map(field -> Option(m.group(9))
-          .orElse(Option(m.group(10)))
-          .orElse(Option(m.group(11))).get)
+        Map(field -> Option(m.group(12))
+          .orElse(Option(m.group(13)))
+          .orElse(Option(m.group(14))).get)
       else Map.empty
       resMap
     }).toMap
+
   }
 
   /**

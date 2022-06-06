@@ -14,7 +14,8 @@ import ot.scalaotl.extensions.DataFrameExt._
 import ot.dispatcher.sdk.core.CustomException.{E00003, E00004, E00005, E00006}
 import ot.dispatcher.sdk.core.CustomException
 
-class IndexSearch(spark: SparkSession, log: Logger, item: (String, Map[String, String]), searchId: Int, fieldsUsedInFullQuery: Seq[String], preview: Boolean, fullReadFlag: Boolean = false) extends OTLIndexes
+class IndexSearch(spark: SparkSession, log: Logger, item: (String, Map[String, String]), searchId: Int,
+                  fieldsUsedInFullQuery: Seq[String], preview: Boolean, fullReadFlag: Boolean = false) extends OTLIndexes
 {
   val index: String = item._1
   val sql: String = item._2("query")

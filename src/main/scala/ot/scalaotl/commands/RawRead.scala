@@ -78,20 +78,17 @@ class RawRead(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLIndexes with E
   // Then strip backtics and add surrounded backticks
   override val fieldsUsed: List[String] = indexQueriesMap.map {
     case (_, singleIndexMap) => singleIndexMap.getOrElse("query", "").withKeepQuotedText[List[String]](
-      // Here a regular expression is used instead of a simple replacement,
-      // because the name of one field can be a substring of another field
       (s: String) => """(?![!(])(\S*?)\s*(=|>|<|like|rlike)\s*""".r.findAllIn(s).matchData.map(_.group(1)).toList
     )
       .map(_.strip("!").strip("'").strip("\"").stripBackticks().addSurroundedBackticks)
   }.toList.flatten
 
-  /** Modifies the query in several steps
-   * Step 1. Replaces all quotes around fieldnames to backticks.
-   * Step 2. Replaces fieldname="null" substrings to 'fieldname is null'
-   *         and fieldname!="null" substrings to 'fieldname is not null'
-   * All fieldnames in substrings of the form "(fieldname" or " fieldname" followed by characters
-   * =, >, <, !=, like, rlike will be surrounded with backticks
-   * Fieldnames are taken from fieldsUsedInFullQuery
+  /** Modifies the query item in several steps
+   * For all fieldnames in the fieldsUsedInFullQuery list following steps are performed
+   * Step 1. All occurrences of the fieldname in substrings of the form "(fieldname" and " fieldname"
+   * followed by characters =, >, <, !=, like, rlike are replaced to fieldname surrounded with backticks
+   * Step 2. All occurrences of the fieldname in substrings of the form fieldname="null" and fieldname!="null"
+   * are replaced to 'fieldname is null' and 'fieldname is not null' respectively
    * Earlier in this method was the replacement of {} brackets to []
    *
    * @param i [[ String, Map[String, String] ]] - item with original query
@@ -121,7 +118,6 @@ class RawRead(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLIndexes with E
   private def searchMap(query: Map[String, Map[String, String]]): DataFrame = {
     val (df, allExceptions) = query.foldLeft((spark.emptyDataFrame, List[Exception]())) {
       case (accum, item) =>
-
         log.debug(s"[SearchID:$searchId]Query is " + item)
         val modifiedQuery = getModifedQuery(item)
         val nItem = (item._1, item._2 + ("query" -> modifiedQuery))
@@ -129,12 +125,16 @@ class RawRead(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLIndexes with E
 
         val s = new IndexSearch(spark, log, nItem, searchId, Seq[String](), preview)
         try {
+          // Read index data (only _time and _raw) and make field extraction
           val fdfe: DataFrame = extractFields(s.search())
-
+          // If the index for some reason already contained an index field, it will be removed
+          // because the value of the index field may differ from the name of the index directory
           val ifdfe = if (fieldsUsedInFullQuery.contains("index"))
             fdfe.drop("index").withColumn("index", lit(item._1))
           else
             fdfe
+
+
           val fdf :DataFrame = if (modifiedQuery == "") ifdfe else ifdfe.filter(modifiedQuery)
           val cols1 = fdf.columns.map(_.stripBackticks().addSurroundedBackticks).toSet
           val cols2 = accum._1.columns.map(_.stripBackticks().addSurroundedBackticks).toSet
@@ -153,14 +153,13 @@ class RawRead(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLIndexes with E
     if (query.size == allExceptions.size) throw allExceptions.head
     // Add columns which are used in query but does not exist in dataframe after read (as null values)
     val emptyCols = fieldsUsedInFullQuery
-      //.map(_.stripBackticks())
+      .map(_.stripBackticks())
       .distinct
       .filterNot(_.contains("*"))
       .diff(df.columns.toSeq)
     log.debug(s"""[SearchID:$searchId] Add null cols to dataframe: [${emptyCols.mkString(", ")}]""")
     emptyCols.foldLeft(df) {
       (acc, col) => acc.withColumn(col, F.lit(null))
-      //      (acc, col) => acc.withColumn(col, F.lit(null)).withColumn(col, F.col(col).cast(NullType))
     }
     df
   }
@@ -177,6 +176,7 @@ class RawRead(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLIndexes with E
   private def extractFields(df: DataFrame): DataFrame = {
 
     import ot.scalaotl.static.FieldExtractor
+
     val stfeFields = fieldsUsedInFullQuery.diff(df.notNullColumns)
     log.debug(s"[SearchID:$searchId] Search-time field extraction: $stfeFields")
     val feDf = makeFieldExtraction(df, stfeFields, FieldExtractor.extractUDF)
@@ -193,7 +193,9 @@ class RawRead(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLIndexes with E
    * @return [[DataFrame]] - dataframe with search time fields
    */
   private def makeFieldExtraction(df: DataFrame, extractedFields: Seq[String], udf: UserDefinedFunction): DataFrame = {
+
     import org.apache.spark.sql.functions.{col, expr}
+
     val stfeFieldsStr = extractedFields.map(x => s""""${x.replaceAll("\\{(\\d+)}", "{}")}"""").mkString(", ")
     val mdf = df.withColumn("__fields__", expr(s"""array($stfeFieldsStr)"""))
       .withColumn("stfe", udf(col("_raw"), col("__fields__")))
@@ -208,15 +210,9 @@ class RawRead(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLIndexes with E
           acc.withColumn(f, col("stfe")(f))
         else {
           val m = "\\{(\\d+)}".r.pattern.matcher(f)
-//          var index = if (m.find()) m.group(1).toInt - 1 else 0
-//          index = if (index < 0) 0 else index
-//          acc.withColumn(f, col("stfe")(f.replaceFirst("\\{\\d+}", "{}"))(index))
-          if (m.matches()) {
-            var index = if (m.find()) m.group(1).toInt - 1 else 0
-            index = if (index < 0) 0 else index
-            acc.withColumn(f, col("stfe")(f.replaceFirst("\\{\\d+}", "{}"))(index))
-          }
-          else acc.withColumn(f, F.lit(null)).withColumn(f, F.col(f).cast(NullType))
+          var index = if (m.find()) m.group(1).toInt - 1 else 0
+          index = if (index < 0) 0 else index
+          acc.withColumn(f, col("stfe")(f.replaceFirst("\\{\\d+}", "{}"))(index))
         }
       } else acc
     }

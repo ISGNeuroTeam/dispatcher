@@ -1,14 +1,17 @@
 package ot.scalaotl.commands
 
+import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.fs.FileSystem
+
 import java.io.{File, PrintWriter}
 import java.util.UUID
-
 import org.apache.log4j.Logger
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{Column, DataFrame, SparkSession, functions => F}
-import org.apache.spark.sql.types.{NullType, StringType, ArrayType, StructType, StructField, LongType}
+import org.apache.spark.sql.types.{ArrayType, DoubleType, IntegerType, LongType, NullType, StringType, StructField, StructType}
 import org.scalatest.{Assertion, BeforeAndAfterAll, FunSuite}
 import ot.AppConfig.{config, getLogLevel}
+
 import scala.reflect.{ClassTag, classTag}
 import ot.dispatcher.OTLQuery
 import ot.scalaotl.Converter
@@ -27,7 +30,12 @@ abstract class CommandTest extends FunSuite with BeforeAndAfterAll {
     .getOrCreate()
 
   val externalSchema: Boolean = config.getString("schema.external_schema").toBoolean
-
+  val fsdisk: String = config.getString("indexes.fs_disk")
+  val fs_disk: FileSystem = {
+    val conf = new Configuration()
+    conf.set("fs.defaultFS", fsdisk)
+    FileSystem.get(conf)
+  }
 
   val dataset: String =
   """[
@@ -45,6 +53,22 @@ abstract class CommandTest extends FunSuite with BeforeAndAfterAll {
   val dataDir: String =  "src/test/resources/data"
   val tmpDir: String =  "src/test/resources/temp"
   val test_index = s"test_index-${this.getClass.getSimpleName}"
+  val stfeRawSeparators: Array[String] = Array("json", ": ", "= ", " :", " =", " : ", " = ", ":", "=")
+  val stfeDfSchema: StructType =StructType(Array(
+    StructField("_time",LongType,nullable = true),
+    StructField("floor",IntegerType,nullable = true),
+    StructField("room",IntegerType,nullable = true),
+    StructField("ip",StringType,nullable = true),
+    StructField("id",StringType,nullable = true),
+    StructField("type",StringType,nullable = true),
+    StructField("description",StringType,nullable = true),
+    StructField("metric_name",StringType,nullable = true),
+    StructField("metric_long_name",StringType,nullable = true),
+    StructField("value",DoubleType,nullable = true),
+    StructField("index",StringType,nullable = true),
+    StructField("_raw",StringType,nullable = true)
+  ))
+
 
   def jsonCompare(json1 : String,json2 : String): Boolean = {
     import spray.json._
@@ -72,10 +96,9 @@ abstract class CommandTest extends FunSuite with BeforeAndAfterAll {
     val df = new Converter(otlQuery).run
     df.toJSON.collect().mkString("[\n", ",\n", "\n]")
   }
-  
+
   def execute(otlQuery : OTLQuery): String = {
     val df = new Converter(otlQuery).run
-    df.printSchema()
     df.toJSON.collect().mkString("[\n", ",\n", "\n]")
   }
 
@@ -122,38 +145,43 @@ abstract class CommandTest extends FunSuite with BeforeAndAfterAll {
    * Step3 If an external data schema is used, it will be written next to the parquet
    */
   override def beforeAll() {
-    val junkIndex = new Directory(new File(f"$tmpDir/indexes/$test_index"))
-    if (junkIndex.exists && junkIndex.list.nonEmpty) junkIndex.deleteRecursively()
+    val indexDir = new Directory(new File(f"$tmpDir/indexes"))
+    if (indexDir.exists && indexDir.list.nonEmpty) indexDir.deleteRecursively()
     var df = spark.emptyDataFrame
     if (this.getClass.getSimpleName.contains("FullRead") || this.getClass.getSimpleName.contains("RawRead")){
-      for(ind <- 1 to 2){
-        df = spark.read.options(Map("inferSchema"->"true", "delimiter"->",", "header"->"true"))
-          .csv(f"$dataDir/sensors-$ind.csv")
-          .withColumn("index", F.lit(f"$test_index-$ind"))
+
+        df = spark.read.options(Map("inferSchema"->"true","delimiter"->",","header"->"true", "quote"->"\"", "escape"->"\""))
+          .csv(f"$dataDir/sensors.csv")
+          .withColumn("index", F.lit(f"$test_index-0"))
           .withColumn("_time", col("_time").cast(LongType))
+        df = setNullableStateOfColumn(df, "index", true)
         val time_min_max = df.agg(min("_time"), max("_time")).head()
         val time_step = (time_min_max.getLong(1) - time_min_max.getLong(0));
-        val bucket_period = 3600*24*30
+        val bucket_period = 3600 * 24 * 30
         val buckets_cnt = math.floor(time_step / bucket_period).toInt
-        for (i <- 0 to buckets_cnt) {
-          val lowerBound = i * bucket_period + time_min_max.getLong(0);
-          val upperBound = (i + 1) * bucket_period + time_min_max.getLong(0);
-          val bucketPath = f"$tmpDir/indexes/$test_index-$ind/bucket-${lowerBound}-${upperBound}-${System.currentTimeMillis / 1000}";
-          val df_bucket = df.filter(F.col("_time").between(lowerBound, upperBound));
-          df_bucket.write.parquet(bucketPath)
-          //        println(bucketPath)
-          if (externalSchema)
-            new PrintWriter(bucketPath + "/all.schema") {
-              write(df_bucket.schema.toDDL.replace(",", "\n"));
-              close()
-            }
+        for(i <- stfeRawSeparators.indices){
+          val df_new = if (i == 0) df else df.withColumn("index", F.lit(f"${test_index}-${i}"))
+            .withColumn("_raw", F.ltrim(F.col("_raw"), "{"))
+            .withColumn("_raw", F.rtrim(F.col("_raw"), "}"))
+              .withColumn("_raw", F.regexp_replace(F.col("_raw"), F.lit(": "), F.lit(stfeRawSeparators(i))))
+          for (j <- 0 to buckets_cnt) {
+            val lowerBound = j * bucket_period + time_min_max.getLong(0);
+            val upperBound = (j + 1) * bucket_period + time_min_max.getLong(0);
+            val bucketPath = f"$tmpDir/indexes/$test_index-$i/bucket-${lowerBound}-${upperBound}-${System.currentTimeMillis / 1000}";
+            val df_bucket = df_new.filter(F.col("_time").between(lowerBound, upperBound));
+            df_bucket.write.parquet(bucketPath)
+            if (externalSchema)
+              new PrintWriter(bucketPath + "/all.schema") {
+                write(df_bucket.schema.toDDL.replace(",", "\n"));
+                close()
+              }
+          }
         }
-      }
     }
     else{
       df = jsonToDf(dataset)
       val bucketPath = f"$tmpDir/indexes/$test_index/bucket-0-${Int.MaxValue}-${System.currentTimeMillis / 1000}"
-      df.write.parquet(bucketPath)
+      df.write.option("compression","snappy").parquet(bucketPath)
       if(externalSchema)
         new PrintWriter(bucketPath + "/all.schema") {
           write(df.schema.toDDL.replace(",","\n")); close()
@@ -166,20 +194,8 @@ abstract class CommandTest extends FunSuite with BeforeAndAfterAll {
    * Step2 If indexes directory is empty then delete it
    */
   override def afterAll() {
-    if (this.getClass.getSimpleName.contains("FullRead") || this.getClass.getSimpleName.contains("RawRead")){
-      for(ind <- 1 to 2) {
-        val indexDir = new Directory(new File(f"$tmpDir/indexes/$test_index-$ind"))
-        indexDir.deleteRecursively()
-        val indexesPath = new File(f"$tmpDir/indexes")
-        if (new Directory(indexesPath).list.isEmpty) new Directory(indexesPath.getParentFile).deleteRecursively()
-      }
-    }
-      else{
-      val indexDir = new Directory(new File(f"$tmpDir/indexes/$test_index"))
-      indexDir.deleteRecursively()
-      val indexesPath = new File(f"$tmpDir/indexes")
-      if(new Directory(indexesPath).list.isEmpty) new Directory(indexesPath.getParentFile).deleteRecursively()
-    }
+    val indexDir = new Directory(new File(f"$tmpDir/indexes"))
+    indexDir.deleteRecursively()
   }
 
   def setNullableStateOfColumn(df: DataFrame, col_name: String, nullable: Boolean) : DataFrame = {
@@ -210,14 +226,19 @@ abstract class CommandTest extends FunSuite with BeforeAndAfterAll {
       df_actual.count() == df_expected.count(),
       "DataFrames sizes should be equal"
     )
-
     val diff = df_actual.except(df_expected).union(df_expected.except(df_actual))
-
     assert(
       diff.isEmpty,
-      s"DataFrames are different. Difference is:\n${diff.collect().mkString("\n")}"
+      s"DataFrames are different. " +
+        s"\n Counts actual ${df_actual.count()} / expected ${df_actual.count()} / diff ${diff.count()} " +
+        s"\n Difference is:\n${diff.collect().mkString("\n")}"
     )
 
+  }
+
+  def recursiveListFiles(f: File): Array[File] = {
+    val these = f.listFiles
+    these ++ these.filter(_.isDirectory).flatMap(recursiveListFiles)
   }
 
 
