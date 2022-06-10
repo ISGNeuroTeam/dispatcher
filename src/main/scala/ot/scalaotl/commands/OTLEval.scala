@@ -130,7 +130,7 @@ class OTLEval(sq: SimpleQuery) extends OTLBaseCommand(sq) with ExpressionParser 
    */
   override def validateArgs(): Unit = {
     if (keywordsMap.isEmpty)
-      throw E00020(sq.searchId, commandname)
+      throw E00020(sq.searchId, commandName)
   }
 
   /**

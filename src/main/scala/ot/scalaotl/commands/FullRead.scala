@@ -40,8 +40,8 @@ import scala.collection.mutable.ListBuffer
  * OTL: read one index with complex boolean expression for filter on two fields
  * {{{ otstats index="index_name" metric_name="temp*" AND value<20.0 OR value>50.0 | ... other otl-commands }}}
  *
- * @constructor creates new instance of [[FullRead]]
- * @param sq [[SimpleQuery]]
+ * @constructor creates new instance of [[ FullRead ]]
+ * @param sq [[ SimpleQuery ]] - contains args, cache, subsearches, search time interval, stfe and preview flags
  */
 class FullRead(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLIndexes with ExpressionParser with WildcardParser {
   val requiredKeywords = Set.empty[String]
@@ -93,7 +93,7 @@ class FullRead(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLIndexes with 
    * @param i [[ String, Map[String, String] ]] - item with original query
    * @return [[ String, Map[String, String] ]] - modified item
    */
-  def modifyItemQuery(i: (String, Map[String, String])) = {
+  def modifyItemQuery(i: (String, Map[String, String])): (String, Map[String, String]) = {
     val query = i._2.getOrElse("query", "")
     val backtickedQuery = fieldsUsedInFullQuery
       // Filtering not number columns names (does not occur in RawRead because there are only columns _time and _raw)
@@ -152,9 +152,9 @@ class FullRead(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLIndexes with 
 
     // Add new columns with arrays of fields by mask ..[\d]...
     // Replace square brackets to curly brackets in column names
-    val bracketCols = df.columns.filter("""^.*\[\d+\].*$""".r.pattern.matcher(_).matches)
+    val bracketCols = df.columns.filter("""^.*\[\d+].*$""".r.pattern.matcher(_).matches)
     val dfWithArrays = bracketCols
-      .groupBy(_.replaceAll("\\[\\d+\\]", "{}"))
+      .groupBy(_.replaceAll("\\[\\d+]", "{}"))
       .filterKeys(key => {
         fieldsUsedInFullQuery.map(_.stripBackticks().escapeChars("""<([{\^-=$!|]})?+.>""").replace("*", ".*").r)
           .exists(_.pattern.matcher(key).matches())
@@ -179,10 +179,10 @@ class FullRead(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLIndexes with 
   }
 
   /**
-   * Standard method called by [[Converter]] in each command.
+   * Standard method called by Converter in each OTL-command.
    *
    * @param _df [[DataFrame]] - incoming dataset (in generator-command like this one is ignored and should be empty)
-   * @return [[DataFrame]]  - outgoing dataset
+   * @return [[DataFrame]]  - outgoing dataframe with OTL-command results
    */
   override def transform(_df: DataFrame): DataFrame = {
     log.debug(s"[SearchId:$searchId] queryMap: $indexQueriesMap")

@@ -25,7 +25,6 @@ import scala.collection.mutable.ListBuffer
  * Logical operations names (AND and OR) are not case sensitive
  * The command can read data from multiple indexes (in this case indexes will be combined with logical OR)
  * Index names and search words can use wildcards
-
  *
  * =Usage example=
  * OTL: one index and one search word
@@ -37,11 +36,11 @@ import scala.collection.mutable.ListBuffer
  * OTL: one index and two search words
  * {{{ search index="index_name" "first_search_word" AND "second_search_word" | ... other otl-commands }}}
  *
- *  Also search command can be used in subqueries to filter the results of other queries
- *  {{{ other otl-commands ... | search metric=temp* AND level=WARN*
+ * Also search command can be used in subqueries to filter the results of other queries
+ * {{{ other otl-commands ... | search metric=temp* AND level=WARN* }}}
  *
- * @constructor creates new instance of [[RawRead]]
- * @param sq [[SimpleQuery]]
+ * @constructor creates new instance of [[ RawRead ]]
+ * @param sq [[ SimpleQuery ]] - contains args, cache, subsearches, search time interval, stfe and preview flags
  */
 class RawRead(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLIndexes with ExpressionParser with WildcardParser {
   val requiredKeywords = Set.empty[String]
@@ -220,10 +219,10 @@ class RawRead(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLIndexes with E
   }
 
   /**
-   * Standard method called by [[Converter]] in each command.
+   * Standard method called by Converter in each OTL-command.
    *
    * @param _df [[DataFrame]] - incoming dataset (in generator-command like this one is ignored and should be empty)
-   * @return [[DataFrame]]  - outgoing dataset
+   * @return [[DataFrame]]  - outgoing dataframe with OTL-command results
    */
   override def transform(_df: DataFrame): DataFrame = {
     log.debug(s"searchId = $searchId queryMap: $indexQueriesMap")
