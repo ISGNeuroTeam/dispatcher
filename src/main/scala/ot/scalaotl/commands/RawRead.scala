@@ -4,7 +4,6 @@ package commands
 import org.apache.spark.sql.expressions.UserDefinedFunction
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{Column, DataFrame, functions => F}
-import org.apache.spark.sql.types.{NullType, StringType}
 import org.json4s._
 import org.json4s.native.JsonMethods._
 import ot.scalaotl.config.OTLIndexes

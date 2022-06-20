@@ -132,7 +132,7 @@ class FullRead(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLIndexes with 
         try {
           // Read index data
           val fdf: DataFrame = s.search()
-          fdf.printSchema()
+
           log.debug(s"[SearchID:$searchId] fdf.schema: ${fdf.schema} ")
           val cols1 = fdf.columns.map(_.stripBackticks().addSurroundedBackticks).toSet
           val cols2 = accum._1.columns.map(_.stripBackticks().addSurroundedBackticks).toSet

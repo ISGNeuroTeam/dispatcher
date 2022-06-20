@@ -5,23 +5,23 @@ import org.apache.hadoop.fs.Path
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{Column, DataFrame, Row, SparkSession, functions => F}
 import org.apache.spark.sql.types.{ArrayType, DoubleType, IntegerType, LongType, NullType, StringType, StructField, StructType}
+import org.json4s
 import ot.dispatcher.OTLQuery
 import ot.scalaotl.Converter
 import ot.scalaotl.utils.searchinternals.Timerange.{duration_cache, log}
+import org.json4s.native.JsonMethods._
 
 import scala.collection.mutable.ListBuffer
 class RawReadTest extends CommandTest {
 
   val start_time = 1649145660
   val finish_time = 1663228860
-//  val finish_time = 1649550000
 
-
-  override def createQuery(command_otl: String, tws: Int = 0, twf: Int = 0): OTLQuery ={
+  override def createQuery(command_otl: String, tws: Int = 0, twf: Int = 0, read_cmd: String = "read"): OTLQuery ={
     val otlQuery = new OTLQuery(
       id = 0,
       original_otl = s"search index=$test_index-0 | $command_otl",
-      service_otl = s"""| read {"$test_index-0": {"query": "", "tws": "$tws", "twf": "$twf"}} |  $command_otl """,
+      service_otl = s"""| $read_cmd {"$test_index-0": {"query": "", "tws": "$tws", "twf": "$twf"}} |  $command_otl """,
       tws = tws,
       twf = twf,
       cache_ttl = 0,
@@ -42,7 +42,7 @@ class RawReadTest extends CommandTest {
       status.foreach(x => filenames += s"$tmpDir/indexes/$index/${x.getPath.getName}")
     }
     catch { case e: Exception => log.debug(e);}
-    spark.read.options(Map("recursiveFileLookup"->"true")).schema(stfeDfSchema)
+    spark.read.options(Map("recursiveFileLookup"->"true")).schema(readingDatasetSchema)
       .parquet(filenames.seq: _*)
       .withColumn("index", F.lit(index))
   }
@@ -82,7 +82,7 @@ class RawReadTest extends CommandTest {
       tws = 0,
       twf = 0,
       cache_ttl = 0,
-      indexes = Array(test_index),
+      indexes = Array(s"$test_index-0"),
       subsearches = Map(),
       username = "admin",
       field_extraction = true,
@@ -108,7 +108,7 @@ class RawReadTest extends CommandTest {
       tws = 0,
       twf = 0,
       cache_ttl = 0,
-      indexes = Array(test_index),
+      indexes = Array(s"$test_index-0"),
       subsearches = Map(),
       username = "admin",
       field_extraction = true,
@@ -135,7 +135,7 @@ class RawReadTest extends CommandTest {
       tws = 0,
       twf = 0,
       cache_ttl = 0,
-      indexes = Array(test_index),
+      indexes = Array(s"$test_index-0"),
       subsearches = Map(),
       username = "admin",
       field_extraction = true,
@@ -156,7 +156,7 @@ class RawReadTest extends CommandTest {
       tws = 0,
       twf = 0,
       cache_ttl = 0,
-      indexes = Array(test_index),
+      indexes = Array(s"$test_index-0"),
       subsearches = Map(),
       username = "admin",
       field_extraction = true,
@@ -176,7 +176,7 @@ class RawReadTest extends CommandTest {
       tws = start_time,
       twf = finish_time,
       cache_ttl = 0,
-      indexes = Array(test_index),
+      indexes = Array(s"$test_index-0"),
       subsearches = Map(),
       username = "admin",
       field_extraction = true,
@@ -227,6 +227,32 @@ class RawReadTest extends CommandTest {
 
   test("READ => TEST 16. Search-time field extractions from _raw") {
     stfeExtractionTest(8)
+  }
+
+  test("READ => TEST 17. Create multi-value cols") {
+    val otlQuery = createQuery("""fields _time, listField{}, 'nestedField{}.val'""")
+    val actual = new Converter(otlQuery).run
+    val schema = ArrayType(StructType(Array(StructField("val", StringType, nullable = false))), containsNull = false)
+    var expected = getIndexDF(s"$test_index-0")
+      .select(F.col("_time"), F.col("listField"), F.col("nestedField"))
+      .withColumn("listField{}", F.split(regexp_replace(F.col("listField"), "\\[|\\]", ""), ", "))
+      .withColumn("nestedField{}.val", F.from_json(F.col("nestedField"), schema).getField("val"))
+      .select(F.col("_time"), F.col("`listField{}`"), F.col("`nestedField{}.val`"))
+    expected = setNullableStateOfColumn(expected, "listField{}", true)
+    compareDataFrames(actual, expected)
+  }
+
+  test("READ => TEST 18. Replace square brackets with curly brackets in col names") {
+    val otlQuery = createQuery("""fields _time, 'num{1}.val', 'text{2}.val'""")
+    val actual = new Converter(otlQuery).run
+    actual.show(10, false)
+    val expected = getIndexDF(s"$test_index-0")
+      .withColumn("num[1].val", F.col("`num[1].val`").cast(StringType))
+      .withColumnRenamed("num[1].val", "num{1}.val")
+      .withColumnRenamed("text[2].val", "text{2}.val")
+      .select(F.col("_time"), F.col("`num{1}.val`"), F.col("`text{2}.val`"))
+    expected.show(10, false)
+    compareDataFrames(actual, expected)
   }
 
 }

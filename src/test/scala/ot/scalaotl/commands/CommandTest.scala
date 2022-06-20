@@ -54,7 +54,26 @@ abstract class CommandTest extends FunSuite with BeforeAndAfterAll {
   val tmpDir: String =  "src/test/resources/temp"
   val test_index = s"test_index-${this.getClass.getSimpleName}"
   val stfeRawSeparators: Array[String] = Array("json", ": ", "= ", " :", " =", " : ", " = ", ":", "=")
-  val stfeDfSchema: StructType =StructType(Array(
+
+  val datasetSchema: StructType =StructType(Array(
+    StructField("WordField",StringType,nullable = true),
+    StructField("_meta",StringType,nullable = true),
+    StructField("_nifi_time",StringType,nullable = true),
+    StructField("_nifi_time_out",StringType,nullable = true),
+    StructField("_raw",StringType,nullable = true),
+    StructField("_subsecond",StringType,nullable = true),
+    StructField("_time",LongType,nullable = true),
+    StructField("host",StringType,nullable = true),
+    StructField("index",StringType,nullable = true),
+    StructField("junkField",DoubleType,nullable = true),
+    StructField("random_Field",StringType,nullable = true),
+    StructField("serialField",StringType,nullable = true),
+    StructField("source",StringType,nullable = true),
+    StructField("sourcetype",StringType,nullable = true),
+    StructField("timestamp",StringType,nullable = true)
+  ))
+
+  val readingDatasetSchema: StructType =StructType(Array(
     StructField("_time",LongType,nullable = true),
     StructField("floor",IntegerType,nullable = true),
     StructField("room",IntegerType,nullable = true),
@@ -66,8 +85,15 @@ abstract class CommandTest extends FunSuite with BeforeAndAfterAll {
     StructField("metric_long_name",StringType,nullable = true),
     StructField("value",DoubleType,nullable = true),
     StructField("index",StringType,nullable = true),
-    StructField("_raw",StringType,nullable = true)
-  ))
+    StructField("text",StringType,nullable = true),
+    StructField("text[1].val",StringType,nullable = true),
+    StructField("text[2].val",StringType,nullable = true),
+    StructField("num",IntegerType,nullable = true),
+    StructField("num[1].val",IntegerType,nullable = true),
+    StructField("num[2].val",IntegerType,nullable = true),
+    StructField("listField",StringType,nullable = true),
+    StructField("nestedField",StringType,nullable = true),
+    StructField("_raw",StringType,nullable = true)))
 
 
   def jsonCompare(json1 : String,json2 : String): Boolean = {
@@ -91,8 +117,8 @@ abstract class CommandTest extends FunSuite with BeforeAndAfterAll {
   }
 
 
-  def execute(query: String, tws: Int, twf: Int): String = {
-    val otlQuery = createQuery(query, tws, twf)
+  def execute(query: String, tws: Int, twf: Int, read_cmd: String): String = {
+    val otlQuery = createQuery(query, tws, twf, read_cmd)
     val df = new Converter(otlQuery).run
     df.toJSON.collect().mkString("[\n", ",\n", "\n]")
   }
@@ -114,12 +140,11 @@ abstract class CommandTest extends FunSuite with BeforeAndAfterAll {
     fieldsUsed.mkString(", ")
   }
 
-  def createQuery(command_otl: String, tws: Int = 0, twf: Int = 0): OTLQuery ={
-    val cmd = if (this.getClass.getSimpleName.contains("FullRead")) "otstats" else "read"
+  def createQuery(command_otl: String, tws: Int = 0, twf: Int = 0, read_cmd: String = "read"): OTLQuery ={
     val otlQuery = new OTLQuery(
       id = 0,
       original_otl = s"search index=$test_index | $command_otl",
-      service_otl = s""" | $cmd {"$test_index": {"query": "", "tws": "$tws", "twf": "$twf"}} |  $command_otl """,
+      service_otl = s""" | $read_cmd {"$test_index": {"query": "", "tws": "$tws", "twf": "$twf"}} |  $command_otl """,
       tws = tws,
       twf = twf,
       cache_ttl = 0,
@@ -154,8 +179,7 @@ abstract class CommandTest extends FunSuite with BeforeAndAfterAll {
           .csv(f"$dataDir/sensors.csv")
           .withColumn("index", F.lit(f"$test_index-0"))
           .withColumn("_time", col("_time").cast(LongType))
-        df = setNullableStateOfColumn(df, "index", true)
-        val time_min_max = df.agg(min("_time"), max("_time")).head()
+      val time_min_max = df.agg(min("_time"), max("_time")).head()
         val time_step = (time_min_max.getLong(1) - time_min_max.getLong(0));
         val bucket_period = 3600 * 24 * 30
         val buckets_cnt = math.floor(time_step / bucket_period).toInt
@@ -165,14 +189,16 @@ abstract class CommandTest extends FunSuite with BeforeAndAfterAll {
             .withColumn("_raw", F.rtrim(F.col("_raw"), "}"))
               .withColumn("_raw", F.regexp_replace(F.col("_raw"), F.lit(": "), F.lit(stfeRawSeparators(i))))
           for (j <- 0 to buckets_cnt) {
-            val lowerBound = j * bucket_period + time_min_max.getLong(0);
-            val upperBound = (j + 1) * bucket_period + time_min_max.getLong(0);
-            val bucketPath = f"$tmpDir/indexes/$test_index-$i/bucket-${lowerBound}-${upperBound}-${System.currentTimeMillis / 1000}";
-            val df_bucket = df_new.filter(F.col("_time").between(lowerBound, upperBound));
+            val lowerBound = j * bucket_period + time_min_max.getLong(0)
+            val upperBound = (j + 1) * bucket_period + time_min_max.getLong(0)
+            val bucketPath = f"$tmpDir/indexes/$test_index-$i/bucket-${lowerBound}-${upperBound}-${System.currentTimeMillis / 1000}"
+            val df_bucket = df_new.filter(F.col("_time").between(lowerBound, upperBound))
+
+
             df_bucket.write.parquet(bucketPath)
             if (externalSchema)
               new PrintWriter(bucketPath + "/all.schema") {
-                write(df_bucket.schema.toDDL.replace(",", "\n"));
+                write(df_bucket.schema.toDDL.replace(",", "\n"))
                 close()
               }
           }
@@ -181,7 +207,7 @@ abstract class CommandTest extends FunSuite with BeforeAndAfterAll {
     else{
       df = jsonToDf(dataset)
       val bucketPath = f"$tmpDir/indexes/$test_index/bucket-0-${Int.MaxValue}-${System.currentTimeMillis / 1000}"
-      df.write.option("compression","snappy").parquet(bucketPath)
+      df.write.parquet(bucketPath)
       if(externalSchema)
         new PrintWriter(bucketPath + "/all.schema") {
           write(df.schema.toDDL.replace(",","\n")); close()
@@ -198,10 +224,19 @@ abstract class CommandTest extends FunSuite with BeforeAndAfterAll {
     indexDir.deleteRecursively()
   }
 
-  def setNullableStateOfColumn(df: DataFrame, col_name: String, nullable: Boolean) : DataFrame = {
+  def setNullableStateOfColumn(df: DataFrame, column: String, nullable: Boolean) : DataFrame = {
     val schema = df.schema
     val newSchema = StructType(schema.map {
-      case StructField( c, t, _, m) if c.equals(col_name) => StructField( c, t, nullable = nullable, m)
+      case StructField( c, t, _, m) if c.equals(column) => StructField( c, t, nullable = nullable, m)
+      case y: StructField => y
+    })
+    df.sqlContext.createDataFrame( df.rdd, newSchema )
+  }
+
+  def setNullableStateOfColumn(df: DataFrame, columns: List[String], nullable: Boolean) : DataFrame = {
+    val schema = df.schema
+    val newSchema = StructType(schema.map {
+      case StructField( c, t, _, m) if columns.contains(c) => StructField( c, t, nullable = nullable, m)
       case y: StructField => y
     })
     df.sqlContext.createDataFrame( df.rdd, newSchema )
