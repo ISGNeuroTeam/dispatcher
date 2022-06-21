@@ -24,7 +24,7 @@ class PluginProxyCommand(command: PluginCommand, sq: ot.scalaotl.SimpleQuery) ex
 
   override def logLevel: String = command.logLevel
 
-  override def commandname: String = command.commandname
+  override def commandName: String = command.commandname
 
   override def fieldsUsed: List[String] = command.fieldsUsed
 }

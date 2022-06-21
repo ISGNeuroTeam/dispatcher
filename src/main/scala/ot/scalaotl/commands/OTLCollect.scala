@@ -83,10 +83,10 @@ import ot.dispatcher.sdk.core.CustomException.E00019
  * @param sq [[SimpleQuery]]
  */
 class OTLCollect(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLIndexes {
-  val requiredKeywords = Set("index")
-  val optionalKeywords = Set("host", "source", "sourcetype")
+  val requiredKeywords: Set[String] = Set("index")
+  val optionalKeywords: Set[String] = Set("host", "source", "sourcetype")
 
-  override val fieldsUsed = List()
+  override val fieldsUsed: List[String] = List()
 
   /**
    * @param _df input __dataframe__, passed by the [[Converter]] when executing an OTL query
@@ -137,7 +137,7 @@ class OTLCollect(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLIndexes {
 
       case _ =>
         log.error("Required argument 'index' not found")
-        throw E00019(sq.searchId, commandname)
+        throw E00019(sq.searchId, commandName)
     }
     res.show()
     res

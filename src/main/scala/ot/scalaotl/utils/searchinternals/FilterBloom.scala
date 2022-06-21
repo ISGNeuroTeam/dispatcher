@@ -2,13 +2,12 @@ package ot.scalaotl
 package utils
 package searchinternals
 
-import java.io._
-import org.apache.hadoop.fs.{ FileSystem, Path }
+import org.apache.hadoop.fs.{FileSystem, Path}
+import org.apache.log4j.{Level, Logger}
 import org.apache.spark.util.sketch.BloomFilter
+import ot.AppConfig.{config, getLogLevel}
+
 import scala.collection.mutable.ListBuffer
-import org.apache.log4j.{ Level, Logger }
-import ot.AppConfig.config
-import ot.AppConfig.getLogLevel
 
 object FilterBloom {
 
@@ -25,19 +24,19 @@ object FilterBloom {
     try {
       val status = fs.listStatus(new Path(s"$INDEX_PATH$index/$bucket/bloom"))
       val filenames = ListBuffer[String]()
-      status.foreach(x ⇒ filenames += x.getPath().toString())
-      val path = new Path(filenames(0))
+      status.foreach(x ⇒ filenames += x.getPath.toString)
+      val path = new Path(filenames.head)
       val stream = fs.open(path)
       val bloom = BloomFilter.readFrom(stream)
       var logical_query = query
       for (token ← tokens_raw) {
-        val isTokenContains = bloom.mightContain(token.toLowerCase()).toString().toLowerCase()
+        val isTokenContains = bloom.mightContain(token.toLowerCase()).toString.toLowerCase()
         val token_escaped =  escapeRegex(token)
-        logical_query = logical_query.replaceAll(s"""`_raw` like (\"|\')%$token_escaped%(\'|\")""", isTokenContains)
+        logical_query = logical_query.replaceAll(s"""`_raw` like (["'])%$token_escaped%(['"])""", isTokenContains)
       }
       for (token ← tokens_cols) {
         val system_cols = List("source", "sourcetype", "host")
-        var isTokenContains = bloom.mightContain(token).toString().toLowerCase()
+        var isTokenContains = bloom.mightContain(token).toString.toLowerCase()
         if (system_cols.contains(token)) isTokenContains="true"
         val token_escaped =  escapeRegex(token)
         log.debug(s"Transformation: $token_escaped $logical_query")
@@ -66,7 +65,7 @@ object FilterBloom {
   private def getTokens(regex: String, query: String, group: Int): ListBuffer[String] =
   {
     val mi = regex.r.findAllMatchIn(query)
-    var tokens = ListBuffer[String]()
+    val tokens = ListBuffer[String]()
     while (mi.hasNext) {
       val d = mi.next
       tokens += d.group(group)

@@ -16,7 +16,7 @@ class OTLWhere(sq: SimpleQuery) extends OTLBaseCommand(sq) with ExpressionParser
 
   override def validateArgs(): Unit = {
     if (args.isEmpty)
-      throw E00022(sq.searchId, commandname)
+      throw E00022(sq.searchId, commandName)
   }
 
   // Override from ExpressionParser to get rid of obstructive splitting by '='
@@ -41,7 +41,7 @@ class OTLWhere(sq: SimpleQuery) extends OTLBaseCommand(sq) with ExpressionParser
     returns.evals.foldLeft(_df) {
       case (acc, StatsEval(_, exp)) =>
         val pairs = exp.split("( AND | and | OR | or )").toList.map({ p =>
-          val pair = """^[\(| ]* *([^\)]*)\)*$""".r.replaceAllIn(p, """$1""")
+          val pair = """^[(| ]* *([^)]*)\)*$""".r.replaceAllIn(p, """$1""")
           if (pair.startsWith("like(")) pair + ")" else pair
         })
         val replExpr = pairs.foldLeft(exp)((accExpr, ex) => {
