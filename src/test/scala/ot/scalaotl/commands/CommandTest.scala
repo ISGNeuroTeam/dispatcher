@@ -1,7 +1,7 @@
 package ot.scalaotl.commands
 
 import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.fs.FileSystem
+import org.apache.hadoop.fs.{FileSystem, Path}
 
 import java.io.{File, PrintWriter}
 import java.util.UUID
@@ -17,6 +17,7 @@ import ot.dispatcher.OTLQuery
 import ot.scalaotl.Converter
 import ot.scalaotl.extensions.StringExt._
 
+import scala.collection.mutable.ListBuffer
 import scala.reflect.io.Directory
 
 abstract class CommandTest extends FunSuite with BeforeAndAfterAll {
@@ -54,6 +55,9 @@ abstract class CommandTest extends FunSuite with BeforeAndAfterAll {
   val tmpDir: String =  "src/test/resources/temp"
   val test_index = s"test_index-${this.getClass.getSimpleName}"
   val stfeRawSeparators: Array[String] = Array("json", ": ", "= ", " :", " =", " : ", " = ", ":", "=")
+  // example timestamps for tws twf
+  val start_time = 1649145660
+  val finish_time = 1663228860
 
   val datasetSchema: StructType =StructType(Array(
     StructField("WordField",StringType,nullable = true),
@@ -65,7 +69,7 @@ abstract class CommandTest extends FunSuite with BeforeAndAfterAll {
     StructField("_time",LongType,nullable = true),
     StructField("host",StringType,nullable = true),
     StructField("index",StringType,nullable = true),
-    StructField("junkField",DoubleType,nullable = true),
+    StructField("junkField",StringType,nullable = true),
     StructField("random_Field",StringType,nullable = true),
     StructField("serialField",StringType,nullable = true),
     StructField("source",StringType,nullable = true),
@@ -95,6 +99,48 @@ abstract class CommandTest extends FunSuite with BeforeAndAfterAll {
     StructField("nestedField",StringType,nullable = true),
     StructField("_raw",StringType,nullable = true)))
 
+  def createFullQuery(command_original_otl: String, service_original_otl: String,
+                      index: String, tws: Int = 0, twf: Int = 0, fe: Boolean = false): OTLQuery ={
+    val otlQuery = new OTLQuery(
+      id = 0,
+      original_otl = command_original_otl,
+      service_otl = service_original_otl,
+      tws = tws,
+      twf = twf,
+      cache_ttl = 0,
+      indexes = Array(index),
+      subsearches = Map(),
+      username = "admin",
+      field_extraction = fe,
+      preview = false
+    )
+    log.debug(s"otlQuery: $otlQuery.")
+    otlQuery
+  }
+
+  def createQuery(command_otl: String, read_cmd: String = "read",
+                  index: String = test_index, tws: Int = 0, twf: Int = 0): OTLQuery ={
+    createFullQuery(
+      s"search index=$index| $command_otl",
+      s""" | $read_cmd {"$index": {"query": "", "tws": "$tws", "twf": "$twf"}} |  $command_otl """,
+      test_index, tws, twf)
+  }
+
+  def createQuery(command_otl: String): OTLQuery ={
+    createQuery(command_otl, "read", test_index)
+  }
+
+  def readIndexDF(index : String, schema: StructType = datasetSchema): DataFrame ={
+    val filenames = ListBuffer[String]()
+    try {
+      val status = fs_disk.listStatus(new Path(s"$tmpDir/indexes/$index"))
+      status.foreach(x => filenames += s"$tmpDir/indexes/$index/${x.getPath.getName}")
+    }
+    catch { case e: Exception => log.debug(e);}
+    spark.read.options(Map("recursiveFileLookup"->"true")).schema(schema)
+      .parquet(filenames.seq: _*)
+      .withColumn("index", F.lit(index))
+  }
 
   def jsonCompare(json1 : String,json2 : String): Boolean = {
     import spray.json._
@@ -117,12 +163,6 @@ abstract class CommandTest extends FunSuite with BeforeAndAfterAll {
   }
 
 
-  def execute(query: String, tws: Int, twf: Int, read_cmd: String): String = {
-    val otlQuery = createQuery(query, tws, twf, read_cmd)
-    val df = new Converter(otlQuery).run
-    df.toJSON.collect().mkString("[\n", ",\n", "\n]")
-  }
-
   def execute(otlQuery : OTLQuery): String = {
     val df = new Converter(otlQuery).run
     df.toJSON.collect().mkString("[\n", ",\n", "\n]")
@@ -140,23 +180,7 @@ abstract class CommandTest extends FunSuite with BeforeAndAfterAll {
     fieldsUsed.mkString(", ")
   }
 
-  def createQuery(command_otl: String, tws: Int = 0, twf: Int = 0, read_cmd: String = "read"): OTLQuery ={
-    val otlQuery = new OTLQuery(
-      id = 0,
-      original_otl = s"search index=$test_index | $command_otl",
-      service_otl = s""" | $read_cmd {"$test_index": {"query": "", "tws": "$tws", "twf": "$twf"}} |  $command_otl """,
-      tws = tws,
-      twf = twf,
-      cache_ttl = 0,
-      indexes = Array(test_index),
-      subsearches = Map(),
-      username = "admin",
-      field_extraction = false,
-      preview = false
-    )
-    log.debug(s"otlQuery: $otlQuery.")
-    otlQuery
-  }
+
 
   def jsonToDf(json :String): DataFrame = {
     import spark.implicits._
@@ -169,7 +193,7 @@ abstract class CommandTest extends FunSuite with BeforeAndAfterAll {
    * Step2 If index exists, it is removed
    * Step3 If an external data schema is used, it will be written next to the parquet
    */
-  override def beforeAll() {
+  override def beforeAll(): Unit = {
     val indexDir = new Directory(new File(f"$tmpDir/indexes"))
     if (indexDir.exists && indexDir.list.nonEmpty) indexDir.deleteRecursively()
     var df = spark.emptyDataFrame
@@ -180,18 +204,18 @@ abstract class CommandTest extends FunSuite with BeforeAndAfterAll {
           .withColumn("index", F.lit(f"$test_index-0"))
           .withColumn("_time", col("_time").cast(LongType))
       val time_min_max = df.agg(min("_time"), max("_time")).head()
-        val time_step = (time_min_max.getLong(1) - time_min_max.getLong(0));
+        val time_step = time_min_max.getLong(1) - time_min_max.getLong(0)
         val bucket_period = 3600 * 24 * 30
         val buckets_cnt = math.floor(time_step / bucket_period).toInt
         for(i <- stfeRawSeparators.indices){
-          val df_new = if (i == 0) df else df.withColumn("index", F.lit(f"${test_index}-${i}"))
+          val df_new = if (i == 0) df else df.withColumn("index", F.lit(f"$test_index-$i"))
             .withColumn("_raw", F.ltrim(F.col("_raw"), "{"))
             .withColumn("_raw", F.rtrim(F.col("_raw"), "}"))
               .withColumn("_raw", F.regexp_replace(F.col("_raw"), F.lit(": "), F.lit(stfeRawSeparators(i))))
           for (j <- 0 to buckets_cnt) {
             val lowerBound = j * bucket_period + time_min_max.getLong(0)
             val upperBound = (j + 1) * bucket_period + time_min_max.getLong(0)
-            val bucketPath = f"$tmpDir/indexes/$test_index-$i/bucket-${lowerBound}-${upperBound}-${System.currentTimeMillis / 1000}"
+            val bucketPath = f"$tmpDir/indexes/$test_index-$i/bucket-$lowerBound-$upperBound-${System.currentTimeMillis / 1000}"
             val df_bucket = df_new.filter(F.col("_time").between(lowerBound, upperBound))
 
 
@@ -204,13 +228,14 @@ abstract class CommandTest extends FunSuite with BeforeAndAfterAll {
           }
         }
     }
-    else{
+    else {
       df = jsonToDf(dataset)
       val bucketPath = f"$tmpDir/indexes/$test_index/bucket-0-${Int.MaxValue}-${System.currentTimeMillis / 1000}"
       df.write.parquet(bucketPath)
-      if(externalSchema)
+      if (externalSchema)
         new PrintWriter(bucketPath + "/all.schema") {
-          write(df.schema.toDDL.replace(",","\n")); close()
+          write(df.schema.toDDL.replace(",", "\n"))
+          close()
         }
     }
   }
@@ -219,7 +244,7 @@ abstract class CommandTest extends FunSuite with BeforeAndAfterAll {
    * Step1 Recursively delete created indexes
    * Step2 If indexes directory is empty then delete it
    */
-  override def afterAll() {
+  override def afterAll(): Unit = {
     val indexDir = new Directory(new File(f"$tmpDir/indexes"))
     indexDir.deleteRecursively()
   }
