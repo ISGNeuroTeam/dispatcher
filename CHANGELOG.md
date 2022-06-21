@@ -3,6 +3,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+### [Unreleased] 
+- Fixed OTLNomv command not deleted backticks bug 
+- Added documentation for OTLDedup command.
+- Problem with unworked consecutive parameter in OTLDedup solved.
+- OTLDedup dependency from OTLSort deleted.
+- OTLTop command refactored
+- Problem with non-work 0 limit solved
+- OTLTop tests extended and some of them corrected
+
+
 ## [1.7.7] - 2021-02-16
 ### Fixed
 - scala code formatting
@@ -14,7 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - log4j 2.17.0.
 
-## [1.7.5] - 2021-12-16
+## [1.7.5] - 2021-12-16 
 ### Fixed
 - log4j RCE.
 

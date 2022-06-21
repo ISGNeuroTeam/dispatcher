@@ -1,8 +1,8 @@
 package ot.scalaotl
 package commands
 
-import org.apache.spark.sql.functions.{concat_ws, col}
 import org.apache.spark.sql.DataFrame
+import org.apache.spark.sql.functions.{col, concat_ws}
 import ot.scalaotl.extensions.StringExt._
 
 /** =Abstract=
