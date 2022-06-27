@@ -1,18 +1,16 @@
 package ot.scalaotl
 package commands
 
-import ot.scalaotl.extensions.StringExt._
-import ot.scalaotl.parsers._
-import ot.AppConfig.config
-import ot.AppConfig.getLogLevel
-
-import scala.util.{Failure, Success, Try}
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.functions.lit
-import org.apache.spark.sql.types.{NullType, StructField}
+import ot.AppConfig.{config, getLogLevel}
+import ot.dispatcher.sdk.core.CustomException.{E00012, E00013, E00014}
+import ot.scalaotl.extensions.StringExt._
+import ot.scalaotl.parsers._
 import ot.scalaotl.utils.logging.StatViewer
-import ot.dispatcher.sdk.core.CustomException.{E00014, E00001, E00013, E00012}
+
+import scala.util.{Failure, Success, Try}
 
 
 /** =Abstract=
