@@ -19,17 +19,20 @@ import org.apache.spark.sql.DataFrame
  * Command syntax fields [-|*] <field-list>
  *
  * If "-" is specified, then the fields from <field-list> will be removed from the query results.
- * If an asterisk "*" is specified, then all fields will be retrieved, including the _raw field.
- * By default, the _raw field is not retrieved.
+ * If an asterisk "*" is specified, then all fields will be retrieved.
+ * Field names can use wildcards.
  *
  * =Usage example=
  * OTL: keep only selected fields
  * {{{  other otl-commands ... | fields metric_name, value }}}
  *
  * OTL: remove selected fields
- * {{{  other otl-commands ... | fields - metric_long_name }}}
+ * {{{  other otl-commands ... | fields - metric_long_name, _raw }}}
  *
- * OTL: get all fields including _raw
+ * OTL: keep selected fields with wildcards
+ * {{{  other otl-commands ... | fields _*, metric*, value }}}
+ *
+ * OTL: get all fields from index
  * {{{  other otl-commands ... | fields * }}}
  *
  * @constructor creates new instance of [[ OTLFields ]]
@@ -51,15 +54,19 @@ class OTLFields(sq: SimpleQuery) extends OTLBaseCommand(sq) with WildcardParser 
    */
   override def transform(_df: DataFrame): DataFrame = {
     val initCols = _df.columns.map(_.addSurroundedBackticks)
+    // field-list from the query
     val retCols = returns.flatFields.map(_.replace("\"", ""))
+    // list of fields from the df matching regular expressions in the field-list from the query
     val retColsWc = returnsWithWc(initCols, returns).flatFields.map(_.replace("\"", "")).union(retCols)
-    //It is correct to use retCols in 'if' statement (not retColsWc) because applying wildcards removes "-" usually
+    // it is correct to use retCols in 'if' statement (not retColsWc) because applying wildcards removes "-" usually
     val initColsList = initCols.toList
+    // if field-list contains minus return difference from retColsWc, else intersection with retColsWc
     val newCols = if (retCols.contains("`-`")) {
       initColsList.diff(retColsWc)
     } else {
       retColsWc.intersect(initColsList)
     }
+    // if newCols is empty return original df, otherwise return the selected columns from it
     newCols match {
       case head :: tail => _df.select(head, tail: _*)
       case _ => _df
