@@ -86,5 +86,12 @@ class OTLTransactionTest extends CommandTest {
     compareDataFrames(actual, spark.emptyDataFrame)
   }
 
+  test("Test 5. Command: Dataset contains only _time field (with nulls), args includes only _time") {
+    val query = createQuery(
+      """table WordField | table _time | transaction _time""", "otstats", s"$test_index")
+    val actual = new Converter(query).run
+    compareDataFrames(actual, spark.emptyDataFrame)
+  }
+
 
 }
