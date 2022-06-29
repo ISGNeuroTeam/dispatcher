@@ -28,6 +28,8 @@ class OTLUntable(sq: SimpleQuery) extends OTLBaseCommand(sq) {
   val optionalKeywords = Set.empty[String]
 
   override def transform(_df: DataFrame): DataFrame = {
+    if (_df.isEmpty)
+      return _df
     // get fixed, field and value column names
     val (fixed, field, value) = returns.flatFields match {
       case x :: y :: z :: tail => (
@@ -37,22 +39,27 @@ class OTLUntable(sq: SimpleQuery) extends OTLBaseCommand(sq) {
       )
       case _ => return spark.emptyDataFrame
     }
-    // select columns that not in args
-    val cols = _df.columns.filter(x => x != fixed && x != field && x != value).map(_.addSurroundedBackticks)
-    // for all columns that not in args convert to arrays [column name, value]
-    cols.foldLeft(_df) {
-      (accum, colname) => {
-        accum.withColumn(colname.stripBackticks(), expr(s"""array("${colname.stripBackticks()}", $colname)"""))
+    if (_df.columns.contains(fixed)) {
+      // select columns that not in args
+      val cols = _df.columns.filter(x => x != fixed && x != field && x != value).map(_.addSurroundedBackticks)
+      // for all columns that not in args convert to arrays [column name, value]
+      cols.foldLeft(_df) {
+        (accum, colname) => {
+          accum.withColumn(colname.stripBackticks(), expr(s"""array("${colname.stripBackticks()}", $colname)"""))
+        }
       }
+        // adding column arr as an array containing all other columns
+        .withColumn("arr", expr(s"""array(${cols.mkString(", ")})"""))
+        .select(fixed.strip("\""), "arr")
+        // explode arr column to separate arrays [column name, value]
+        .withColumn("arr", explode(col("arr")))
+        // create field and value columns from created arrays
+        .withColumn(field.strip("\""), col("arr").getItem(0))
+        .withColumn(value.strip("\""), col("arr").getItem(1))
+        .drop("arr")
     }
-      // adding column arr as an array containing all other columns
-      .withColumn("arr", expr(s"""array(${cols.mkString(", ")})"""))
-      .select(fixed.strip("\""), "arr")
-      // explode arr column to separate arrays [column name, value]
-      .withColumn("arr", explode(col("arr")))
-      // create field and value columns from created arrays
-      .withColumn(field.strip("\""), col("arr").getItem(0))
-      .withColumn(value.strip("\""), col("arr").getItem(1))
-      .drop("arr")
+    else
+      spark.emptyDataFrame
   }
+
 }

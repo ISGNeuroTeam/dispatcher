@@ -1,13 +1,15 @@
 package ot.scalaotl.commands
 
+import org.apache.spark.sql.functions.col
 import ot.scalaotl.Converter
+import org.apache.spark.sql.{Column, DataFrame, SparkSession, functions => F}
 
 class OTLUntableTest extends CommandTest {
 
-  test("Test 0. Command: | untable ") {
+  test("Test 1. Command: Convert wide table to long table ") {
     val query = createQuery(
-      """table WordField ,serialField, random_Field | untable WordField, field, value""",
-      "otstats", s"$test_index")
+      """table WordField ,serialField, random_Field
+        || untable WordField, field, value""", "otstats", s"$test_index")
     val actual = new Converter(query).run
     val expected = """[
                      |{"WordField":"qwe","field":"serialField","value":"0"},
@@ -32,6 +34,78 @@ class OTLUntableTest extends CommandTest {
                      |{"WordField":"USA","field":"random_Field","value":"10"}
                      |]""".stripMargin
     compareDataFrames(actual, jsonToDf(expected))
+  }
+
+  test("Test 2. Command: Fixed column missing among data fields") {
+    val query = createQuery("""table serialField, random_Field
+        || untable WordField, field, value""", "otstats", s"$test_index")
+    var actual = new Converter(query).run
+    val expectedStr = """[
+                        |{"field":"serialField","value":"0"},
+                        |{"field":"random_Field","value":"100"},
+                        |{"field":"serialField","value":"1"},
+                        |{"field":"random_Field","value":"-90"},
+                        |{"field":"serialField","value":"2"},
+                        |{"field":"random_Field","value":"50"},
+                        |{"field":"serialField","value":"3"},
+                        |{"field":"random_Field","value":"20"},
+                        |{"field":"serialField","value":"4"},
+                        |{"field":"random_Field","value":"30"},
+                        |{"field":"serialField","value":"5"},
+                        |{"field":"random_Field","value":"50"},
+                        |{"field":"serialField","value":"6"},
+                        |{"field":"random_Field","value":"60"},
+                        |{"field":"serialField","value":"7"},
+                        |{"field":"random_Field","value":"-100"},
+                        |{"field":"serialField","value":"8"},
+                        |{"field":"random_Field","value":"0"},
+                        |{"field":"serialField","value":"9"},
+                        |{"field":"random_Field","value":"10"}
+                        |]""".stripMargin
+    var expected = jsonToDf(expectedStr).withColumn("WordField", F.lit(null))
+    actual = actual.select(actual.columns.sorted.toSeq.map(c => col(c)):_*)
+    expected = expected.select(expected.columns.sorted.toSeq.map(c => col(c)):_*)
+    compareDataFrames(actual, expected)
+  }
+
+  test("Test 3. Command: Fixed column contains nulls") {
+    val query = createQuery("""table serialField, random_Field
+    | table WordField ,serialField, random_Field
+    | untable WordField, field, value""", "otstats", s"$test_index")
+    var actual = new Converter(query).run
+    val expectedStr = """[
+                        |{"field":"serialField","value":"0"},
+                        |{"field":"random_Field","value":"100"},
+                        |{"field":"serialField","value":"1"},
+                        |{"field":"random_Field","value":"-90"},
+                        |{"field":"serialField","value":"2"},
+                        |{"field":"random_Field","value":"50"},
+                        |{"field":"serialField","value":"3"},
+                        |{"field":"random_Field","value":"20"},
+                        |{"field":"serialField","value":"4"},
+                        |{"field":"random_Field","value":"30"},
+                        |{"field":"serialField","value":"5"},
+                        |{"field":"random_Field","value":"50"},
+                        |{"field":"serialField","value":"6"},
+                        |{"field":"random_Field","value":"60"},
+                        |{"field":"serialField","value":"7"},
+                        |{"field":"random_Field","value":"-100"},
+                        |{"field":"serialField","value":"8"},
+                        |{"field":"random_Field","value":"0"},
+                        |{"field":"serialField","value":"9"},
+                        |{"field":"random_Field","value":"10"}
+                        |]""".stripMargin
+    var expected = jsonToDf(expectedStr).withColumn("WordField", F.lit(null))
+    actual = actual.select(actual.columns.sorted.toSeq.map(c => col(c)):_*)
+    expected = expected.select(expected.columns.sorted.toSeq.map(c => col(c)):_*)
+    compareDataFrames(actual, expected)
+  }
+
+  test("Test 3. Command: Call untable with 2 arguments ") {
+    val query = createQuery("""table WordField ,serialField, random_Field
+        || untable WordField, field""", "otstats", s"$test_index")
+    val actual = new Converter(query).run
+    compareDataFrames(actual, spark.emptyDataFrame)
   }
 
 }
