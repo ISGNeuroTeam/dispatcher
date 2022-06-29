@@ -59,6 +59,8 @@ class OTLTransaction(sq: SimpleQuery) extends OTLBaseCommand(sq) {
   }
 
   override def transform(_df: DataFrame): DataFrame = {
+    if (_df.isEmpty)
+      return _df
     // calling OTL-stats with received arguments
     val s = SimpleQuery(s"values(*) as * by $args")
     val dfTransaction = convertArraysToSingle(new OTLStats(s).transform(_df))
