@@ -8,9 +8,10 @@ import org.apache.spark.sql.functions.{array, array_min, col, collect_set, expr,
 /** =Abstract=
  * This class provides support of __'''transaction'''__ otl command.
  *
- * __'''transaction'''__ used to finds first record with unique set of specified fields.
+ * __'''transaction'''__ used to find first record with unique set of specified fields.
  * The command allows to find among the many records grouped by the specified set of fields, find the first record by time.
  * The specified set of fields is called a transaction
+ * For correct operation, the presence of the _ field in data is required
  *
  * Command syntax transaction [field-list]
  * The use of this command with a data without the _time field, as well as the inclusion of this field in the list

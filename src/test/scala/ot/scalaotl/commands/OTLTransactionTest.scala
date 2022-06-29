@@ -24,8 +24,9 @@ class OTLTransactionTest extends CommandTest {
       |]"""
 
   test("Test 1. Command: Dataset with _time, args includes not all fields") {
-    val query = createQuery("""table _time, random_Field, WordField | transaction random_Field, WordField""",
-      "otstats", s"$test_index")
+    val query = createQuery(
+      """table _time, random_Field, WordField
+        || transaction random_Field, WordField""", "otstats", s"$test_index")
     var actual = new Converter(query).run
     actual = actual.select(actual.columns.sorted.toSeq.map(c => col(c)):_*)
     val expected =
@@ -45,8 +46,9 @@ class OTLTransactionTest extends CommandTest {
   }
 
   test("Test 2. Command: Dataset with _time, args includes all fields") {
-    val query = createQuery("""table _time, random_Field, WordField | transaction _time, random_Field, WordField""",
-      "otstats", s"$test_index")
+    val query = createQuery(
+      """table _time, random_Field, WordField
+        || transaction _time, random_Field, WordField""", "otstats", s"$test_index")
     var actual = new Converter(query).run
     actual = actual.select(actual.columns.sorted.toSeq.map(c => col(c)):_*)
     val expected =
@@ -69,15 +71,17 @@ class OTLTransactionTest extends CommandTest {
   }
 
   test("Test 3. Command: Dataset without _time, args includes not all fields") {
-    val query = createQuery("""table WordField, random_Field, junkField, serialField | transaction random_Field, WordField""",
-      "otstats", s"$test_index")
+    val query = createQuery(
+      """table WordField, random_Field, junkField, serialField
+        || transaction random_Field, WordField""", "otstats", s"$test_index")
     val actual = new Converter(query).run
     compareDataFrames(actual, spark.emptyDataFrame)
   }
 
   test("Test 4. Command: Dataset without _time, args includes all fields") {
-    val query = createQuery("""table WordField, random_Field, junkField, serialField | transaction WordField, random_Field, junkField, serialField""",
-      "otstats", s"$test_index")
+    val query = createQuery(
+      """table WordField, random_Field, junkField, serialField
+        || transaction WordField, random_Field, junkField, serialField""", "otstats", s"$test_index")
     val actual = new Converter(query).run
     compareDataFrames(actual, spark.emptyDataFrame)
   }

@@ -288,7 +288,7 @@ abstract class CommandTest extends FunSuite with BeforeAndAfterAll {
     )
 
     if (df_actual.isEmpty && df_expected.isEmpty)
-      assert(condition = true)
+      assert(true)
     else {
       val diff = df_actual.except(df_expected).union(df_expected.except(df_actual))
       assert(
