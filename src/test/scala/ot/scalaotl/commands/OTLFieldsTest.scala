@@ -89,14 +89,12 @@ class OTLFieldsTest extends CommandTest {
     compareDataFrames(actual, expected)
   }
 
-  test("Test 8. Command: | Removing of non-existing fields") {
-    val query = createQuery("""fields + _time, meta, host, junk_Field""",
+  test("Test 8. Command: | Selection of existing fields") {
+    val query = createQuery("""fields + _time, _meta, host, sourcetype""",
       "otstats", s"$test_index")
-    var actual = new Converter(query).run
-    var expected = readIndexDF(test_index).drop(F.col("_time")).drop(F.col("host"))
-    expected = setNullableStateOfColumn(expected, "index", nullable = true)
-    actual = actual.select(actual.columns.sorted.toSeq.map(c => col(c)):_*)
-    expected = expected.select(expected.columns.sorted.toSeq.map(c => col(c)):_*)
+    val actual = new Converter(query).run
+    val expected = readIndexDF(test_index)
+      .select(F.col("_time"), F.col("_meta"), F.col("host"), F.col("sourcetype"))
     compareDataFrames(actual, expected)
   }
 

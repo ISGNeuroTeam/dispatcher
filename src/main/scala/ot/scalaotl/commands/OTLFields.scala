@@ -46,6 +46,12 @@ class OTLFields(sq: SimpleQuery) extends OTLBaseCommand(sq) with WildcardParser 
     if (returns.flatFields.contains("`-`")) List()
     else returns.flatFields.map(x => x.strip("`").strip("\"").addSurroundedBackticks)
 
+
+  val act: String = args.split(" ").headOption.filter(x => x.equals("+") || x.equals("-")) match {
+    case Some(str) => str.substring(0, 1)
+    case _ => "+"
+  }
+
   /**
    * Standard method called by Converter in each OTL-command.
    *
@@ -55,9 +61,13 @@ class OTLFields(sq: SimpleQuery) extends OTLBaseCommand(sq) with WildcardParser 
   override def transform(_df: DataFrame): DataFrame = {
     val initCols = _df.columns.map(_.addSurroundedBackticks)
     // field-list from the query
-    val retCols = returns.flatFields.map(_.replace("\"", ""))
+    val retCols = returns.flatFields
+      .filter(x => !x.equals(act.addSurroundedBackticks))
+      .map(_.replace("\"", ""))
     // list of fields from the df matching regular expressions in the field-list from the query
-    val retColsWc = returnsWithWc(initCols, returns).flatFields.map(_.replace("\"", "")).union(retCols)
+    val retColsWc = returnsWithWc(initCols, returns).flatFields
+      .filter(x => !x.equals(act.addSurroundedBackticks))
+      .map(_.replace("\"", "")).union(retCols)
     // it is correct to use retCols in 'if' statement (not retColsWc) because applying wildcards removes "-" usually
     val initColsList = initCols.toList
     // if field-list contains minus return difference from retColsWc, else intersection with retColsWc
