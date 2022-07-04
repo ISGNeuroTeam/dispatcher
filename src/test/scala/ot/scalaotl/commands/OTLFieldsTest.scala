@@ -17,7 +17,16 @@ class OTLFieldsTest extends CommandTest {
     compareDataFrames(actual, expected)
   }
 
-  test("Test 2. Command: | Selection of a non-existent field") {
+  test("Test 2. Command: | Selection of existing fields (with plus)") {
+    val query = createQuery("""fields + _time, _meta, host, sourcetype""",
+      "otstats", s"$test_index")
+    val actual = new Converter(query).run
+    val expected = readIndexDF(test_index)
+      .select(F.col("_time"), F.col("_meta"), F.col("host"), F.col("sourcetype"))
+    compareDataFrames(actual, expected)
+  }
+
+  test("Test 3. Command: | Selection of a non-existent field") {
     val query = createQuery("""fields _time, meta, host, junk_Field""",
       "otstats", s"$test_index")
     var actual = new Converter(query).run
@@ -29,7 +38,7 @@ class OTLFieldsTest extends CommandTest {
     compareDataFrames(actual, expected)
   }
 
-  test("Test 3. Command: | Removing of existing fields") {
+  test("Test 4. Command: | Removing of existing fields") {
     val query = createQuery("""fields - _time, _meta, host, sourcetype""",
       "otstats", s"$test_index")
     var actual = new Converter(query).run
@@ -41,7 +50,7 @@ class OTLFieldsTest extends CommandTest {
     compareDataFrames(actual, expected)
   }
 
-  test("Test 4. Command: | Removing of non-existing fields") {
+  test("Test 5. Command: | Removing of non-existing fields") {
     val query = createQuery("""fields - _time, meta, host, junk_Field""",
       "otstats", s"$test_index")
     var actual = new Converter(query).run
@@ -52,7 +61,7 @@ class OTLFieldsTest extends CommandTest {
     compareDataFrames(actual, expected)
   }
 
-  test("Test 5. Command: Selection of all fields") {
+  test("Test 6. Command: Selection of all fields") {
     val query = createQuery("""fields *""",
       "otstats", s"$test_index")
     var actual = new Converter(query).run
@@ -66,12 +75,8 @@ class OTLFieldsTest extends CommandTest {
   test("Test 6. Command: Removing of all fields") {
     val query = createQuery("""fields - *""",
       "otstats", s"$test_index")
-    var actual = new Converter(query).run
-    var expected = readIndexDF(test_index)
-    expected = setNullableStateOfColumn(expected, "index", nullable = true)
-    actual = actual.select(actual.columns.sorted.toSeq.map(c => col(c)):_*)
-    expected = expected.select(expected.columns.sorted.toSeq.map(c => col(c)):_*)
-    compareDataFrames(actual, expected)
+    val actual = new Converter(query).run
+    compareDataFrames(actual, spark.emptyDataFrame)
   }
 
   test("Test 7. Command: Selection fields by wildcard") {
@@ -89,14 +94,37 @@ class OTLFieldsTest extends CommandTest {
     compareDataFrames(actual, expected)
   }
 
-  test("Test 8. Command: | Removing of non-existing fields") {
-    val query = createQuery("""fields + _time, meta, host, junk_Field""",
+  test("Test 9. Command: | Query without field-list") {
+    val query = createQuery("""fields """,
+      "otstats", s"$test_index")
+    val actual = new Converter(query).run
+    compareDataFrames(actual, spark.emptyDataFrame)
+  }
+
+  test("Test 10. Command: | Query without field-list") {
+    val query = createQuery("""fields +""",
+      "otstats", s"$test_index")
+    val actual = new Converter(query).run
+    compareDataFrames(actual, spark.emptyDataFrame)
+  }
+
+  test("Test 11. Command: | Query without field-list") {
+    val query = createQuery("""fields -""",
       "otstats", s"$test_index")
     var actual = new Converter(query).run
-    var expected = readIndexDF(test_index).drop(F.col("_time")).drop(F.col("host"))
+    var expected = readIndexDF(test_index)
     expected = setNullableStateOfColumn(expected, "index", nullable = true)
     actual = actual.select(actual.columns.sorted.toSeq.map(c => col(c)):_*)
     expected = expected.select(expected.columns.sorted.toSeq.map(c => col(c)):_*)
+    compareDataFrames(actual, expected)
+  }
+
+  test("Test 12. Command: | Selection of existing fields with wrong plus and minus") {
+    val query = createQuery("""fields _time, +, _meta, -, host, sourcetype""",
+      "otstats", s"$test_index")
+    val actual = new Converter(query).run
+    val expected = readIndexDF(test_index)
+      .select(F.col("_time"), F.col("_meta"), F.col("host"), F.col("sourcetype"))
     compareDataFrames(actual, expected)
   }
 
