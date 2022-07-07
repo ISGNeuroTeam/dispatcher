@@ -61,25 +61,7 @@ class OTLFieldsTest extends CommandTest {
     compareDataFrames(actual, expected)
   }
 
-  test("Test 6. Command: Selection of all fields") {
-    val query = createQuery("""fields *""",
-      "otstats", s"$test_index")
-    var actual = new Converter(query).run
-    var expected = readIndexDF(test_index)
-    expected = setNullableStateOfColumn(expected, "index", nullable = true)
-    actual = actual.select(actual.columns.sorted.toSeq.map(c => col(c)):_*)
-    expected = expected.select(expected.columns.sorted.toSeq.map(c => col(c)):_*)
-    compareDataFrames(actual, expected)
-  }
-
-  test("Test 6. Command: Removing of all fields") {
-    val query = createQuery("""fields - *""",
-      "otstats", s"$test_index")
-    val actual = new Converter(query).run
-    compareDataFrames(actual, spark.emptyDataFrame)
-  }
-
-  test("Test 7. Command: Selection fields by wildcard") {
+  test("Test 6. Command: Selection fields by wildcard") {
     val query = createQuery("""fields _nifi_time*, *Field, _time""",
       "otstats", s"$test_index")
     var actual = new Converter(query).run
@@ -94,21 +76,52 @@ class OTLFieldsTest extends CommandTest {
     compareDataFrames(actual, expected)
   }
 
-  test("Test 9. Command: | Query without field-list") {
-    val query = createQuery("""fields """,
+
+  test("Test 7. Command: Selection of all fields") {
+    val query = createQuery("""fields *""",
+      "otstats", s"$test_index")
+    var actual = new Converter(query).run
+    var expected = readIndexDF(test_index)
+    expected = setNullableStateOfColumn(expected, "index", nullable = true)
+    actual = actual.select(actual.columns.sorted.toSeq.map(c => col(c)):_*)
+    expected = expected.select(expected.columns.sorted.toSeq.map(c => col(c)):_*)
+    compareDataFrames(actual, expected)
+  }
+
+  test("Test 8. Command: Selection of all fields") {
+    val query = createQuery("""fields + *""",
+      "otstats", s"$test_index")
+    var actual = new Converter(query).run
+    var expected = readIndexDF(test_index)
+    expected = setNullableStateOfColumn(expected, "index", nullable = true)
+    actual = actual.select(actual.columns.sorted.toSeq.map(c => col(c)):_*)
+    expected = expected.select(expected.columns.sorted.toSeq.map(c => col(c)):_*)
+    compareDataFrames(actual, expected)
+  }
+
+  test("Test 9. Command: Removing of all fields") {
+    val query = createQuery("""fields - *""",
       "otstats", s"$test_index")
     val actual = new Converter(query).run
     compareDataFrames(actual, spark.emptyDataFrame)
   }
 
+
   test("Test 10. Command: | Query without field-list") {
-    val query = createQuery("""fields +""",
+    val query = createQuery("""fields""",
       "otstats", s"$test_index")
     val actual = new Converter(query).run
     compareDataFrames(actual, spark.emptyDataFrame)
   }
 
   test("Test 11. Command: | Query without field-list") {
+    val query = createQuery("""fields +""",
+      "otstats", s"$test_index")
+    val actual = new Converter(query).run
+    compareDataFrames(actual, spark.emptyDataFrame)
+  }
+
+  test("Test 12. Command: | Query without field-list") {
     val query = createQuery("""fields -""",
       "otstats", s"$test_index")
     var actual = new Converter(query).run
@@ -119,7 +132,7 @@ class OTLFieldsTest extends CommandTest {
     compareDataFrames(actual, expected)
   }
 
-  test("Test 12. Command: | Selection of existing fields with wrong plus and minus") {
+  test("Test 13. Command: | Selection of existing fields with wrong plus and minus") {
     val query = createQuery("""fields _time, +, _meta, -, host, sourcetype""",
       "otstats", s"$test_index")
     val actual = new Converter(query).run
@@ -127,5 +140,47 @@ class OTLFieldsTest extends CommandTest {
       .select(F.col("_time"), F.col("_meta"), F.col("host"), F.col("sourcetype"))
     compareDataFrames(actual, expected)
   }
+
+
+  test("Test 14. Command: | Another incorrect query") {
+    val query = createQuery("""fields + +""",
+      "otstats", s"$test_index")
+    val actual = new Converter(query).run
+    compareDataFrames(actual, spark.emptyDataFrame)
+  }
+
+  test("Test 15. Command: | Another incorrect query") {
+    val query = createQuery("""fields - -""",
+      "otstats", s"$test_index")
+    var actual = new Converter(query).run
+    var expected = readIndexDF(test_index)
+    expected = setNullableStateOfColumn(expected, "index", nullable = true)
+    actual = actual.select(actual.columns.sorted.toSeq.map(c => col(c)):_*)
+    expected = expected.select(expected.columns.sorted.toSeq.map(c => col(c)):_*)
+    compareDataFrames(actual, expected)
+  }
+
+  test("Test 17. Command: | Another incorrect query") {
+    val query = createQuery("""fields * +""",
+      "otstats", s"$test_index")
+    var actual = new Converter(query).run
+    var expected = readIndexDF(test_index)
+    expected = setNullableStateOfColumn(expected, "index", nullable = true)
+    actual = actual.select(actual.columns.sorted.toSeq.map(c => col(c)):_*)
+    expected = expected.select(expected.columns.sorted.toSeq.map(c => col(c)):_*)
+    compareDataFrames(actual, expected)
+  }
+
+  test("Test 18. Command: | Another incorrect query") {
+    val query = createQuery("""fields * -""",
+      "otstats", s"$test_index")
+    var actual = new Converter(query).run
+    var expected = readIndexDF(test_index)
+    expected = setNullableStateOfColumn(expected, "index", nullable = true)
+    actual = actual.select(actual.columns.sorted.toSeq.map(c => col(c)):_*)
+    expected = expected.select(expected.columns.sorted.toSeq.map(c => col(c)):_*)
+    compareDataFrames(actual, expected)
+  }
+
 
 }
