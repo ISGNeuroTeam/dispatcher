@@ -18,7 +18,7 @@ class OTLReturnTest extends CommandTest {
     actual = setNullableStateOfColumn(actual, "max_serialField", nullable = true)
     val expected = readIndexDF(test_index)
       .select(F.col("_time"), F.col("serialField"))
-      .withColumn("max_serialField", (F.max("serialField") over ()))
+      .withColumn("max_serialField", F.max("serialField") over ())
       .withColumn("max_serialField", col("max_serialField").cast(IntegerType))
     compareDataFrames(actual, expected)
   }

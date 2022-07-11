@@ -15,7 +15,7 @@ import org.apache.spark.sql.functions._
  * only the first value from the specified column.
  * You can return multiple values by specifying the number of required values as the first parameter.
  *
- * Command syntax return [count] <field-list>
+ * Command syntax return [count] $fieldname
  *
  * The default count is 1.
  *
