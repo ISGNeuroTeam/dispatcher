@@ -45,8 +45,6 @@ class OTLReturnTest extends CommandTest {
       "otstats", s"$test_index")
     var actual = new Converter(mainQuery, cache).run
     actual = setNullableStateOfColumn(actual, "value", nullable = true)
-    actual.show(10, false)
-    actual.printSchema()
     val expected = readIndexDF(test_index)
       .select(F.col("_time"), F.col("serialField"), F.col("random_Field"))
       .withColumn("value", F.col("serialField").cast(DoubleType) * F.col("random_Field").cast(DoubleType))
@@ -54,23 +52,14 @@ class OTLReturnTest extends CommandTest {
   }
 
 
-  test("Test 4. Command: | Return more than one value from subsearch") {
-    val ssQuery = createQuery(s"sort -serialField | return count=5 $$serialField",
+  test("Test 4. Command: | Return multiple values from subsearch") {
+    val mainQuery = createQuery(s"sort -serialField | return 5 serialField",
       "otstats", s"$test_index")
-    val dfc = new Converter(ssQuery).run
-    dfc.printSchema()
-    dfc.show()
-    val cache = Map("id1" -> dfc)
-    val mainQuery = createQuery("""table _time, serialField | where serialField=subsearch=id1""",
-      "otstats", s"$test_index")
-    var actual = new Converter(mainQuery, cache).run
+    var actual = new Converter(mainQuery).run
     actual = setNullableStateOfColumn(actual, "serialField", nullable = true)
-    actual.printSchema()
-    actual.show(10, false)
     val expected = readIndexDF(test_index)
-      .select(F.col("_time"), F.col("serialField"))
-      .withColumn("max_serialField", (F.max("serialField") over ()))
-      .withColumn("max_serialField", col("max_serialField").cast(IntegerType))
+      .orderBy(F.col("serialField").desc)
+      .select(F.col("serialField")).limit(5)
     compareDataFrames(actual, expected)
   }
 }

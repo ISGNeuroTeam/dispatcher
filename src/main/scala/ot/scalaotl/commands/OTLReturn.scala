@@ -9,30 +9,22 @@ import org.apache.spark.sql.functions._
 /** =Abstract=
  * This class provides support of __'''return'''__ otl command.
  *
- * __'''return'''__ used to keeps or remove the selected fields from the query results.
- * If the command is placed at the end of the request, then the indicated fields will be displayed on the screen.
- * If the command is specified in the middle of the query, then further data processing will occur with the fields
- * specified after fields.
- * Fields is a synonym for the command table.
+ * __'''return'''__ Used in subqueries to substitute a value from a specific column of the received dataset
+ * into the original query.
+ * By default if more than one record is received during the subsearch evaluation, the command will return
+ * only the first value from the specified column.
+ * You can return multiple values by specifying the number of required values as the first parameter.
  *
  * Command syntax return [count] <field-list>
  *
- * If "-" is specified, then the fields from <field-list> will be removed from the query results.
- * If an asterisk "*" is specified, then all fields will be retrieved.
- * Field names can use wildcards.
+ * The default count is 1.
  *
  * =Usage example=
- * OTL: keep only selected fields
- * {{{  other otl-commands ... | fields metric_name, value }}}
+ * OTL: return first value of field in subsearch
+ * {{{  main search otl-commands ... eval x = [ subsearch otl-commands ... | return $fieldname }}}
  *
- * OTL: remove selected fields
- * {{{  other otl-commands ... | fields - metric_long_name, _raw }}}
- *
- * OTL: keep selected fields with wildcards
- * {{{  other otl-commands ... | fields _*, metric*, value }}}
- *
- * OTL: get all fields from index
- * {{{  other otl-commands ... | fields * }}}
+ * OTL: return multiple values of field in subsearch
+ * {{{  main search otl-commands ... eval x = [ subsearch otl-commands ... | return count $fieldname }}}
  *
  * @constructor creates new instance of [[ OTLReturn ]]
  * @param sq [[ SimpleQuery ]] - contains args, cache, subsearches, search time interval, stfe and preview flags
@@ -45,6 +37,7 @@ class OTLReturn(sq: SimpleQuery) extends OTLBaseCommand(sq) {
 
   def isInteger(s: String): Boolean = Try(s.toInt).isSuccess
 
+  // getting the number of return values
   val count: Int = args.split(" ").headOption.filter(isInteger) match {
     case Some(str) => str.toInt
     case _ => 1
