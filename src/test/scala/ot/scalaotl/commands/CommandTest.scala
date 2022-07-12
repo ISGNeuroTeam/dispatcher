@@ -194,31 +194,32 @@ abstract class CommandTest extends FunSuite with BeforeAndAfterAll {
    * Step3 If an external data schema is used, it will be written next to the parquet
    */
   override def beforeAll(): Unit = {
-    val indexDir = new Directory(new File(f"$tmpDir/indexes"))
+    val indexPath = s"$tmpDir/indexes/$test_index"
+    val indexDir = new Directory(new File(indexPath))
     if (indexDir.exists && indexDir.list.nonEmpty) indexDir.deleteRecursively()
     var df = spark.emptyDataFrame
     if (this.getClass.getSimpleName.contains("FullRead") || this.getClass.getSimpleName.contains("RawRead")){
-
-        df = spark.read.options(Map("inferSchema"->"true","delimiter"->",","header"->"true", "quote"->"\"", "escape"->"\""))
-          .csv(f"$dataDir/sensors.csv")
-          .withColumn("index", F.lit(f"$test_index-0"))
-          .withColumn("_time", col("_time").cast(LongType))
+      df = spark.read.options(
+        Map("inferSchema" -> "true", "delimiter" -> ",", "header" -> "true", "quote" -> "\"", "escape" -> "\"")
+      )
+        .csv(s"$dataDir/sensors.csv")
+        .withColumn("index", F.lit(s"$test_index-0"))
+        .withColumn("_time", col("_time").cast(LongType))
       val time_min_max = df.agg(min("_time"), max("_time")).head()
         val time_step = time_min_max.getLong(1) - time_min_max.getLong(0)
         val bucket_period = 3600 * 24 * 30
         val buckets_cnt = math.floor(time_step / bucket_period).toInt
         for(i <- stfeRawSeparators.indices){
-          val df_new = if (i == 0) df else df.withColumn("index", F.lit(f"$test_index-$i"))
+          val df_new = if (i == 0) df
+          else df.withColumn("index", F.lit(s"$test_index-$i"))
             .withColumn("_raw", F.ltrim(F.col("_raw"), "{"))
             .withColumn("_raw", F.rtrim(F.col("_raw"), "}"))
-              .withColumn("_raw", F.regexp_replace(F.col("_raw"), F.lit(": "), F.lit(stfeRawSeparators(i))))
+            .withColumn("_raw", F.regexp_replace(F.col("_raw"), F.lit(": "), F.lit(stfeRawSeparators(i))))
           for (j <- 0 to buckets_cnt) {
             val lowerBound = j * bucket_period + time_min_max.getLong(0)
             val upperBound = (j + 1) * bucket_period + time_min_max.getLong(0)
-            val bucketPath = f"$tmpDir/indexes/$test_index-$i/bucket-$lowerBound-$upperBound-${System.currentTimeMillis / 1000}"
+            val bucketPath = s"$indexPath-$i/bucket-$lowerBound-$upperBound-${System.currentTimeMillis / 1000}"
             val df_bucket = df_new.filter(F.col("_time").between(lowerBound, upperBound))
-
-
             df_bucket.write.parquet(bucketPath)
             if (externalSchema)
               new PrintWriter(bucketPath + "/all.schema") {
@@ -230,7 +231,7 @@ abstract class CommandTest extends FunSuite with BeforeAndAfterAll {
     }
     else {
       df = jsonToDf(dataset)
-      val bucketPath = f"$tmpDir/indexes/$test_index/bucket-0-${Int.MaxValue}-${System.currentTimeMillis / 1000}"
+      val bucketPath = s"$tmpDir/indexes/$test_index/bucket-0-${Int.MaxValue}-${System.currentTimeMillis / 1000}"
       df.write.parquet(bucketPath)
       if (externalSchema)
         new PrintWriter(bucketPath + "/all.schema") {
@@ -245,7 +246,8 @@ abstract class CommandTest extends FunSuite with BeforeAndAfterAll {
    * Step2 If indexes directory is empty then delete it
    */
   override def afterAll(): Unit = {
-    val indexDir = new Directory(new File(f"$tmpDir/indexes"))
+    val indexPath = s"$tmpDir/indexes/$test_index"
+    val indexDir = new Directory(new File(indexPath))
     indexDir.deleteRecursively()
   }
 
