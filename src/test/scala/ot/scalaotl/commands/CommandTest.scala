@@ -2,21 +2,16 @@ package ot.scalaotl.commands
 
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileSystem, Path}
-
-import java.io.{File, PrintWriter}
-import java.util.UUID
 import org.apache.log4j.Logger
-import org.apache.spark.sql.functions._
+import org.apache.spark.sql.types._
 import org.apache.spark.sql.{Column, DataFrame, SparkSession, functions => F}
-import org.apache.spark.sql.types.{ArrayType, DoubleType, IntegerType, LongType, NullType, StringType, StructField, StructType}
 import org.scalatest.{Assertion, BeforeAndAfterAll, FunSuite}
-import ot.AppConfig.{config, getLogLevel}
-
-import scala.reflect.{ClassTag, classTag}
+import ot.AppConfig.config
 import ot.dispatcher.OTLQuery
 import ot.scalaotl.Converter
 import ot.scalaotl.extensions.StringExt._
 
+import java.io.{File, PrintWriter}
 import scala.collection.mutable.ListBuffer
 import scala.reflect.io.Directory
 
@@ -39,19 +34,18 @@ abstract class CommandTest extends FunSuite with BeforeAndAfterAll {
   }
 
   val dataset: String =
-  """[
-    |{"_time":1568026476854,"_meta":"_subsecond::.854 timestamp::none","host":"test.local:9990","sourcetype":"jmx","index":"test_index","source":"test_source","_raw":"{\"serialField\": \"0\", \"random_Field\": \"100\", \"WordField\": \"qwe\", \"junkField\": \"q2W\"}","_nifi_time":"1568037188486","serialField":"0","random_Field":"100","WordField":"qwe","junkField":"q2W","_subsecond":"854","timestamp":"none","_nifi_time_out":"1568037488751"},
-    |{"_time":1568026476854,"_meta":"_subsecond::.854 timestamp::none","host":"test.local:9990","sourcetype":"jmx","index":"test_index","source":"test_source","_raw":"{\"serialField\": \"1\", \"random_Field\": \"-90\", \"WordField\": \"rty\", \"junkField\": \"132_.\"}","_nifi_time":"1568037188487","serialField":"1","random_Field":"-90","WordField":"rty","junkField":"132_.","_subsecond":"854","timestamp":"none","_nifi_time_out":"1568037488752"},
-    |{"_time":1568026476854,"_meta":"_subsecond::.854 timestamp::none","host":"test.local:9990","sourcetype":"jmx","index":"test_index","source":"test_source","_raw":"{\"serialField\": \"2\", \"random_Field\": \"50\", \"WordField\": \"uio\", \"junkField\": \"asd.cx\"}","_nifi_time":"1568037188487","serialField":"2","random_Field":"50","WordField":"uio","junkField":"asd.cx","_subsecond":"854","timestamp":"none","_nifi_time_out":"1568037488752"},
-    |{"_time":1568026476854,"_meta":"_subsecond::.854 timestamp::none","host":"test.local:9990","sourcetype":"jmx","index":"test_index","source":"test_source","_raw":"{\"serialField\": \"3\", \"random_Field\": \"20\", \"WordField\": \"GreenPeace\", \"junkField\": \"XYZ\"}","_nifi_time":"1568037188487","serialField":"3","random_Field":"20","WordField":"GreenPeace","junkField":"XYZ","_subsecond":"854","timestamp":"none","_nifi_time_out":"1568037488752"},
-    |{"_time":1568026476854,"_meta":"_subsecond::.854 timestamp::none","host":"test.local:9990","sourcetype":"jmx","index":"test_index","source":"test_source","_raw":"{\"serialField\": \"4\", \"random_Field\": \"30\", \"WordField\": \"fgh\", \"junkField\": \"123_ASD\"}","_nifi_time":"1568037188487","serialField":"4","random_Field":"30","WordField":"fgh","junkField":"123_ASD","_subsecond":"854","timestamp":"none","_nifi_time_out":"1568037488752"},
-    |{"_time":1568026476854,"_meta":"_subsecond::.854 timestamp::none","host":"test.local:9990","sourcetype":"jmx","index":"test_index","source":"test_source","_raw":"{\"serialField\": \"5\", \"random_Field\": \"50\", \"WordField\": \"jkl\", \"junkField\": \"casd(@#)asd\"}","_nifi_time":"1568037188487","serialField":"5","random_Field":"50","WordField":"jkl","junkField":"casd(@#)asd","_subsecond":"854","timestamp":"none","_nifi_time_out":"1568037488752"},
-    |{"_time":1568026476854,"_meta":"_subsecond::.854 timestamp::none","host":"test.local:9990","sourcetype":"jmx","index":"test_index","source":"test_source","_raw":"{\"serialField\": \"6\", \"random_Field\": \"60\", \"WordField\": \"zxc\", \"junkField\": \"QQQ.2\"}","_nifi_time":"1568037188487","serialField":"6","random_Field":"60","WordField":"zxc","junkField":"QQQ.2","_subsecond":"854","timestamp":"none","_nifi_time_out":"1568037488752"},
-    |{"_time":1568026476854,"_meta":"_subsecond::.854 timestamp::none","host":"test.local:9990","sourcetype":"jmx","index":"test_index","source":"test_source","_raw":"{\"serialField\": \"7\", \"random_Field\": \"-100\", \"WordField\": \"RUS\", \"junkField\": \"00_3\"}","_nifi_time":"1568037188487","serialField":"7","random_Field":"-100","WordField":"RUS","junkField":"00_3","_subsecond":"854","timestamp":"none","_nifi_time_out":"1568037488752"},
-    |{"_time":1568026476854,"_meta":"_subsecond::.854 timestamp::none","host":"test.local:9990","sourcetype":"jmx","index":"test_index","source":"test_source","_raw":"{\"serialField\": \"8\", \"random_Field\": \"0\", \"WordField\": \"MMM\", \"junkField\": \"112\"}","_nifi_time":"1568037188487","serialField":"8","random_Field":"0","WordField":"MMM","junkField":"112","_subsecond":"854","timestamp":"none","_nifi_time_out":"1568037488752"},
-    |{"_time":1568026476854,"_meta":"_subsecond::.854 timestamp::none","host":"test.local:9990","sourcetype":"jmx","index":"test_index","source":"test_source","_raw":"{\"serialField\": \"9\", \"random_Field\": \"10\", \"WordField\": \"USA\", \"junkField\": \"word\"}","_nifi_time":"1568037188487","serialField":"9","random_Field":"10","WordField":"USA","junkField":"word","_subsecond":"854","timestamp":"none","_nifi_time_out":"1568037488752"}
-  |]"""
-  val dataDir: String =  "src/test/resources/data"
+    """[
+      |{"_time":1568026476854,"_meta":"_subsecond::.854 timestamp::none","host":"test.local:9990","sourcetype":"jmx","index":"test_index","source":"test_source","_raw":"{\"serialField\": \"0\", \"random_Field\": \"100\", \"WordField\": \"qwe\", \"junkField\": \"q2W\"}","_nifi_time":"1568037188486","serialField":"0","random_Field":"100","WordField":"qwe","junkField":"q2W","_subsecond":"854","timestamp":"none","_nifi_time_out":"1568037488751"},
+      |{"_time":1568026476854,"_meta":"_subsecond::.854 timestamp::none","host":"test.local:9990","sourcetype":"jmx","index":"test_index","source":"test_source","_raw":"{\"serialField\": \"1\", \"random_Field\": \"-90\", \"WordField\": \"rty\", \"junkField\": \"132_.\"}","_nifi_time":"1568037188487","serialField":"1","random_Field":"-90","WordField":"rty","junkField":"132_.","_subsecond":"854","timestamp":"none","_nifi_time_out":"1568037488752"},
+      |{"_time":1568026476854,"_meta":"_subsecond::.854 timestamp::none","host":"test.local:9990","sourcetype":"jmx","index":"test_index","source":"test_source","_raw":"{\"serialField\": \"2\", \"random_Field\": \"50\", \"WordField\": \"uio\", \"junkField\": \"asd.cx\"}","_nifi_time":"1568037188487","serialField":"2","random_Field":"50","WordField":"uio","junkField":"asd.cx","_subsecond":"854","timestamp":"none","_nifi_time_out":"1568037488752"},
+      |{"_time":1568026476854,"_meta":"_subsecond::.854 timestamp::none","host":"test.local:9990","sourcetype":"jmx","index":"test_index","source":"test_source","_raw":"{\"serialField\": \"3\", \"random_Field\": \"20\", \"WordField\": \"GreenPeace\", \"junkField\": \"XYZ\"}","_nifi_time":"1568037188487","serialField":"3","random_Field":"20","WordField":"GreenPeace","junkField":"XYZ","_subsecond":"854","timestamp":"none","_nifi_time_out":"1568037488752"},
+      |{"_time":1568026476854,"_meta":"_subsecond::.854 timestamp::none","host":"test.local:9990","sourcetype":"jmx","index":"test_index","source":"test_source","_raw":"{\"serialField\": \"4\", \"random_Field\": \"30\", \"WordField\": \"fgh\", \"junkField\": \"123_ASD\"}","_nifi_time":"1568037188487","serialField":"4","random_Field":"30","WordField":"fgh","junkField":"123_ASD","_subsecond":"854","timestamp":"none","_nifi_time_out":"1568037488752"},
+      |{"_time":1568026476854,"_meta":"_subsecond::.854 timestamp::none","host":"test.local:9990","sourcetype":"jmx","index":"test_index","source":"test_source","_raw":"{\"serialField\": \"5\", \"random_Field\": \"50\", \"WordField\": \"jkl\", \"junkField\": \"casd(@#)asd\"}","_nifi_time":"1568037188487","serialField":"5","random_Field":"50","WordField":"jkl","junkField":"casd(@#)asd","_subsecond":"854","timestamp":"none","_nifi_time_out":"1568037488752"},
+      |{"_time":1568026476854,"_meta":"_subsecond::.854 timestamp::none","host":"test.local:9990","sourcetype":"jmx","index":"test_index","source":"test_source","_raw":"{\"serialField\": \"6\", \"random_Field\": \"60\", \"WordField\": \"zxc\", \"junkField\": \"QQQ.2\"}","_nifi_time":"1568037188487","serialField":"6","random_Field":"60","WordField":"zxc","junkField":"QQQ.2","_subsecond":"854","timestamp":"none","_nifi_time_out":"1568037488752"},
+      |{"_time":1568026476854,"_meta":"_subsecond::.854 timestamp::none","host":"test.local:9990","sourcetype":"jmx","index":"test_index","source":"test_source","_raw":"{\"serialField\": \"7\", \"random_Field\": \"-100\", \"WordField\": \"RUS\", \"junkField\": \"00_3\"}","_nifi_time":"1568037188487","serialField":"7","random_Field":"-100","WordField":"RUS","junkField":"00_3","_subsecond":"854","timestamp":"none","_nifi_time_out":"1568037488752"},
+      |{"_time":1568026476854,"_meta":"_subsecond::.854 timestamp::none","host":"test.local:9990","sourcetype":"jmx","index":"test_index","source":"test_source","_raw":"{\"serialField\": \"8\", \"random_Field\": \"0\", \"WordField\": \"MMM\", \"junkField\": \"112\"}","_nifi_time":"1568037188487","serialField":"8","random_Field":"0","WordField":"MMM","junkField":"112","_subsecond":"854","timestamp":"none","_nifi_time_out":"1568037488752"},
+      |{"_time":1568026476854,"_meta":"_subsecond::.854 timestamp::none","host":"test.local:9990","sourcetype":"jmx","index":"test_index","source":"test_source","_raw":"{\"serialField\": \"9\", \"random_Field\": \"10\", \"WordField\": \"USA\", \"junkField\": \"word\"}","_nifi_time":"1568037188487","serialField":"9","random_Field":"10","WordField":"USA","junkField":"word","_subsecond":"854","timestamp":"none","_nifi_time_out":"1568037488752"}
+      |]"""
   val tmpDir: String =  "src/test/resources/temp"
   val test_index = s"test_index-${this.getClass.getSimpleName}"
   val stfeRawSeparators: Array[String] = Array("json", ": ", "= ", " :", " =", " : ", " = ", ":", "=")
@@ -194,43 +188,44 @@ abstract class CommandTest extends FunSuite with BeforeAndAfterAll {
    * Step3 If an external data schema is used, it will be written next to the parquet
    */
   override def beforeAll(): Unit = {
-    val indexDir = new Directory(new File(f"$tmpDir/indexes"))
+    val indexPath = s"$tmpDir/indexes/$test_index"
+    val indexDir = new Directory(new File(indexPath))
     if (indexDir.exists && indexDir.list.nonEmpty) indexDir.deleteRecursively()
     var df = spark.emptyDataFrame
     if (this.getClass.getSimpleName.contains("FullRead") || this.getClass.getSimpleName.contains("RawRead")){
-
-        df = spark.read.options(Map("inferSchema"->"true","delimiter"->",","header"->"true", "quote"->"\"", "escape"->"\""))
-          .csv(f"$dataDir/sensors.csv")
-          .withColumn("index", F.lit(f"$test_index-0"))
-          .withColumn("_time", col("_time").cast(LongType))
-      val time_min_max = df.agg(min("_time"), max("_time")).head()
-        val time_step = time_min_max.getLong(1) - time_min_max.getLong(0)
-        val bucket_period = 3600 * 24 * 30
-        val buckets_cnt = math.floor(time_step / bucket_period).toInt
-        for(i <- stfeRawSeparators.indices){
-          val df_new = if (i == 0) df else df.withColumn("index", F.lit(f"$test_index-$i"))
-            .withColumn("_raw", F.ltrim(F.col("_raw"), "{"))
-            .withColumn("_raw", F.rtrim(F.col("_raw"), "}"))
-              .withColumn("_raw", F.regexp_replace(F.col("_raw"), F.lit(": "), F.lit(stfeRawSeparators(i))))
-          for (j <- 0 to buckets_cnt) {
-            val lowerBound = j * bucket_period + time_min_max.getLong(0)
-            val upperBound = (j + 1) * bucket_period + time_min_max.getLong(0)
-            val bucketPath = f"$tmpDir/indexes/$test_index-$i/bucket-$lowerBound-$upperBound-${System.currentTimeMillis / 1000}"
-            val df_bucket = df_new.filter(F.col("_time").between(lowerBound, upperBound))
-
-
-            df_bucket.write.parquet(bucketPath)
-            if (externalSchema)
-              new PrintWriter(bucketPath + "/all.schema") {
-                write(df_bucket.schema.toDDL.replace(",", "\n"))
-                close()
-              }
-          }
+      df = spark.read.options(
+        Map("inferSchema" -> "true", "delimiter" -> ",", "header" -> "true", "quote" -> "\"", "escape" -> "\"")
+      )
+        .csv(this.getClass.getClassLoader.getResource("data/sensors.csv").getPath)
+        .withColumn("index", F.lit(s"$test_index-0"))
+        .withColumn("_time", F.col("_time").cast(LongType))
+      val time_min_max = df.agg(F.min("_time"), F.max("_time")).head()
+      val time_step = time_min_max.getLong(1) - time_min_max.getLong(0)
+      val bucket_period = 3600 * 24 * 30
+      val buckets_cnt = math.floor(time_step / bucket_period).toInt
+      for(i <- stfeRawSeparators.indices){
+        val df_new = if (i == 0) df
+        else df.withColumn("index", F.lit(s"$test_index-$i"))
+          .withColumn("_raw", F.ltrim(F.col("_raw"), "{"))
+          .withColumn("_raw", F.rtrim(F.col("_raw"), "}"))
+          .withColumn("_raw", F.regexp_replace(F.col("_raw"), F.lit(": "), F.lit(stfeRawSeparators(i))))
+        for (j <- 0 to buckets_cnt) {
+          val lowerBound = j * bucket_period + time_min_max.getLong(0)
+          val upperBound = (j + 1) * bucket_period + time_min_max.getLong(0)
+          val bucketPath = s"$indexPath-$i/bucket-$lowerBound-$upperBound-${System.currentTimeMillis / 1000}"
+          val df_bucket = df_new.filter(F.col("_time").between(lowerBound, upperBound))
+          df_bucket.write.parquet(bucketPath)
+          if (externalSchema)
+            new PrintWriter(bucketPath + "/all.schema") {
+              write(df_bucket.schema.toDDL.replace(",", "\n"))
+              close()
+            }
         }
+      }
     }
     else {
       df = jsonToDf(dataset)
-      val bucketPath = f"$tmpDir/indexes/$test_index/bucket-0-${Int.MaxValue}-${System.currentTimeMillis / 1000}"
+      val bucketPath = s"$tmpDir/indexes/$test_index/bucket-0-${Int.MaxValue}-${System.currentTimeMillis / 1000}"
       df.write.parquet(bucketPath)
       if (externalSchema)
         new PrintWriter(bucketPath + "/all.schema") {
@@ -245,7 +240,8 @@ abstract class CommandTest extends FunSuite with BeforeAndAfterAll {
    * Step2 If indexes directory is empty then delete it
    */
   override def afterAll(): Unit = {
-    val indexDir = new Directory(new File(f"$tmpDir/indexes"))
+    val indexPath = s"$tmpDir/indexes"
+    val indexDir = new Directory(new File(indexPath))
     indexDir.deleteRecursively()
   }
 
@@ -268,12 +264,10 @@ abstract class CommandTest extends FunSuite with BeforeAndAfterAll {
   }
 
   def writeTextFile(content : String, relativePath :String) : Unit={
-    spark.stop()
     val lookupFile = tmpDir + "/" + relativePath
     val directory = new Directory(new File(lookupFile).getParentFile)
     directory.createDirectory()
     new PrintWriter(lookupFile) { write(content); close() }
-
   }
 
   def compareDataFrames(df_actual: DataFrame, df_expected: DataFrame): Assertion={

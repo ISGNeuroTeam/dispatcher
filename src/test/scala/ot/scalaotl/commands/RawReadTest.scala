@@ -4,7 +4,6 @@ package ot.scalaotl.commands
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.{Row, functions => F}
-import ot.dispatcher.OTLQuery
 import ot.scalaotl.Converter
 
 class RawReadTest extends CommandTest {
@@ -48,7 +47,7 @@ class RawReadTest extends CommandTest {
     var expected = spark.createDataFrame(spark.sparkContext.emptyRDD[Row],
       StructType(Seq(StructField("_time", LongType), StructField("_raw", StringType))))
     for(i <- stfeRawSeparators.indices) {
-      val df = readIndexDF(f"""$test_index-$i""", readingDatasetSchema)
+      val df = readIndexDF(s"$test_index-$i", readingDatasetSchema)
         .select(F.col("_time"), F.col("_raw"))
       expected = df.union(expected)
     }
@@ -66,7 +65,7 @@ class RawReadTest extends CommandTest {
     var expected = spark.createDataFrame(spark.sparkContext.emptyRDD[Row],
       StructType(Seq(StructField("_time", LongType), StructField("_raw", StringType))))
     for(i <- stfeRawSeparators.indices) {
-      val df = readIndexDF(f"$test_index-$i").select(F.col("_time"), F.col("_raw"))
+      val df = readIndexDF(s"$test_index-$i").select(F.col("_time"), F.col("_raw"))
       expected = df.union(expected)
     }
     actual = actual.select(actual.columns.sorted.toSeq.map(c => col(c)):_*)

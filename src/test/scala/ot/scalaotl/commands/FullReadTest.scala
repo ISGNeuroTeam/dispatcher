@@ -1,6 +1,5 @@
 package ot.scalaotl.commands
 
-import org.apache.spark.sql.functions._
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.{Row, functions => F}
 import ot.scalaotl.Converter
@@ -47,12 +46,12 @@ class FullReadTest extends CommandTest {
       StructType(Seq(StructField("_time", LongType), StructField("metric_name", StringType),
         StructField("value", DoubleType))))
     for(i <- stfeRawSeparators.indices) {
-      val df = readIndexDF(f"$test_index-$i", readingDatasetSchema)
+      val df = readIndexDF(s"$test_index-$i", readingDatasetSchema)
         .select(F.col("_time"), F.col("metric_name"), F.col("value"))
       expected = df.union(expected)
     }
-    actual = actual.select(actual.columns.sorted.toSeq.map(c => col(c)):_*)
-    expected = expected.select(expected.columns.sorted.toSeq.map(c => col(c)):_*)
+    actual = actual.select(actual.columns.sorted.toSeq.map(c => F.col(c)):_*)
+    expected = expected.select(expected.columns.sorted.toSeq.map(c => F.col(c)):_*)
     compareDataFrames(actual, expected)
   }
 
@@ -66,12 +65,12 @@ class FullReadTest extends CommandTest {
       StructType(Seq(StructField("_time", LongType), StructField("metric_name", StringType),
         StructField("value", DoubleType))))
     for(i <- stfeRawSeparators.indices) {
-      val df = readIndexDF(f"$test_index-$i", readingDatasetSchema)
+      val df = readIndexDF(s"$test_index-$i", readingDatasetSchema)
         .select(F.col("_time"), F.col("metric_name"), F.col("value"))
       expected = df.union(expected)
     }
-    actual = actual.select(actual.columns.sorted.toSeq.map(c => col(c)):_*)
-    expected = expected.select(expected.columns.sorted.toSeq.map(c => col(c)):_*)
+    actual = actual.select(actual.columns.sorted.toSeq.map(c => F.col(c)):_*)
+    expected = expected.select(expected.columns.sorted.toSeq.map(c => F.col(c)):_*)
     compareDataFrames(actual, expected)
   }
 
@@ -84,8 +83,8 @@ class FullReadTest extends CommandTest {
     var actual = new Converter(query).run
     var expected = readIndexDF(s"$test_index-0", readingDatasetSchema)
       .select(F.col("_time"), F.col("metric_name"), F.col("value"))
-    actual = actual.select(actual.columns.sorted.toSeq.map(c => col(c)):_*)
-    expected = expected.select(expected.columns.sorted.toSeq.map(c => col(c)):_*)
+    actual = actual.select(actual.columns.sorted.toSeq.map(c => F.col(c)):_*)
+    expected = expected.select(expected.columns.sorted.toSeq.map(c => F.col(c)):_*)
     compareDataFrames(actual, expected)
   }
 
@@ -96,7 +95,7 @@ class FullReadTest extends CommandTest {
       s""" | otstats {"$non_existent_index-1": {"query": "", "tws": 0, "twf": 0}, "$non_existent_index-2": {"query": "", "tws": 0, "twf": 0}}  | table _time, floor, room, metric_name, value, index, _raw""",
       s"$test_index-0")
     val thrown = intercept[Exception] {
-      val actual = new Converter(query).run
+      new Converter(query).run
     }
     assert(thrown.getMessage.endsWith(s"Index not found: $non_existent_index-2"))
   }
@@ -108,8 +107,8 @@ class FullReadTest extends CommandTest {
     var expected = readIndexDF(s"$test_index-0", readingDatasetSchema)
       .select(F.col("_time"), F.col("floor"), F.col("room"), F.col("description"),
         F.col("metric_name"), F.col("metric_long_name"))
-    actual = actual.select(actual.columns.sorted.toSeq.map(c => col(c)):_*)
-    expected = expected.select(expected.columns.sorted.toSeq.map(c => col(c)):_*)
+    actual = actual.select(actual.columns.sorted.toSeq.map(c => F.col(c)):_*)
+    expected = expected.select(expected.columns.sorted.toSeq.map(c => F.col(c)):_*)
     compareDataFrames(actual, expected)
   }
 
@@ -124,8 +123,8 @@ class FullReadTest extends CommandTest {
       .select(F.col("_time"), F.col("floor"), F.col("room"), F.col("metric_name"),
         F.col("value"), F.col("_raw"), F.col("index"))
     expected = setNullableStateOfColumn(expected, "index", nullable = true)
-    actual = actual.select(actual.columns.sorted.toSeq.map(c => col(c)):_*)
-    expected = expected.select(expected.columns.sorted.toSeq.map(c => col(c)):_*)
+    actual = actual.select(actual.columns.sorted.toSeq.map(c => F.col(c)):_*)
+    expected = expected.select(expected.columns.sorted.toSeq.map(c => F.col(c)):_*)
     compareDataFrames(actual, expected)
   }
 
@@ -201,12 +200,12 @@ class FullReadTest extends CommandTest {
         F.col("`text`"), F.col("`text[1].val`"), F.col("`text[2].val`"),
         F.col("`num`"), F.col("`num[1].val`"), F.col("`num[2].val`")
       )
-      .withColumn("res", array(
+      .withColumn("res", F.array(
         F.concat(F.col("`num[1].val`"), F.lit(' '), F.col("`text[1].val`")),
         F.concat(F.col("`num[2].val`"), F.lit(' '), F.col("`text[2].val`")))
       )
-      .withColumn("num{}.val", array(F.col("`num[1].val`"), F.col("`num[2].val`")))
-      .withColumn("text{}.val", array(F.col("`text[1].val`"), F.col("`text[2].val`")))
+      .withColumn("num{}.val", F.array(F.col("`num[1].val`"), F.col("`num[2].val`")))
+      .withColumn("text{}.val", F.array(F.col("`text[1].val`"), F.col("`text[2].val`")))
       .select(
         F.col("_time"),  F.col("res"), F.col("`num{}.val`"), F.col("`text{}.val`")
       )

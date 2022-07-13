@@ -1,6 +1,6 @@
 package ot.scalaotl.commands
 
-import org.apache.spark.sql.functions.col
+
 import org.apache.spark.sql.types.{NullType, StringType}
 import org.apache.spark.sql.{functions => F}
 import ot.scalaotl.Converter
@@ -45,8 +45,8 @@ class OTLFieldsTest extends CommandTest {
     var expected = readIndexDF(test_index).drop(F.col("_time")).drop(F.col("_meta"))
       .drop(F.col("host")).drop(F.col("sourcetype"))
     expected = setNullableStateOfColumn(expected, "index", nullable = true)
-    actual = actual.select(actual.columns.sorted.toSeq.map(c => col(c)):_*)
-    expected = expected.select(expected.columns.sorted.toSeq.map(c => col(c)):_*)
+    actual = actual.select(actual.columns.sorted.toSeq.map(c => F.col(c)):_*)
+    expected = expected.select(expected.columns.sorted.toSeq.map(c => F.col(c)):_*)
     compareDataFrames(actual, expected)
   }
 
@@ -56,8 +56,8 @@ class OTLFieldsTest extends CommandTest {
     var actual = new Converter(query).run
     var expected = readIndexDF(test_index).drop(F.col("_time")).drop(F.col("host"))
     expected = setNullableStateOfColumn(expected, "index", nullable = true)
-    actual = actual.select(actual.columns.sorted.toSeq.map(c => col(c)):_*)
-    expected = expected.select(expected.columns.sorted.toSeq.map(c => col(c)):_*)
+    actual = actual.select(actual.columns.sorted.toSeq.map(c => F.col(c)):_*)
+    expected = expected.select(expected.columns.sorted.toSeq.map(c => F.col(c)):_*)
     compareDataFrames(actual, expected)
   }
 
@@ -71,8 +71,8 @@ class OTLFieldsTest extends CommandTest {
     val selection = expected.columns.filter(s => regex1.findFirstIn(s).isDefined || regex2.findFirstIn(s).isDefined
       || s.equals("_time"))
     expected = expected.select(selection.head, selection.tail : _*)
-    actual = actual.select(actual.columns.sorted.toSeq.map(c => col(c)):_*)
-    expected = expected.select(expected.columns.sorted.toSeq.map(c => col(c)):_*)
+    actual = actual.select(actual.columns.sorted.toSeq.map(c => F.col(c)):_*)
+    expected = expected.select(expected.columns.sorted.toSeq.map(c => F.col(c)):_*)
     compareDataFrames(actual, expected)
   }
 
@@ -83,8 +83,8 @@ class OTLFieldsTest extends CommandTest {
     var actual = new Converter(query).run
     var expected = readIndexDF(test_index)
     expected = setNullableStateOfColumn(expected, "index", nullable = true)
-    actual = actual.select(actual.columns.sorted.toSeq.map(c => col(c)):_*)
-    expected = expected.select(expected.columns.sorted.toSeq.map(c => col(c)):_*)
+    actual = actual.select(actual.columns.sorted.toSeq.map(c => F.col(c)):_*)
+    expected = expected.select(expected.columns.sorted.toSeq.map(c => F.col(c)):_*)
     compareDataFrames(actual, expected)
   }
 
@@ -94,8 +94,8 @@ class OTLFieldsTest extends CommandTest {
     var actual = new Converter(query).run
     var expected = readIndexDF(test_index)
     expected = setNullableStateOfColumn(expected, "index", nullable = true)
-    actual = actual.select(actual.columns.sorted.toSeq.map(c => col(c)):_*)
-    expected = expected.select(expected.columns.sorted.toSeq.map(c => col(c)):_*)
+    actual = actual.select(actual.columns.sorted.toSeq.map(c => F.col(c)):_*)
+    expected = expected.select(expected.columns.sorted.toSeq.map(c => F.col(c)):_*)
     compareDataFrames(actual, expected)
   }
 
@@ -127,8 +127,8 @@ class OTLFieldsTest extends CommandTest {
     var actual = new Converter(query).run
     var expected = readIndexDF(test_index)
     expected = setNullableStateOfColumn(expected, "index", nullable = true)
-    actual = actual.select(actual.columns.sorted.toSeq.map(c => col(c)):_*)
-    expected = expected.select(expected.columns.sorted.toSeq.map(c => col(c)):_*)
+    actual = actual.select(actual.columns.sorted.toSeq.map(c => F.col(c)):_*)
+    expected = expected.select(expected.columns.sorted.toSeq.map(c => F.col(c)):_*)
     compareDataFrames(actual, expected)
   }
 
@@ -155,8 +155,8 @@ class OTLFieldsTest extends CommandTest {
     var actual = new Converter(query).run
     var expected = readIndexDF(test_index)
     expected = setNullableStateOfColumn(expected, "index", nullable = true)
-    actual = actual.select(actual.columns.sorted.toSeq.map(c => col(c)):_*)
-    expected = expected.select(expected.columns.sorted.toSeq.map(c => col(c)):_*)
+    actual = actual.select(actual.columns.sorted.toSeq.map(c => F.col(c)):_*)
+    expected = expected.select(expected.columns.sorted.toSeq.map(c => F.col(c)):_*)
     compareDataFrames(actual, expected)
   }
 
@@ -166,8 +166,8 @@ class OTLFieldsTest extends CommandTest {
     var actual = new Converter(query).run
     var expected = readIndexDF(test_index)
     expected = setNullableStateOfColumn(expected, "index", nullable = true)
-    actual = actual.select(actual.columns.sorted.toSeq.map(c => col(c)):_*)
-    expected = expected.select(expected.columns.sorted.toSeq.map(c => col(c)):_*)
+    actual = actual.select(actual.columns.sorted.toSeq.map(c => F.col(c)):_*)
+    expected = expected.select(expected.columns.sorted.toSeq.map(c => F.col(c)):_*)
     compareDataFrames(actual, expected)
   }
 
@@ -177,8 +177,8 @@ class OTLFieldsTest extends CommandTest {
     var actual = new Converter(query).run
     var expected = readIndexDF(test_index)
     expected = setNullableStateOfColumn(expected, "index", nullable = true)
-    actual = actual.select(actual.columns.sorted.toSeq.map(c => col(c)):_*)
-    expected = expected.select(expected.columns.sorted.toSeq.map(c => col(c)):_*)
+    actual = actual.select(actual.columns.sorted.toSeq.map(c => F.col(c)):_*)
+    expected = expected.select(expected.columns.sorted.toSeq.map(c => F.col(c)):_*)
     compareDataFrames(actual, expected)
   }
 
