@@ -188,12 +188,9 @@ abstract class CommandTest extends FunSuite with BeforeAndAfterAll {
    * Step3 If an external data schema is used, it will be written next to the parquet
    */
   override def beforeAll(): Unit = {
-    val indexPath = s"$tmpDir/indexes/$test_index"
-    val indexDir = new Directory(new File(indexPath))
-    if (indexDir.exists && indexDir.list.nonEmpty) indexDir.deleteRecursively()
-    var df = spark.emptyDataFrame
-    if (this.getClass.getSimpleName.contains("FullRead") || this.getClass.getSimpleName.contains("RawRead")){
-      df = spark.read.options(
+    cleanIndexFiles()
+    if (List("RawRead", "FullRead").exists(this.getClass.getName.contains(_))){
+      val df = spark.read.options(
         Map("inferSchema" -> "true", "delimiter" -> ",", "header" -> "true", "quote" -> "\"", "escape" -> "\"")
       )
         .csv(this.getClass.getClassLoader.getResource("data/sensors.csv").getPath)
@@ -212,7 +209,7 @@ abstract class CommandTest extends FunSuite with BeforeAndAfterAll {
         for (j <- 0 to buckets_cnt) {
           val lowerBound = j * bucket_period + time_min_max.getLong(0)
           val upperBound = (j + 1) * bucket_period + time_min_max.getLong(0)
-          val bucketPath = s"$indexPath-$i/bucket-$lowerBound-$upperBound-${System.currentTimeMillis / 1000}"
+          val bucketPath = s"$tmpDir/indexes/$test_index-$i/bucket-$lowerBound-$upperBound-${System.currentTimeMillis / 1000}"
           val df_bucket = df_new.filter(F.col("_time").between(lowerBound, upperBound))
           df_bucket.write.parquet(bucketPath)
           if (externalSchema)
@@ -224,7 +221,7 @@ abstract class CommandTest extends FunSuite with BeforeAndAfterAll {
       }
     }
     else {
-      df = jsonToDf(dataset)
+      val df = jsonToDf(dataset)
       val bucketPath = s"$tmpDir/indexes/$test_index/bucket-0-${Int.MaxValue}-${System.currentTimeMillis / 1000}"
       df.write.parquet(bucketPath)
       if (externalSchema)
@@ -235,31 +232,32 @@ abstract class CommandTest extends FunSuite with BeforeAndAfterAll {
     }
   }
 
-  /** This code is executed after running the OTL-command
+  /** This code is executed after running the OTL-command tests
    * Recursively delete created indexes
    */
   override def afterAll(): Unit = {
-    if (this.getClass.getSimpleName.contains("FullRead") || this.getClass.getSimpleName.contains("RawRead")){
+    cleanIndexFiles()
+  }
+
+  def cleanIndexFiles(): AnyVal ={
+    if (List("RawRead", "FullRead").exists(this.getClass.getName.contains(_))){
       for(i <- stfeRawSeparators.indices){
-        val indexPath = s"$tmpDir/indexes/$test_index-$i"
-        val indexDir = new Directory(new File(indexPath))
-        indexDir.deleteRecursively()
+        val indexDir = new Directory(new File(s"$tmpDir/indexes/$test_index-$i"))
+        if (indexDir.exists) indexDir.deleteRecursively()
       }
     }
-    else {
-      val indexPath = s"$tmpDir/indexes/$test_index"
-      val indexDir = new Directory(new File(indexPath))
-      indexDir.deleteRecursively()
+      else {
+      if (this.getClass.getSimpleName.contains("OTLCollect")) {
+        val indexDir = new Directory(new File(s"$tmpDir/indexes/for_test"))
+        if (indexDir.exists) indexDir.deleteRecursively()
+      }
+      val indexDir = new Directory(new File(s"$tmpDir/indexes/$test_index"))
+      if (indexDir.exists) indexDir.deleteRecursively()
     }
   }
 
   def setNullableStateOfColumn(df: DataFrame, column: String, nullable: Boolean) : DataFrame = {
-    val schema = df.schema
-    val newSchema = StructType(schema.map {
-      case StructField( c, t, _, m) if c.equals(column) => StructField( c, t, nullable = nullable, m)
-      case y: StructField => y
-    })
-    df.sqlContext.createDataFrame( df.rdd, newSchema )
+    setNullableStateOfColumn(df, List(column), nullable)
   }
 
   def setNullableStateOfColumn(df: DataFrame, columns: List[String], nullable: Boolean) : DataFrame = {
