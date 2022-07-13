@@ -237,6 +237,8 @@ abstract class CommandTest extends FunSuite with BeforeAndAfterAll {
    */
   override def afterAll(): Unit = {
     cleanIndexFiles()
+    val indexesPath = new File(f"$tmpDir/indexes")
+    if(new Directory(indexesPath).list.isEmpty) new Directory(indexesPath.getParentFile).deleteRecursively()
   }
 
   def cleanIndexFiles(): AnyVal ={
@@ -246,7 +248,7 @@ abstract class CommandTest extends FunSuite with BeforeAndAfterAll {
         if (indexDir.exists) indexDir.deleteRecursively()
       }
     }
-      else {
+    else {
       if (this.getClass.getSimpleName.contains("OTLCollect")) {
         val indexDir = new Directory(new File(s"$tmpDir/indexes/for_test"))
         if (indexDir.exists) indexDir.deleteRecursively()
