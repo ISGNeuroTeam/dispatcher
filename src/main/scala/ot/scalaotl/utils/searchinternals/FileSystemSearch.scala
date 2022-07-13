@@ -22,21 +22,22 @@ import scala.util.{Failure, Success, Try}
 import scala.util.matching.Regex
 import scala.collection.mutable.ListBuffer
 
-class FileSystemSearch(spark: SparkSession, log: Logger, searchId: Int, fieldsUsedInFullQuery: Seq[String],
-                       fs: FileSystem, indexPath: String, index: String, query: String, _tws: Long, _twf: Long,
-                       preview: Boolean, isCache: Boolean = false, fullReadFlag: Boolean = false) extends OTLIndexes {
-  val defaultFields: List[String] = List("_time", "_raw")
-  val externalSchema: Boolean = otlconfig.getString("schema.external_schema").toBoolean
-  val mergeSchema: Boolean = otlconfig.getString("schema.merge_schema").toBoolean
+class FileSystemSearch(spark: SparkSession, log: Logger, searchId: Int, fieldsUsedInFullQuery: Seq[String], fs: FileSystem, indexPath: String, index: String, query: String, _tws: Long, _twf: Long, preview: Boolean, isCache: Boolean = false, fullReadFlag: Boolean = false) extends OTLIndexes
+{
+  val defaultFields = List("_time", "_raw")
+  val externalSchema = otlconfig.getString("schema.external_schema").toBoolean
+  val mergeSchema = otlconfig.getString("schema.merge_schema").toBoolean
 
   private def getColumns(_df: DataFrame): List[String] = {
     def matchCols(r: Regex): Array[String] = _df.columns.filter(r.pattern.matcher(_).matches)
 
+    val dfCols = _df.columns
     var i = 0
     val res = for(field <- fieldsUsedInFullQuery if i < max_cols)
       yield
       // select all fields matched with wildcards; Ex.: t* -> time, temp, t1.value
       if (field.contains("*")) {
+        //        matchCols(field.replace("*", ".*").r)
         val r = field.escapeChars("""<([{\^-=$!|]})?+.>""").replace("*", ".*").r
         val cols = matchCols(r).sorted.take(max_cols).toList //Excuding nested fields from search
         i += cols.size
@@ -46,7 +47,7 @@ class FileSystemSearch(spark: SparkSession, log: Logger, searchId: Int, fieldsUs
         i += 1
         matchCols(field.replace("{}", "\\[\\d+\\]").r).sorted.take(max_mv_size).toList
         // if field contains {\d}, just replace curly brackets with square ones
-      } else if ("""^.*\{\d+}.*$""".r.pattern.matcher(field).matches) {
+      } else if ("""^.*\{\d+\}.*$""".r.pattern.matcher(field).matches) {
         i += 1
         List(field.replaceByMap(Map("{" -> "[", "}" -> "]")))
       }
@@ -54,11 +55,13 @@ class FileSystemSearch(spark: SparkSession, log: Logger, searchId: Int, fieldsUs
         i += 1
         List(field)
       }
+
     res.toList.flatten
   }
 
-  private def checkSchema(df: DataFrame): DataFrame = {
-    var fdf = spark.emptyDataFrame
+  private def checkSchema(df: DataFrame): DataFrame =
+  {
+    var fdf = spark.emptyDataFrame.asInstanceOf[DataFrame]
     val cols = fieldsUsedInFullQuery.map(_.stripBackticks())
     log.debug(s"[SearchId:$searchId] fieldsUsedInFullQuery = $cols")
     val schema = df.schema.names.toList
@@ -88,15 +91,17 @@ class FileSystemSearch(spark: SparkSession, log: Logger, searchId: Int, fieldsUs
     fdf
   }
 
-  private def readParquetParallel(files: ListBuffer[String]): DataFrame = {
+  private def readParquetParallel(files: ListBuffer[String]): DataFrame =
+  {
     log.debug(s"[SearchId:$searchId] Fields in query: $fieldsUsedInFullQuery")
     val df = if(externalSchema) {
       val ddlSchema = getSchemaBySpark(files)
-      spark.read.schema(ddlSchema).parquet(files.seq: _*)
+      spark.sqlContext.read.schema(ddlSchema).parquet(files.seq: _*)
     }else if(mergeSchema)
-      spark.read.option("mergeSchema", "true").parquet(files.seq: _*)
+      spark.sqlContext.read.option("mergeSchema", "true").parquet(files.seq: _*)
     else
-      spark.read.parquet(files.seq: _*)
+      spark.sqlContext.read.parquet(files.seq: _*)
+
     log.debug(s"[SearchId:$searchId] Parquet files readed")
     log.debug(s"[SearchId:$searchId] Start checking schema")
     val fdf = checkSchema(df.withColumn("index", lit(index)))
@@ -104,9 +109,11 @@ class FileSystemSearch(spark: SparkSession, log: Logger, searchId: Int, fieldsUs
     fdd
   }
 
-  private def readParquetSequential(files: ListBuffer[String]): DataFrame = {
+
+  private def readParquetSequential(files: ListBuffer[String]): DataFrame =
+  {
     log.debug(s"[SearchId:$searchId] Fields in query: $fieldsUsedInFullQuery")
-    var fdf = spark.emptyDataFrame
+    var fdf = spark.emptyDataFrame.asInstanceOf[DataFrame]
     //val df = spark.sqlContext.read.option("mergeSchema", "true").parquet(files.seq: _*)//.select("_time","_raw")
     import util.control.Breaks._
     breakable {
@@ -115,21 +122,27 @@ class FileSystemSearch(spark: SparkSession, log: Logger, searchId: Int, fieldsUs
         val df = spark.sqlContext.read.parquet(file)
         val fd = checkSchema(df)
         val fdd = searchInDataFrame(fd)
+
+        val cols1 = fdd.columns.toSet
+        val cols2 = fdf.columns.toSet
+        val total = cols1 ++ cols2
         fdf = fdf.append(fdd)
 
-        if (fdf.count() > 100000) {
+        if (fdf.count() > 100000)
+          {
             log.debug(s"[SearchId:$searchId] search stopped")
             break
-        }
+          }
       }
     }
     fdf
   }
 
   private def searchInDataFrame(df: DataFrame): DataFrame = {
+  {
     var fdf = df.withColumn("_time", F.col("_time").cast(LongType))
-    val tws = _tws
-    val twf = _twf
+    val tws = _tws.toLong
+    val twf = _twf.toLong
 
     fdf = fdf//.withColumn("_time", F.expr("""if(_time / 1e10 < 1, _time, _time / 1000)""").cast(LongType))
       .filter(s"_time >= $tws AND _time < $twf")
@@ -144,59 +157,63 @@ class FileSystemSearch(spark: SparkSession, log: Logger, searchId: Int, fieldsUs
         }
       }
     }
-    catch {
-      case ex: AnalysisException => throw ex
-    }
+    catch
+    {
+    case ex: AnalysisException => throw ex}
     fdf
   }
 
+    /** Gets index buckets, filters them, returns df with data required to filters.
+     * Step 1. Creates empty DataFrame because list of accepted buckets may be empty.
+     * Step 2. Checks if index presents.
+     * Step 3. Gets list of buckets filtered by time range.
+     * Step 4. Returns empty DataFrame if list is empty.
+     *
+     */
+  }
 
-  /** Gets index buckets, filters them, returns df with data required to filters.
-   * Step 1. Creates empty DataFrame because list of accepted buckets may be empty.
-   * Step 2. Checks if index presents.
-   * Step 3. Gets list of buckets filtered by TimeRange.
-   * Step 4. Returns empty DataFrame if list is empty.
-   * Step 5. Gets list of buckets filtered by  BloomFilter.
-   * Step 6. Returns empty DataFrame if list is empty.
-   * Step 7. Read the parquets in series or in parallel depending on the preview parameter
-   */
-  def search(): Try[DataFrame] = {
+  def search(): Try[DataFrame] =
+  {
     log.debug(s"$searchId FileSystem: $fs, indexPath: $indexPath, index: $index")
     // Step 1. Creates empty DataFrame because list of accepted buckets may be empty.
     var fdf = spark.createDataFrame(spark.sparkContext.emptyRDD[Row], StructType(Seq(StructField("_raw", StringType), StructField("_time", LongType))))
     // Step 2. Checks if index presents.
     if (!fs.exists(new Path(indexPath + index))){
       log.debug(s"Index in $fs: $index not found")
-      return Failure(E00004(searchId, index))}
+    return Failure(E00004(searchId, index))}
     // Step 3. Gets list of buckets filtered by time range.
-    val bucketsTimeRange = Timerange.getBucketsByTimerange(fs, indexPath, index, _tws, _twf, isCache)
-    log.debug(s"[SearchId:$searchId] Buckets by timerange $bucketsTimeRange")
-    log.info(s"[SearchId:$searchId] ${bucketsTimeRange.length} Buckets by timerange")
+    val filesTime = Timerange.getBucketsByTimerange(fs, indexPath, index, _tws, _twf, isCache)
+    log.debug(s"[SearchId:$searchId] Buckets by timerange $filesTime")
+    log.info(s"[SearchId:$searchId] ${filesTime.length} Buckets by timerange")
     // Step 4. Returns empty DataFrame if list is empty.
-    if (bucketsTimeRange.isEmpty) return Success(fdf)
+    if (filesTime.isEmpty) return Success(fdf)
 
-    var bucketsBloomFilter = ListBuffer[String]()
+    var filesBloom = ListBuffer[String]()
     if (!query.isEmpty()){
-      bucketsBloomFilter = FilterBloom.getBucketsByFB(fs, indexPath, index, bucketsTimeRange, query)
-      log.debug(s"[SearchId:$searchId] Buckets by BloomFilter $bucketsBloomFilter")
-      log.info(s"[SearchId:$searchId] ${bucketsBloomFilter.length} Buckets by BloomFilter")
+        filesBloom = FilterBloom.getBucketsByFB(fs, indexPath, index, filesTime, query)
+        log.debug(s"[SearchId:$searchId] Buckets by BloomFilter $filesBloom")
+        log.info(s"[SearchId:$searchId] ${filesBloom.length} Buckets by BloomFilter")
     }
-    else {
-      bucketsBloomFilter = bucketsTimeRange
-      log.debug(s"[SearchId:$searchId] Query is empty. No BloomFilter used ")
+    else
+    {
+        filesBloom = filesTime
+        log.debug(s"[SearchId:$searchId] Query is empty. No BloomFilter used ")
     }
-    if (bucketsBloomFilter.isEmpty) return Success(fdf)
+    if (filesBloom.isEmpty) return Success(fdf)
 
-    val files = bucketsBloomFilter.map(x => s"""file:$indexPath$index/$x/""")
+    val files = filesBloom.map(x => s"""file:$indexPath$index/$x/""")
     log.debug(s"[SearchId:$searchId] FilesPath $files")
 
-    if (preview) {
+    if (preview)
+    {
       log.debug(s"[SearchId:$searchId] Enable Preview Mode")
       fdf = readParquetSequential(files)}
-    else {
+    else
+    {
       log.debug(s"[SearchId:$searchId] Enable Parallel Mode")
       fdf = readParquetParallel(files)
     }
+
     Success(fdf)
   }
 

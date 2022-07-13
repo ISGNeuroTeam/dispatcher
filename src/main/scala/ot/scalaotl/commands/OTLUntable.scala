@@ -10,13 +10,10 @@ class OTLUntable(sq: SimpleQuery) extends OTLBaseCommand(sq) {
   val optionalKeywords = Set.empty[String]
 
   override def transform(_df: DataFrame): DataFrame = {
-    _df.printSchema()
     val (fixed, field, value) = returns.flatFields match {
-      case x :: y :: z :: tail => (
-        x.stripBackticks().strip("\""),
+      case x :: y :: z :: tail => (x.stripBackticks().strip("\""),
         y.stripBackticks().strip("\""),
-        z.stripBackticks().strip("\"")
-      )
+        z.stripBackticks().strip("\""))
       case _ => return _df
     }
     val cols = _df.columns.filter(x => x != fixed && x != field && x != value).map(_.addSurroundedBackticks)

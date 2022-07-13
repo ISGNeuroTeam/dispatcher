@@ -31,7 +31,7 @@ class Converter(otlQuery: OTLQuery, cache: Map[String, DataFrame]) extends OTLSp
     this(otlQuery, Map[String, DataFrame]())
   }
 
-  val classname: String = this.getClass.getSimpleName
+  val classname = this.getClass.getSimpleName
   val log: Logger = Logger.getLogger(this.getClass.getName)
   log.setLevel(Level.toLevel(getLogLevel(ot.AppConfig.config, classname)))
 
@@ -98,9 +98,7 @@ class Converter(otlQuery: OTLQuery, cache: Map[String, DataFrame]) extends OTLSp
   def run = transformers.foldLeft(df) {
     (accum, tr) =>
       {
-        if (List("OTLInputlookup", "OTLLookup", "RawRead", "FullRead").exists(tr.getClass.getName.contains(_)))
-          tr.setFieldsUsedInFullQuery(fieldsUsed)
-        //if (tr.getClass.getName.contains("OTLInputlookup") || tr.getClass.getName.contains("OTLLookup") || tr.getClass.getName.contains("RawRead") || tr.getClass.getName.contains("FullRead")) tr.setFieldsUsedInFullQuery(fieldsUsed)
+        if (tr.getClass.getName.contains("OTLRead") || tr.getClass.getName.contains("OTLInputlookup") || tr.getClass.getName.contains("OTLLookup") || tr.getClass.getName.contains("RawRead") || tr.getClass.getName.contains("FullRead")) tr.setFieldsUsedInFullQuery(fieldsUsed)
         tr.safeTransform(accum)
       }
   }

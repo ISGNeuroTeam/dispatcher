@@ -6,49 +6,31 @@ import ot.scalaotl.config.OTLIndexes
 import ot.scalaotl.extensions.StringExt._
 import ot.scalaotl.extensions.DataFrameExt._
 import ot.scalaotl.parsers.{ExpressionParser, WildcardParser}
+import ot.scalaotl.static.EvalFunctions
 import org.apache.spark.sql.{DataFrame, functions => F}
 import org.json4s._
 import org.json4s.native.JsonMethods._
+import org.apache.commons.lang.StringEscapeUtils.escapeJava
 import org.apache.spark.sql.expressions.UserDefinedFunction
 
 import scala.collection.mutable.ListBuffer
 
-/** =Abstract=
- * This class provides support of __'''search'''__ otl command.
- *
- * __'''search'''__ used for read raw data from indexes (only fields _raw and time)
- * field _raw is used for search-time-field-extraction
- * The command can search for given words inside the _raw field
- * Search words can be combined via logical operations AND and OR
- *
- * =Usage example=
- * OTL: one index and one search word
- * {{{ search index="index_name" "search_word" | ... other otl-commands }}}
- * OTL: two indexes and one search word
- * {{{ search index="first_index_name" index="second_index_name" "first_search_word" | ... other otl-commands }}}
- * OTL: one index and two search words
- * {{{ search index="index_name" "first_search_word" AND "second_search_word" | ... other otl-commands }}}
- *
- *  Also search command can be used in subqueries
- *
- * @constructor creates new instance of [[OTLRead]]
- * @param sq [[SimpleQuery]]
- */
 class OTLRead(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLIndexes with ExpressionParser with WildcardParser {
   val requiredKeywords = Set.empty[String]
-  val optionalKeywords: Set[String] = Set("limit", "subsearch")
+  val optionalKeywords = Set("limit", "subsearch")
 
   val SimpleQuery(_args, searchId, cache, subsearches, tws, twf, stfe, preview) = sq
+
+  override def validateOptionalKeywords(): Unit = ()
 
   def jsonStrToMap(jsonStr: String): Map[String, Map[String, String]] = {
     implicit val formats: DefaultFormats.type = org.json4s.DefaultFormats
     parse(jsonStr).extract[Map[String, Map[String, String]]]
   }
 
-  // Get a list of available indexes (allIndexes)
+  val indexQueriesMapFirst: Map[String, Map[String, String]] = jsonStrToMap(excludeKeywords(_args.trim, List(Keyword("limit", "t"))))
+  var indexQueriesMap: Map[String, Map[String, String]] = indexQueriesMapFirst
   val allIndexes: ListBuffer[String] = getAllIndexes()
-  // Search in the query for all indexes containing * and look for similar ones among the available indexes
-  var indexQueriesMap: Map[String, Map[String, String]] = jsonStrToMap(excludeKeywords(_args.trim, List(Keyword("limit", "t"))))
   for (index <- indexQueriesMap) {
     if (index._1.contains("*")) {
       val regex_raw = index._1.replace("*", ".*").r
@@ -60,22 +42,17 @@ class OTLRead(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLIndexes with E
     }
   }
 
-  // Command OTLRead has no optional keywords, nothing to validate
-  override def validateOptionalKeywords(): Unit = ()
+  override val fieldsUsed: List[String] = indexQueriesMap.map {
+    case (_, singleIndexMap) => singleIndexMap.getOrElse("query", "").withKeepQuotedText[List[String]](
+      (s: String) => """(?![!\(])(\S*?)\s*(=|>|<|like|rlike)\s*""".r.findAllIn(s).matchData.map(_.group(1)).toList
+    )
+      .map(_.strip("!").strip("'").strip("\"").stripBackticks().addSurroundedBackticks)
+  }.toList.flatten
 
-  /**
-   * Reads data from indexes
-   * Determines which fields can be obtained from indexes and which cannot
-   * Then adds not found fields as null columns
-   *
-   * @param query [[Map[String, Map[String, String]]] - source query
-   * @return df [[DataFrame]] - dataframe with index time fields
-   */
   private def searchMap(query: Map[String, Map[String, String]]): DataFrame = {
-
     /**
-     * Replaces all {} symbols to [] in fieldnames in query.
-     * Then replaces all quotes around fieldnames to backticks.
+     * Replace all {} symbols to [] in fieldnames in query.
+     * Then replaces all quotes around fieldnames to bacticktics.
      * Then replaces fieldname=\"null\" substrings to 'fieldname is null'
      * Fieldnames are taken from `fieldsUsedInFullQuery`
      *
@@ -103,12 +80,17 @@ class OTLRead(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLIndexes with E
           val fdf: DataFrame = s.search()
           val cols1 = fdf.columns.map(_.stripBackticks().addSurroundedBackticks).toSet
           val cols2 = accum._1.columns.map(_.stripBackticks().addSurroundedBackticks).toSet
-          val totalCols = cols1 ++ cols2
+          val totalCols = (cols1 ++ cols2).toList
+
           def expr(myCols: Set[String], allCols: Set[String]) = {
             allCols.toList.map(x => if (myCols.contains(x)) F.col(x).as(x.stripBackticks()) else F.lit(null).as(x.stripBackticks()))
           }
 
-          if (totalCols.nonEmpty) (fdf.select(expr(cols1, totalCols): _*).union(accum._1.select(expr(cols2, totalCols): _*)), accum._2)
+          /*totalCols match {
+            case head :: tail => (fdf.select(expr(cols1, totalCols.toSet): _*).union(accum._1.select(expr(cols2, totalCols.toSet): _*)), accum._2)
+            case _ => accum
+          }*/
+          if (totalCols.nonEmpty) (fdf.select(expr(cols1, totalCols.toSet): _*).union(accum._1.select(expr(cols2, totalCols.toSet): _*)), accum._2)
           else accum
         } catch {
           case ex: Exception => (accum._1, ex +: accum._2)
@@ -117,7 +99,7 @@ class OTLRead(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLIndexes with E
     if (query.size == allExceptions.size) throw allExceptions.head
 
     // Add new columns with arrays of fields by mask ..[\d]...
-    // Replace [ ] brackets to { } brackets in column names
+    // Replace square brackets to curly brackets in column names
     val bracketCols = df.columns.filter("""^.*\[\d+\].*$""".r.pattern.matcher(_).matches)
     val dfWithArrays = bracketCols
       .groupBy(_.replaceAll("\\[\\d+\\]", "{}"))
@@ -138,7 +120,7 @@ class OTLRead(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLIndexes with E
     }
     log.debug(s"""[SearchID:$searchId] DF cols after adding mv-columns: [${dfColsRenamed.columns.mkString(", ")}]""")
 
-    // Add columns which are used in query but does not exist in dataframe as null values
+    // Add columns which are used in query but does not exist in dataframe after read
     val emptyCols = fieldsUsedInFullQuery
       .map(_.stripBackticks())
       .distinct
@@ -150,38 +132,23 @@ class OTLRead(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLIndexes with E
     }
   }
 
-
-
-  /**
-   * Finds fields from the query that are not among the non-empty fields of the dataframe
-   * then makes field extraction for these search-time-field-extraction Fields (by calling makeFieldExtraction)
-   * and adds them to dataframe
-   *
-   * @param df [[DataFrame]] - source dataframe
-   * @return df [[DataFrame]] - dataframe with search time fields
-   */
   private def extractFields(df: DataFrame): DataFrame = {
     import ot.scalaotl.static.FieldExtractor
 
     val stfeFields = fieldsUsedInFullQuery.diff(df.notNullColumns)
     log.debug(s"[SearchID:$searchId] Search-time field extraction: $stfeFields")
+    //val valueFields = stfeFields.filter(!_.contains("{}"))
+    //val multiValueFields = stfeFields.filter(_.contains("{}"))
     val feDf = makeFieldExtraction(df, stfeFields, FieldExtractor.extractUDF)
+    // makeFieldExtraction(feDf, multiValueFields, FieldExtractor.extractMVUDF)
     feDf
   }
 
-
-  /**
-   * Makes field extraction for these search-time-field-extraction Fields
-   * And adds them to dataframe
-   *
-   * @param df [[DataFrame]] - source dataframe
-   * @param extractedFields [[ Seq[String] ]] - list of fields for search-time-field-extraction
-   * @param udf [[ UserDefinedFunction ]] - UDF-function for fields extraction
-   * @return df [[DataFrame]] - dataframe with search time fields
-   */
-  private def makeFieldExtraction(df: DataFrame, extractedFields: Seq[String], udf: UserDefinedFunction): DataFrame = {
+  private def makeFieldExtraction(df: DataFrame,
+                                  extractedFields: Seq[String],
+                                  udf: UserDefinedFunction
+                                 ): DataFrame = {
     import org.apache.spark.sql.functions.{col, expr}
-
     val stfeFieldsStr = extractedFields.map(x => s""""$x"""").mkString(", ")
     extractedFields.foldLeft(
       df.withColumn("__fields__", expr(s"""array($stfeFieldsStr)"""))
@@ -194,7 +161,6 @@ class OTLRead(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLIndexes with E
     }.drop("__fields__", "stfe")
   }
 
-
   override def transform(_df: DataFrame): DataFrame = {
 
     log.debug(s"searchId = $searchId queryMap: $indexQueriesMap")
@@ -203,6 +169,7 @@ class OTLRead(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLIndexes with E
       case Some(lim) => log.debug(s"[SearchID:$searchId] Dataframe is limited to $lim"); dfInit.limit(100000)
       case _ => dfInit
     }
+
     val dfStfe = if (stfe) extractFields(dfLimit) else dfLimit
     getKeyword("subsearch") match {
       case Some(str) =>

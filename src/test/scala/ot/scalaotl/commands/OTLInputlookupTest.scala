@@ -5,7 +5,7 @@ import ot.scalaotl.Converter
 
 class OTLInputlookupTest extends CommandTest {
 
-  override def createQuery(command_otl: String): OTLQuery = {
+  def createQuery(command_otl: String): OTLQuery = {
     new OTLQuery(
       id = 0,
       original_otl = s"|$command_otl",

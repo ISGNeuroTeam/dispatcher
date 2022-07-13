@@ -138,7 +138,7 @@ object StringExt {
     def strip(seq: String): String = s.stripPrefix(seq).stripSuffix(seq)
     def strip(): String = strip(" ")
     def stripBackticks(): String = strip("`")
-    def replaceSingleQuotToBacktick: String = s.withKeepQuotedText[String]((s: String) => s.replaceAllLiterally("'", "`"), DOUBLE)
+    def replaceSingleQuotToBacktick = s.withKeepQuotedText[String]((s: String) => s.replaceAllLiterally("'", "`"), DOUBLE)
 
     /**
      * Escapes chars with "\\" specified in escapedCharList

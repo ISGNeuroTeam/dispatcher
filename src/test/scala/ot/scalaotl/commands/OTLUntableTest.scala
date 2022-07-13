@@ -3,9 +3,7 @@ package ot.scalaotl.commands
 class OTLUntableTest extends CommandTest {
 
   test("Test 0. Command: | untable ") {
-    val actual = execute(""" table serialField, random_Field, WordField, junkField | untable WordField с1 с2""")
-//    val actual = execute(""" table serialField, random_Field, WordField | untable WordField c1 c2""")
-    println(actual)
+    val actual = execute(""" table serialField, random_Field, WordField | untable WordField c1 c2""")
     val expected = """[
                      |{"WordField":"qwe","c1":"serialField","c2":"0"},
                      |{"WordField":"qwe","c1":"random_Field","c2":"100"},
