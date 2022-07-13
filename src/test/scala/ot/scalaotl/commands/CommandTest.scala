@@ -188,7 +188,8 @@ abstract class CommandTest extends FunSuite with BeforeAndAfterAll {
    * Step3 If an external data schema is used, it will be written next to the parquet
    */
   override def beforeAll(): Unit = {
-    cleanIndexFiles()
+    val indexDir = new Directory(new File(f"$tmpDir/indexes/"))
+    if(indexDir.exists && indexDir.list.nonEmpty) indexDir.deleteRecursively()
     if (List("RawRead", "FullRead").exists(this.getClass.getName.contains(_))){
       val df = spark.read.options(
         Map("inferSchema" -> "true", "delimiter" -> ",", "header" -> "true", "quote" -> "\"", "escape" -> "\"")
