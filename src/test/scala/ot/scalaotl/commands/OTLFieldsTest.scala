@@ -1,6 +1,5 @@
 package ot.scalaotl.commands
 
-import org.apache.spark.sql.functions.col
 import org.apache.spark.sql.{functions => F}
 import ot.scalaotl.Converter
 
@@ -22,8 +21,8 @@ class OTLFieldsTest extends CommandTest {
     var actual = new Converter(query).run
     var expected = readIndexDF(test_index).drop(F.col("_raw"))
     expected = setNullableStateOfColumn(expected, "index", nullable = true)
-    actual = actual.select(actual.columns.sorted.toSeq.map(c => col(c)):_*)
-    expected = expected.select(expected.columns.sorted.toSeq.map(c => col(c)):_*)
+    actual = actual.select(actual.columns.sorted.toSeq.map(c => F.col(c)):_*)
+    expected = expected.select(expected.columns.sorted.toSeq.map(c => F.col(c)):_*)
     compareDataFrames(actual, expected)
   }
 

@@ -2,20 +2,16 @@ package ot.scalaotl.commands
 
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileSystem, Path}
-
-import java.io.{File, PrintWriter}
-import java.util.UUID
 import org.apache.log4j.Logger
+import org.apache.spark.sql.types._
 import org.apache.spark.sql.{Column, DataFrame, SparkSession, functions => F}
-import org.apache.spark.sql.types.{ArrayType, DoubleType, IntegerType, LongType, NullType, StringType, StructField, StructType}
 import org.scalatest.{Assertion, BeforeAndAfterAll, FunSuite}
-import ot.AppConfig.{config, getLogLevel}
-
-import scala.reflect.{ClassTag, classTag}
+import ot.AppConfig.config
 import ot.dispatcher.OTLQuery
 import ot.scalaotl.Converter
 import ot.scalaotl.extensions.StringExt._
 
+import java.io.{File, PrintWriter}
 import scala.collection.mutable.ListBuffer
 import scala.reflect.io.Directory
 
@@ -244,7 +240,7 @@ abstract class CommandTest extends FunSuite with BeforeAndAfterAll {
    * Step2 If indexes directory is empty then delete it
    */
   override def afterAll(): Unit = {
-    val indexPath = s"$tmpDir/indexes/$test_index"
+    val indexPath = s"$tmpDir/indexes"
     val indexDir = new Directory(new File(indexPath))
     indexDir.deleteRecursively()
   }
@@ -272,7 +268,6 @@ abstract class CommandTest extends FunSuite with BeforeAndAfterAll {
     val directory = new Directory(new File(lookupFile).getParentFile)
     directory.createDirectory()
     new PrintWriter(lookupFile) { write(content); close() }
-
   }
 
   def compareDataFrames(df_actual: DataFrame, df_expected: DataFrame): Assertion={
