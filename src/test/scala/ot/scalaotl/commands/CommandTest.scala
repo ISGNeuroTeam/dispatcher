@@ -6,7 +6,6 @@ import org.apache.hadoop.fs.{FileSystem, Path}
 import java.io.{File, PrintWriter}
 import java.util.UUID
 import org.apache.log4j.Logger
-import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{Column, DataFrame, SparkSession, functions => F}
 import org.apache.spark.sql.types.{ArrayType, DoubleType, IntegerType, LongType, NullType, StringType, StructField, StructType}
 import org.scalatest.{Assertion, BeforeAndAfterAll, FunSuite}
@@ -203,8 +202,8 @@ abstract class CommandTest extends FunSuite with BeforeAndAfterAll {
       )
         .csv(this.getClass.getClassLoader.getResource("data/sensors.csv").getPath)
         .withColumn("index", F.lit(s"$test_index-0"))
-        .withColumn("_time", col("_time").cast(LongType))
-      val time_min_max = df.agg(min("_time"), max("_time")).head()
+        .withColumn("_time", F.col("_time").cast(LongType))
+      val time_min_max = df.agg(F.min("_time"), F.max("_time")).head()
       val time_step = time_min_max.getLong(1) - time_min_max.getLong(0)
       val bucket_period = 3600 * 24 * 30
       val buckets_cnt = math.floor(time_step / bucket_period).toInt
@@ -269,7 +268,6 @@ abstract class CommandTest extends FunSuite with BeforeAndAfterAll {
   }
 
   def writeTextFile(content : String, relativePath :String) : Unit={
-    spark.stop()
     val lookupFile = tmpDir + "/" + relativePath
     val directory = new Directory(new File(lookupFile).getParentFile)
     directory.createDirectory()
