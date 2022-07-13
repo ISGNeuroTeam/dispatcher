@@ -236,13 +236,21 @@ abstract class CommandTest extends FunSuite with BeforeAndAfterAll {
   }
 
   /** This code is executed after running the OTL-command
-   * Step1 Recursively delete created indexes
-   * Step2 If indexes directory is empty then delete it
+   * Recursively delete created indexes
    */
   override def afterAll(): Unit = {
-    val indexPath = s"$tmpDir/indexes"
-    val indexDir = new Directory(new File(indexPath))
-    indexDir.deleteRecursively()
+    if (this.getClass.getSimpleName.contains("FullRead") || this.getClass.getSimpleName.contains("RawRead")){
+      for(i <- stfeRawSeparators.indices){
+        val indexPath = s"$tmpDir/indexes/$test_index-$i"
+        val indexDir = new Directory(new File(indexPath))
+        indexDir.deleteRecursively()
+      }
+    }
+    else {
+      val indexPath = s"$tmpDir/indexes/$test_index"
+      val indexDir = new Directory(new File(indexPath))
+      indexDir.deleteRecursively()
+    }
   }
 
   def setNullableStateOfColumn(df: DataFrame, column: String, nullable: Boolean) : DataFrame = {
