@@ -1,8 +1,8 @@
 package ot.scalaotl.commands
 
 import org.apache.spark.sql.functions.col
+import org.apache.spark.sql.{functions => F}
 import ot.scalaotl.Converter
-import org.apache.spark.sql.{Column, DataFrame, SparkSession, functions => F}
 
 class OTLUntableTest extends CommandTest {
 
@@ -38,7 +38,7 @@ class OTLUntableTest extends CommandTest {
 
   test("Test 2. Command: Fixed column missing among data fields") {
     val query = createQuery("""table serialField, random_Field
-        || untable WordField, field, value""", "otstats", s"$test_index")
+                              || untable WordField, field, value""", "otstats", s"$test_index")
     var actual = new Converter(query).run
     val expectedStr = """[
                         |{"field":"serialField","value":"0"},
@@ -70,8 +70,8 @@ class OTLUntableTest extends CommandTest {
 
   test("Test 3. Command: Fixed column contains nulls") {
     val query = createQuery("""table serialField, random_Field
-    | table WordField ,serialField, random_Field
-    | untable WordField, field, value""", "otstats", s"$test_index")
+                              | table WordField ,serialField, random_Field
+                              | untable WordField, field, value""", "otstats", s"$test_index")
     var actual = new Converter(query).run
     val expectedStr = """[
                         |{"field":"serialField","value":"0"},
@@ -103,7 +103,7 @@ class OTLUntableTest extends CommandTest {
 
   test("Test 3. Command: Call untable with 2 arguments ") {
     val query = createQuery("""table WordField ,serialField, random_Field
-        || untable WordField, field""", "otstats", s"$test_index")
+                              || untable WordField, field""", "otstats", s"$test_index")
     val actual = new Converter(query).run
     compareDataFrames(actual, spark.emptyDataFrame)
   }

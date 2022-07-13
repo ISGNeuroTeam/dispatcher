@@ -33,8 +33,8 @@ class OTLFieldsTest extends CommandTest {
     var expected = readIndexDF(test_index).select(F.col("_time"), F.col("host"))
       .withColumn("meta", F.lit(null).cast(NullType))
       .withColumn("junk_Field", F.lit(null).cast(NullType))
-    actual = actual.select(actual.columns.sorted.toSeq.map(c => col(c)):_*)
-    expected = expected.select(expected.columns.sorted.toSeq.map(c => col(c)):_*)
+    actual = actual.select(actual.columns.sorted.toSeq.map(c => F.col(c)):_*)
+    expected = expected.select(expected.columns.sorted.toSeq.map(c => F.col(c)):_*)
     compareDataFrames(actual, expected)
   }
 
