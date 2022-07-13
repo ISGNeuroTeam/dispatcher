@@ -41,6 +41,9 @@ class RawReadTest extends CommandTest {
   test("READ => TEST 4. Reading of all indexes") {
     val query = createFullQuery(
       s"""search index=* | table _time, _raw""",
+      // s"""| read {"*": {"query": "", "tws": 0, "twf": 0}} | table _time, _raw""",
+      // due to the peculiarities of testing, it is necessary to form a list of available indices
+      // (indices of other commands can be read during testing)
       s"""| read {"*": {"query": "", "tws": 0, "twf": 0}} | table _time, _raw""",
       s"$test_index-0")
     var actual = new Converter(query).run
