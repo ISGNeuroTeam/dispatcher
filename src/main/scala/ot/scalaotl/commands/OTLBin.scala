@@ -10,7 +10,7 @@ import org.apache.spark.sql.DataFrame
 
 class OTLBin(sq: SimpleQuery) extends OTLBaseCommand(sq) with ReplaceParser {
   val requiredKeywords = Set.empty[String]
-  val optionalKeywords = Set("bins", "span")
+  val optionalKeywords: Set[String] = Set("bins", "span")
 
   override def transform(_df: DataFrame): DataFrame = {
     val ReturnField(newfield, field) = returns.fields.headOption.getOrElse(return _df)
@@ -23,7 +23,7 @@ class OTLBin(sq: SimpleQuery) extends OTLBaseCommand(sq) with ReplaceParser {
       val span = OtDatetime.getSpanInSeconds(getKeyword("span").getOrElse("10000d"))
       (df: DataFrame) => df.withColumn("__span__", lit(span))
     } else {
-      throw E00018(sq.searchId, commandname)
+      throw E00018(sq.searchId, commandName)
     }
 
     dfWithMinMax

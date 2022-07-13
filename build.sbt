@@ -12,9 +12,9 @@ retrieveManaged := true
 
 resolvers += Resolver.jcenterRepo
 
-resolvers += "Sonatype OSS Snapshots" at (sys.env.getOrElse("NEXUS_OTP_URL_HTTPS","")+"/repository/ot.platform-sbt-releases/")
+resolvers += "Sonatype OSS Snapshots" at (sys.env.getOrElse("NEXUS_OTP_URL_HTTPS","https://repo1.maven.org/maven2/"))
 
-libraryDependencies += "ot.dispatcher" % "dispatcher-sdk_2.11" % "1.2.0"% Compile
+libraryDependencies += "ot.dispatcher" % "dispatcher-sdk_2.11" % "1.2.1"% Compile
 
 libraryDependencies += "net.totietje" %% "evaluator" % "1.1.0"
 
