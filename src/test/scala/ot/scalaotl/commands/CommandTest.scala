@@ -280,14 +280,18 @@ abstract class CommandTest extends FunSuite with BeforeAndAfterAll {
       df_actual.count() == df_expected.count(),
       "DataFrames sizes should be equal"
     )
-    val diff = df_actual.except(df_expected).union(df_expected.except(df_actual))
-    assert(
-      diff.isEmpty,
-      s"DataFrames are different. " +
-        s"\n Counts actual ${df_actual.count()} / expected ${df_actual.count()} / diff ${diff.count()} " +
-        s"\n Difference is:\n${diff.collect().mkString("\n")}"
-    )
 
+    if (df_actual.isEmpty && df_expected.isEmpty)
+      assert(true)
+    else {
+      val diff = df_actual.except(df_expected).union(df_expected.except(df_actual))
+      assert(
+        diff.isEmpty,
+        s"DataFrames are different. " +
+          s"\n Counts actual ${df_actual.count()} / expected ${df_expected.count()} / diff ${diff.count()} " +
+          s"\n Difference is:\n${diff.collect().mkString("\n")}"
+      )
+    }
   }
 
   def recursiveListFiles(f: File): Array[File] = {
