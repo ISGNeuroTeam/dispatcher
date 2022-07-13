@@ -143,6 +143,7 @@ abstract class CommandTest extends FunSuite with BeforeAndAfterAll {
     j1==j2
   }
 
+
   def countCols(columns:Array[String]):Array[Column]={
     columns.map(c=>{
       F.count(F.when(F.col(c).isNull,c)).alias(c)
@@ -187,9 +188,11 @@ abstract class CommandTest extends FunSuite with BeforeAndAfterAll {
    * Step3 If an external data schema is used, it will be written next to the parquet
    */
   override def beforeAll(): Unit = {
-    cleanIndexDir()
+    val indexPath = s"$tmpDir/indexes/$test_index"
+    val indexDir = new Directory(new File(indexPath))
+    if (indexDir.exists && indexDir.list.nonEmpty) indexDir.deleteRecursively()
     var df = spark.emptyDataFrame
-    if (List("RawRead", "FullRead").exists(this.getClass.getName.contains(_))){
+    if (this.getClass.getSimpleName.contains("FullRead") || this.getClass.getSimpleName.contains("RawRead")){
       df = spark.read.options(
         Map("inferSchema" -> "true", "delimiter" -> ",", "header" -> "true", "quote" -> "\"", "escape" -> "\"")
       )
@@ -208,8 +211,8 @@ abstract class CommandTest extends FunSuite with BeforeAndAfterAll {
           .withColumn("_raw", F.regexp_replace(F.col("_raw"), F.lit(": "), F.lit(stfeRawSeparators(i))))
         for (j <- 0 to buckets_cnt) {
           val lowerBound = j * bucket_period + time_min_max.getLong(0)
-          val upperBound = lowerBound + bucket_period
-          val bucketPath = s"$tmpDir/indexes/$test_index-$i/bucket-$lowerBound-$upperBound-${System.currentTimeMillis / 1000}"
+          val upperBound = (j + 1) * bucket_period + time_min_max.getLong(0)
+          val bucketPath = s"$indexPath-$i/bucket-$lowerBound-$upperBound-${System.currentTimeMillis / 1000}"
           val df_bucket = df_new.filter(F.col("_time").between(lowerBound, upperBound))
           df_bucket.write.parquet(bucketPath)
           if (externalSchema)
@@ -236,7 +239,18 @@ abstract class CommandTest extends FunSuite with BeforeAndAfterAll {
    * Recursively delete created indexes
    */
   override def afterAll(): Unit = {
-    cleanIndexDir()
+    if (this.getClass.getSimpleName.contains("FullRead") || this.getClass.getSimpleName.contains("RawRead")){
+      for(i <- stfeRawSeparators.indices){
+        val indexPath = s"$tmpDir/indexes/$test_index-$i"
+        val indexDir = new Directory(new File(indexPath))
+        indexDir.deleteRecursively()
+      }
+    }
+    else {
+      val indexPath = s"$tmpDir/indexes/$test_index"
+      val indexDir = new Directory(new File(indexPath))
+      indexDir.deleteRecursively()
+    }
   }
 
   def setNullableStateOfColumn(df: DataFrame, column: String, nullable: Boolean) : DataFrame = {
@@ -246,15 +260,6 @@ abstract class CommandTest extends FunSuite with BeforeAndAfterAll {
       case y: StructField => y
     })
     df.sqlContext.createDataFrame( df.rdd, newSchema )
-  }
-
-  def cleanIndexDir(): AnyVal = {
-    val indexPath = new File(s"$tmpDir/indexes")
-    val indexDir = new Directory(indexPath)
-    if (indexDir.exists && indexDir.list.nonEmpty){
-      indexDir.deleteRecursively()
-      indexPath.mkdir()
-    }
   }
 
   def setNullableStateOfColumn(df: DataFrame, columns: List[String], nullable: Boolean) : DataFrame = {
