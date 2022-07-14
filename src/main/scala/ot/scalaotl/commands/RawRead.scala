@@ -98,7 +98,7 @@ class RawRead(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLIndexes with E
       val nf = field.addSurroundedBackticks
       // Here a regular expression is used instead of a simple replacement,
       // because the name of one field can be a substring of another field
-      // начинается со скобки или пробела, затем кавычка или бэктик
+      // Starts with a bracket or space, then a quotation mark or backtick
       q.replaceAll("""([\(| ])(['`]*\Q""" + field + """\E['`]*)\s*(=|>|<|!=| like| rlike)""", s"$$1$nf$$3")
         .replace(nf + "=\"null\"", s"$nf is null")
         .replace(nf + "!=\"null\"", s"$nf is not null")

@@ -9,8 +9,7 @@ import ot.scalaotl.Converter
 class RawReadTest extends CommandTest {
 
   test("READ => TEST 1. Simple read only _time and _raw fields") {
-    val otlQuery = createQuery("""table _time, _raw""",
-      "read", s"$test_index-0")
+    val otlQuery = createQuery("", "read", s"$test_index-0")
     val actual = new Converter(otlQuery).run
     val expected = readIndexDF(s"$test_index-0", readingDatasetSchema)
       .select(F.col("_time"), F.col("_raw"))
@@ -18,8 +17,7 @@ class RawReadTest extends CommandTest {
   }
 
   test("READ => TEST 2. Apply time range") {
-    val otlQuery = createQuery("""table _time, _raw""",
-      "read", s"$test_index-0", start_time, finish_time)
+    val otlQuery = createQuery("", "read", s"$test_index-0", start_time, finish_time)
     val actual = new Converter(otlQuery).run
     val expected = readIndexDF(s"$test_index-0", readingDatasetSchema)
       .select(F.col("_time"), F.col("_raw"))
@@ -39,12 +37,13 @@ class RawReadTest extends CommandTest {
   }
 
   test("READ => TEST 4. Reading of all indexes") {
+    val indexList =
+      for (i <- stfeRawSeparators.indices)
+        yield s""" "$test_index-$i": {"query": "", "tws": 0, "twf": 0}"""
+    val serviceOtl = indexList.mkString(",")
     val query = createFullQuery(
-      s"""search index=* | table _time, _raw""",
-      // s"""| read {"*": {"query": "", "tws": 0, "twf": 0}} | table _time, _raw""",
-      // due to the peculiarities of testing, it is necessary to form a list of available indices
-      // (indices of other commands can be read during testing)
-      s"""| read {"$test_index*": {"query": "", "tws": 0, "twf": 0}} | table _time, _raw""",
+      s"""search index=*""",
+      s"""| read {$serviceOtl}""",
       s"$test_index-0")
     var actual = new Converter(query).run
     var expected = spark.createDataFrame(spark.sparkContext.emptyRDD[Row],
@@ -61,8 +60,8 @@ class RawReadTest extends CommandTest {
 
   test("READ => TEST 5. Reading indexes by name with wildcard") {
     val query = createFullQuery(
-      s"""search index=$test_index* | table _time, _raw""",
-      s"""| read {"$test_index*": {"query": "", "tws": 0, "twf": 0}} | table _time, _raw""",
+      s"""search index=$test_index*""",
+      s"""| read {"$test_index*": {"query": "", "tws": 0, "twf": 0}}""",
       s"$test_index-0")
     var actual = new Converter(query).run
     var expected = spark.createDataFrame(spark.sparkContext.emptyRDD[Row],
@@ -79,8 +78,8 @@ class RawReadTest extends CommandTest {
   test("READ => TEST 6. Read indexes with wildcard. One of indexes is not exist ") {
     val non_existent_index = "non_existent_index"
     val query = createFullQuery(
-      s"""search index=$test_index-1 index=$non_existent_index | table _time, _raw""",
-      s"""| read {"$test_index-1": {"query": "", "tws": 0, "twf": 0}, "$non_existent_index": {"query": "", "tws": 0, "twf": 0}} | table _time, _raw""",
+      s"""search index=$test_index-1 index=$non_existent_index""",
+      s"""| read {"$test_index-1": {"query": "", "tws": 0, "twf": 0}, "$non_existent_index": {"query": "", "tws": 0, "twf": 0}}""",
       s"$test_index-0")
     val actual = new Converter(query).run
     val expected = readIndexDF(s"$test_index-1", readingDatasetSchema)
@@ -91,8 +90,8 @@ class RawReadTest extends CommandTest {
   test("READ => TEST 7. Read indexes with wildcard. All indexes is not exist ") {
     val non_existent_index = "non_existent_index"
     val query = createFullQuery(
-      s"""search index=$non_existent_index-1 index=$non_existent_index-2 | table _time, _raw""",
-      s""" | read {"$non_existent_index-1": {"query": "", "tws": 0, "twf": 0}, "$non_existent_index-2": {"query": "", "tws": 0, "twf": 0}}  | table _time, _raw""",
+      """search index=$non_existent_index-1 index=$non_existent_index-2""",
+      s""" | read {"$non_existent_index-1": {"query": "", "tws": 0, "twf": 0}, "$non_existent_index-2": {"query": "", "tws": 0, "twf": 0}}""",
       s"$test_index-0")
     val thrown = intercept[Exception] {
       new Converter(query).run

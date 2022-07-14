@@ -42,3 +42,5 @@ libraryDependencies += "org.json4s" %% "json4s-native" % "3.5.5"
 libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.8" % Test
 
 libraryDependencies += "io.spray" %% "spray-json" % "1.3.5" % Test
+
+Test / parallelExecution := false

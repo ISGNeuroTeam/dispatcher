@@ -37,12 +37,13 @@ class FullReadTest extends CommandTest {
   }
 
   test("READ => TEST 4. Reading of all indexes") {
+    val indexList =
+      for (i <- stfeRawSeparators.indices)
+        yield s""" "$test_index-$i": {"query": "", "tws": 0, "twf": 0}"""
+    val serviceOtl = indexList.mkString(",")
     val query = createFullQuery(
       s"""search index=* | table _time, metric_name, value""",
-      // s""" | otstats {"*": {"query": "", "tws": 0, "twf": 0}} | table _time, metric_name, value""",
-      // due to the peculiarities of testing, it is necessary to form a list of available indices
-      // (indices of other commands can be read during testing)
-      s""" | otstats {"$test_index*": {"query": "", "tws": 0, "twf": 0}} | table _time, metric_name, value""",
+      s"""| otstats {$serviceOtl} | table _time, metric_name, value""",
       s"$test_index-0")
     var actual = new Converter(query).run
     var expected = spark.createDataFrame(spark.sparkContext.emptyRDD[Row],
