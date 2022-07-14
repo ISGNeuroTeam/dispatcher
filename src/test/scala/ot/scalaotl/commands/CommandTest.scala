@@ -5,7 +5,7 @@ import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.log4j.Logger
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.{Column, DataFrame, SparkSession, functions => F}
-import org.scalatest.{Assertion, BeforeAndAfterAll, FunSuite}
+import org.scalatest.{Assertion, BeforeAndAfterEach, FunSuite}
 import ot.AppConfig.config
 import ot.dispatcher.OTLQuery
 import ot.scalaotl.Converter
@@ -15,7 +15,7 @@ import java.io.{File, PrintWriter}
 import scala.collection.mutable.ListBuffer
 import scala.reflect.io.Directory
 
-abstract class CommandTest extends FunSuite with BeforeAndAfterAll {
+abstract class CommandTest extends FunSuite with BeforeAndAfterEach {
 
   val log: Logger = Logger.getLogger("TestLogger")
 
@@ -143,7 +143,6 @@ abstract class CommandTest extends FunSuite with BeforeAndAfterAll {
     j1==j2
   }
 
-
   def countCols(columns:Array[String]):Array[Column]={
     columns.map(c=>{
       F.count(F.when(F.col(c).isNull,c)).alias(c)
@@ -155,7 +154,6 @@ abstract class CommandTest extends FunSuite with BeforeAndAfterAll {
     val df = new Converter(otlQuery).run
     df.toJSON.collect().mkString("[\n", ",\n", "\n]")
   }
-
 
   def execute(otlQuery : OTLQuery): String = {
     val df = new Converter(otlQuery).run
@@ -174,8 +172,6 @@ abstract class CommandTest extends FunSuite with BeforeAndAfterAll {
     fieldsUsed.mkString(", ")
   }
 
-
-
   def jsonToDf(json :String): DataFrame = {
     import spark.implicits._
     spark.read.json(Seq(json.stripMargin).toDS)
@@ -187,8 +183,8 @@ abstract class CommandTest extends FunSuite with BeforeAndAfterAll {
    * Step2 If index exists, it is removed
    * Step3 If an external data schema is used, it will be written next to the parquet
    */
-  override def beforeAll(): Unit = {
-    cleanIndexFiles()
+  override def beforeEach(): Unit = {
+    new Directory(new File(f"$tmpDir/indexes")).deleteRecursively()
     if (List("RawRead", "FullRead").exists(this.getClass.getName.contains(_))){
       val df = spark.read.options(
         Map("inferSchema" -> "true", "delimiter" -> ",", "header" -> "true", "quote" -> "\"", "escape" -> "\"")
@@ -235,27 +231,8 @@ abstract class CommandTest extends FunSuite with BeforeAndAfterAll {
   /** This code is executed after running the OTL-command tests
    * Recursively delete created indexes
    */
-  override def afterAll(): Unit = {
-    cleanIndexFiles()
-    val indexesPath = new File(f"$tmpDir/indexes")
-    if(new Directory(indexesPath).list.isEmpty) new Directory(indexesPath.getParentFile).deleteRecursively()
-  }
-
-  def cleanIndexFiles(): AnyVal ={
-    if (List("RawRead", "FullRead").exists(this.getClass.getName.contains(_))){
-      for(i <- stfeRawSeparators.indices){
-        val indexDir = new Directory(new File(s"$tmpDir/indexes/$test_index-$i"))
-        if (indexDir.exists) indexDir.deleteRecursively()
-      }
-    }
-    else {
-      if (this.getClass.getSimpleName.contains("OTLCollect")) {
-        val indexDir = new Directory(new File(s"$tmpDir/indexes/for_test"))
-        if (indexDir.exists) indexDir.deleteRecursively()
-      }
-      val indexDir = new Directory(new File(s"$tmpDir/indexes/$test_index"))
-      if (indexDir.exists) indexDir.deleteRecursively()
-    }
+  override def afterEach(): Unit = {
+    new Directory(new File(f"$tmpDir/indexes")).deleteRecursively()
   }
 
   def setNullableStateOfColumn(df: DataFrame, column: String, nullable: Boolean) : DataFrame = {
