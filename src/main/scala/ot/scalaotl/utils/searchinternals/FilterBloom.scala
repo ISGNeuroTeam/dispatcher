@@ -20,9 +20,10 @@ object FilterBloom {
   }
 
 
-  private def isTokensInFb(bucket: String, tokens_raw: ListBuffer[String], tokens_cols: ListBuffer[String], query: String, fs: FileSystem, INDEX_PATH: String, index: String): Boolean = {
+  private def isTokensInFb(bucket: String, tokens_raw: ListBuffer[String], tokens_cols: ListBuffer[String],
+                           query: String, fs: FileSystem, indexPath: String, indexName: String, bloomFileName: String): Boolean = {
     try {
-      val status = fs.listStatus(new Path(s"$INDEX_PATH$index/$bucket/bloom"))
+      val status = fs.listStatus(new Path(s"$indexPath$indexName/$bucket/$bloomFileName"))
       val filenames = ListBuffer[String]()
       status.foreach(x ⇒ filenames += x.getPath.toString)
       val path = new Path(filenames.head)
@@ -73,7 +74,7 @@ object FilterBloom {
     tokens
   }
 
-  def getBucketsByFB(fs: FileSystem, INDEX_PATH: String, index: String, buckets: ListBuffer[String], query: String): ListBuffer[String] = {
+  def getBucketsByFB(fs: FileSystem, indexPath: String, indexName: String, bloomFileName: String, buckets: ListBuffer[String], query: String): ListBuffer[String] = {
     log.debug(s"FilterBloom; Query: $query")
     val regex_raw = """`_raw` like (\"|\')%(.*?)%(\'|\")"""
     val regex_col = """`*([a-zA-Z0-9_*-.{}]+)`*(=|!=|<|<=|>|>=)(\"(.*?)\"|\d+(?:\.\d+)*|[a-zA-Z0-9_*-]+)"""
@@ -84,7 +85,7 @@ object FilterBloom {
     if (tokens_raw.nonEmpty)
       log.debug(s"Tokens for FTS: $tokens_raw")
       log.debug(s"Tokens for column search: $tokens_cols")
-      resultbuckets = buckets.filter(isTokensInFb(_, tokens_raw, tokens_cols, transform_query, fs, INDEX_PATH, index))
+      resultbuckets = buckets.filter(isTokensInFb(_, tokens_raw, tokens_cols, transform_query, fs, indexPath, indexName, bloomFileName))
     resultbuckets
   }
 }

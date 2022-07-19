@@ -1,7 +1,6 @@
 package ot.scalaotl.commands
 
-
-import org.apache.spark.sql.types.{NullType, StringType}
+import org.apache.spark.sql.types.NullType
 import org.apache.spark.sql.{functions => F}
 import ot.scalaotl.Converter
 

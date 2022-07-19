@@ -1,7 +1,5 @@
 package ot.scalaotl.commands
 
-
-import org.apache.spark.sql.functions._
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.{Row, functions => F}
 import ot.scalaotl.Converter
@@ -53,8 +51,8 @@ class RawReadTest extends CommandTest {
         .select(F.col("_time"), F.col("_raw"))
       expected = df.union(expected)
     }
-    actual = actual.select(actual.columns.sorted.toSeq.map(c => col(c)):_*)
-    expected = expected.select(expected.columns.sorted.toSeq.map(c => col(c)):_*)
+    actual = actual.select(actual.columns.sorted.toSeq.map(c => F.col(c)):_*)
+    expected = expected.select(expected.columns.sorted.toSeq.map(c => F.col(c)):_*)
     compareDataFrames(actual, expected)
   }
 
@@ -70,8 +68,8 @@ class RawReadTest extends CommandTest {
       val df = readIndexDF(s"$test_index-$i").select(F.col("_time"), F.col("_raw"))
       expected = df.union(expected)
     }
-    actual = actual.select(actual.columns.sorted.toSeq.map(c => col(c)):_*)
-    expected = expected.select(expected.columns.sorted.toSeq.map(c => col(c)):_*)
+    actual = actual.select(actual.columns.sorted.toSeq.map(c => F.col(c)):_*)
+    expected = expected.select(expected.columns.sorted.toSeq.map(c => F.col(c)):_*)
     compareDataFrames(actual, expected)
   }
 
@@ -107,10 +105,10 @@ class RawReadTest extends CommandTest {
       .select(F.col("_time"), F.col("floor"), F.col("room"), F.col("description"),
         F.col("metric_name"), F.col("metric_long_name")
       )
-      .withColumn("floor", col("floor").cast(StringType))
-      .withColumn("room", col("room").cast(StringType))
-    actual = actual.select(actual.columns.sorted.toSeq.map(c => col(c)):_*)
-    expected = expected.select(expected.columns.sorted.toSeq.map(c => col(c)):_*)
+      .withColumn("floor", F.col("floor").cast(StringType))
+      .withColumn("room", F.col("room").cast(StringType))
+    actual = actual.select(actual.columns.sorted.toSeq.map(c => F.col(c)):_*)
+    expected = expected.select(expected.columns.sorted.toSeq.map(c => F.col(c)):_*)
     compareDataFrames(actual, expected)
   }
 
@@ -120,16 +118,16 @@ class RawReadTest extends CommandTest {
       s""" | read {"$test_index-0": {"query": "!(metric_name=\\\"temperature_celsius\\\")", "tws": 0, "twf": 0}}  | table _time, floor, room, metric_name, value, index, _raw""",
       s"$test_index-0")
     var actual = new Converter(query).run
-    actual = actual.withColumn("value", col("value").cast(DoubleType))
+    actual = actual.withColumn("value", F.col("value").cast(DoubleType))
     var expected = readIndexDF(s"$test_index-0", readingDatasetSchema)
       .filter(!(F.col("metric_name") === "temperature_celsius"))
       .select(F.col("_time"), F.col("floor"), F.col("room"), F.col("metric_name"),
         F.col("value"), F.col("_raw"), F.col("index"))
-      .withColumn("floor", col("floor").cast(StringType))
-      .withColumn("room", col("room").cast(StringType))
+      .withColumn("floor", F.col("floor").cast(StringType))
+      .withColumn("room", F.col("room").cast(StringType))
     expected = setNullableStateOfColumn(expected, "index", nullable = true)
-    actual = actual.select(actual.columns.sorted.toSeq.map(c => col(c)):_*)
-    expected = expected.select(expected.columns.sorted.toSeq.map(c => col(c)):_*)
+    actual = actual.select(actual.columns.sorted.toSeq.map(c => F.col(c)):_*)
+    expected = expected.select(expected.columns.sorted.toSeq.map(c => F.col(c)):_*)
     compareDataFrames(actual, expected)
   }
 
@@ -141,8 +139,8 @@ class RawReadTest extends CommandTest {
     var actual = new Converter(query).run
     var expected = spark.createDataFrame(spark.sparkContext.emptyRDD[Row],
       StructType(Seq(StructField("_time", LongType), StructField("metric", StringType))))
-    actual = actual.select(actual.columns.sorted.toSeq.map(c => col(c)):_*)
-    expected = expected.select(expected.columns.sorted.toSeq.map(c => col(c)):_*)
+    actual = actual.select(actual.columns.sorted.toSeq.map(c => F.col(c)):_*)
+    expected = expected.select(expected.columns.sorted.toSeq.map(c => F.col(c)):_*)
     compareDataFrames(actual, expected)
   }
 
@@ -152,7 +150,7 @@ class RawReadTest extends CommandTest {
       s""" | read {"$test_index-0": {"query": "'company.val'!=null", "tws": 0, "twf": 0}} | table _time, metric_name, value""",
       s"$test_index-0")
     var actual = new Converter(query).run
-    actual = actual.withColumn("value", col("value").cast(DoubleType))
+    actual = actual.withColumn("value", F.col("value").cast(DoubleType))
     val expected = spark.createDataFrame(spark.sparkContext.emptyRDD[Row], StructType(
       Seq(StructField("_time", LongType), StructField("metric_name", StringType), StructField("value", DoubleType))))
     compareDataFrames(actual, expected)
@@ -164,7 +162,7 @@ class RawReadTest extends CommandTest {
       s""" | read {"$test_index-0": {"query": "'text{5}.val'!=null", "tws": 0, "twf": 0}} | table _time, metric_name, value""",
       s"$test_index-0")
     var actual = new Converter(query).run
-    actual = actual.withColumn("value", col("value").cast(DoubleType))
+    actual = actual.withColumn("value", F.col("value").cast(DoubleType))
     val expected = spark.createDataFrame(spark.sparkContext.emptyRDD[Row], StructType(
       Seq(StructField("_time", LongType), StructField("metric_name", StringType), StructField("value", DoubleType))))
     compareDataFrames(actual, expected)
@@ -213,12 +211,12 @@ class RawReadTest extends CommandTest {
       .withColumn("num", F.col("num").cast(StringType))
       .withColumn("num[1].val", F.col("`num[1].val`").cast(StringType))
       .withColumn("num[2].val", F.col("`num[2].val`").cast(StringType))
-      .withColumn("res", array(
+      .withColumn("res", F.array(
         F.concat(F.col("`num[1].val`"), F.lit(' '), F.col("`text[1].val`")),
         F.concat(F.col("`num[2].val`"), F.lit(' '), F.col("`text[2].val`")))
       )
-      .withColumn("num{}.val", array(F.col("`num[1].val`"), F.col("`num[2].val`")))
-      .withColumn("text{}.val", array(F.col("`text[1].val`"), F.col("`text[2].val`")))
+      .withColumn("num{}.val", F.array(F.col("`num[1].val`"), F.col("`num[2].val`")))
+      .withColumn("text{}.val", F.array(F.col("`text[1].val`"), F.col("`text[2].val`")))
       .select(
         F.col("_time"),  F.col("res"), F.col("`num{}.val`"), F.col("`text{}.val`")
       )
@@ -233,7 +231,7 @@ class RawReadTest extends CommandTest {
     val schema = ArrayType(StructType(Array(StructField("val", StringType, nullable = false))), containsNull = false)
     var expected = readIndexDF(s"$test_index-0", readingDatasetSchema)
       .select(F.col("_time"), F.col("listField"), F.col("nestedField"))
-      .withColumn("listField{}", F.split(regexp_replace(F.col("listField"), "\\[|\\]", ""), ", "))
+      .withColumn("listField{}", F.split(F.regexp_replace(F.col("listField"), "\\[|\\]", ""), ", "))
       .withColumn("nestedField{}.val", F.from_json(F.col("nestedField"), schema).getField("val"))
       .select(F.col("_time"), F.col("`listField{}`"), F.col("`nestedField{}.val`"))
     expected = expected.sqlContext.createDataFrame(expected.rdd, StructType(expected.schema.map(_.copy(nullable = true))))
@@ -259,7 +257,7 @@ class RawReadTest extends CommandTest {
       s"""| read {"$test_index-$k": {"query": "", "tws": $start_time, "twf": $finish_time}} | table _time, _raw, metric_name, metric_long_name, value""",
       s"$test_index-$k", start_time, finish_time)
     var actual = new Converter(query).run
-    actual = actual.withColumn("value", col("value").cast(DoubleType))
+    actual = actual.withColumn("value", F.col("value").cast(DoubleType))
     val expected = readIndexDF(s"$test_index-$k", readingDatasetSchema)
       .filter(F.col("_time").between(start_time, finish_time))
       .select(

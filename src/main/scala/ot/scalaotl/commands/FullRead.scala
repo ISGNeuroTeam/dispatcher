@@ -56,7 +56,7 @@ class FullRead(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLIndexes with 
   }
 
   // Get a list of available indexes (reading from filesystem)
-  val allIndexes: ListBuffer[String] = getAllIndexes()
+  val allIndexes: ListBuffer[String] = getAllIndexes
   // Search in the query for all indexes containing * and look for similar ones among the available indexes
   var indexQueriesMap: Map[String, Map[String, String]] = jsonStrToMap(excludeKeywords(_args.trim, List(Keyword("limit", "t"))))
   for (index <- indexQueriesMap) {
@@ -129,7 +129,7 @@ class FullRead(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLIndexes with 
           case Some(_) | None => fieldsUsedInFullQuery
         }).distinct
 
-        val s = new IndexSearch(spark, log, mItem, searchId, fieldsUsedInFullQuery, preview, true)
+        val s = new IndexSearch(spark, mItem, searchId, fieldsUsedInFullQuery, preview, true)
         try {
           // Read index data
           val fdf: DataFrame = s.search()

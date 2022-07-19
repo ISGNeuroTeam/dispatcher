@@ -1,9 +1,5 @@
 package ot.scalaotl.commands
 
-import java.io.File
-
-import ot.dispatcher.OTLQuery
-
 class SearchTimeFieldExtractionTest extends CommandTest {
 
   override val dataset: String = """[ 

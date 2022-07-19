@@ -54,7 +54,7 @@ class RawRead(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLIndexes with E
   }
 
   // Get a list of available indexes (reading from filesystem)
-  val allIndexes: ListBuffer[String] = getAllIndexes()
+  val allIndexes: ListBuffer[String] = getAllIndexes
   // Search in the query for all indexes containing * and look for similar ones among the available indexes
   var indexQueriesMap: Map[String, Map[String, String]] = jsonStrToMap(excludeKeywords(_args.trim, List(Keyword("limit", "t"))))
   for (index <- indexQueriesMap) {
@@ -121,7 +121,7 @@ class RawRead(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLIndexes with E
         val nItem = (item._1, item._2 + ("query" -> modifiedQuery))
         log.debug(s"[SearchID:$searchId]Modified query is" + nItem)
 
-        val s = new IndexSearch(spark, log, nItem, searchId, Seq[String](), preview)
+        val s = new IndexSearch(spark, nItem, searchId, Seq[String](), preview)
         try {
           // Read index data (only _time and _raw) and make field extraction
           val fdfe: DataFrame = extractFields(s.search())
@@ -131,8 +131,7 @@ class RawRead(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLIndexes with E
             fdfe.drop("index").withColumn("index", lit(item._1))
           else
             fdfe
-
-
+          // Dataframe filtering by _raw field
           val fdf :DataFrame = if (modifiedQuery == "") ifdfe else ifdfe.filter(modifiedQuery)
           val cols1 = fdf.columns.map(_.stripBackticks().addSurroundedBackticks).toSet
           val cols2 = accum._1.columns.map(_.stripBackticks().addSurroundedBackticks).toSet

@@ -3,22 +3,28 @@ package utils
 package searchinternals
 
 import ot.scalaotl.config.OTLIndexes
-import org.apache.log4j.Logger
+import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.types.{StringType, StructField, StructType}
 import org.apache.spark.sql.{DataFrame, Row, SparkSession, functions => F}
 import org.apache.spark.sql.types.LongType
-import scala.util.{Try, Success, Failure}
+
+import scala.util.{Failure, Success, Try}
 import org.apache.spark.sql.AnalysisException
 import org.apache.commons.lang.StringEscapeUtils.escapeJava
+import ot.AppConfig.{config, getLogLevel}
 import ot.scalaotl.extensions.DataFrameExt._
 import ot.dispatcher.sdk.core.CustomException.{E00003, E00004, E00005, E00006}
 import ot.dispatcher.sdk.core.CustomException
 
-class IndexSearch(spark: SparkSession, log: Logger, item: (String, Map[String, String]), searchId: Int,
+class IndexSearch(spark: SparkSession, item: (String, Map[String, String]), searchId: Int,
                   fieldsUsedInFullQuery: Seq[String], preview: Boolean, fullReadFlag: Boolean = false) extends OTLIndexes
 {
-  val index: String = item._1
-  val sql: String = item._2("query")
+  val log: Logger = Logger.getLogger(this.getClass.getName)
+  log.setLevel(Level.toLevel(getLogLevel(config, this.getClass.getSimpleName)))
+
+
+  val indexName: String = item._1
+  val query: String = item._2("query")
   // timestamp of the start of the searched data
   val _tws: Long = item._2("tws").toLong
   // timestamp of the finish of the searched data
@@ -55,8 +61,8 @@ class IndexSearch(spark: SparkSession, log: Logger, item: (String, Map[String, S
   def getException(ex1: Throwable, ex2: Throwable): Throwable = {
     (ex1, ex2) match {
       case (ex1: AnalysisException, _) => E00003(searchId, ex1.getMessage())
-      case (e1: CustomException, e2: CustomException) => E00004(searchId, index)
-      case ex => E00005(searchId, index, ex._1.getMessage, ex._1)
+      case (e1: CustomException, e2: CustomException) => E00004(searchId, indexName)
+      case ex => E00005(searchId, indexName, ex._1.getMessage, ex._1)
     }
   }
 
@@ -64,17 +70,17 @@ class IndexSearch(spark: SparkSession, log: Logger, item: (String, Map[String, S
     log.debug(s"[SearchID:$searchId] IndexSearch: indexPathDisk ='$indexPathDisk'; indexPathCache = '$indexPathCache'")
     var result_disk: Try[DataFrame] = Failure(E00006(searchId))
     val delta = System.currentTimeMillis - tws * 1000
-    val duration_cache_millis = duration_cache * 1000
+    val duration_cache_millis = durationCache * 1000
     log.info(s"[SearchID:$searchId] IndexSearch: indexPathDisk ='$indexPathDisk'; " +
       s"indexPathCache = '$indexPathCache'; tws = '$tws'; delta = '$delta'; " +
       s"duration_cache_millis = '$duration_cache_millis'")
     if (delta >= duration_cache_millis) {
-      val search_disk = new FileSystemSearch(spark, log, searchId, fieldsUsedInFullQuery, fs_disk, indexPathDisk,
-        index, sql, tws, twf, preview, fullReadFlag = fullReadFlag)
+      val search_disk = new FileSystemSearch(spark, searchId, fieldsUsedInFullQuery, fs_disk, indexPathDisk,
+        indexName, query, tws, twf, preview, fullReadFlag = fullReadFlag)
       result_disk = search_disk.search()
     }
-    val search_cache = new FileSystemSearch(spark, log, searchId, fieldsUsedInFullQuery, fs_cache, indexPathCache,
-      index, sql, tws, twf, preview, isCache = true, fullReadFlag = fullReadFlag)
+    val search_cache = new FileSystemSearch(spark, searchId, fieldsUsedInFullQuery, fs_cache, indexPathCache,
+      indexName, query, tws, twf, preview, fullReadFlag = fullReadFlag, isCache = true)
     val result_cache = search_cache.search()
 
     (result_disk, result_cache) match {

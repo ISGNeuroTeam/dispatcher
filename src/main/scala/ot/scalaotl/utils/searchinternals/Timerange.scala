@@ -10,23 +10,21 @@ import ot.AppConfig.config
 import ot.AppConfig.getLogLevel
 
 object Timerange extends OTLIndexes {
-
-  val classname: String = this.getClass.getSimpleName
-  val log: Logger = Logger.getLogger(classname)
+  val log: Logger = Logger.getLogger("Timerange")
   log.setLevel(Level.toLevel(getLogLevel(config, "Timerange")))
 
-  private def getBucketsFromFs(fs: FileSystem, INDEX_PATH: String, index: String, isCache: Boolean = false): ListBuffer[String] =
+  private def getBucketsFromFs(fs: FileSystem, indexPath: String, indexName: String, isCache: Boolean = false): ListBuffer[String] =
   {
     val filenames = ListBuffer[String]()
     try {
-      var status = fs.listStatus(new Path(INDEX_PATH + index))
+      var status = fs.listStatus(new Path(indexPath + indexName))
       val timestamp: Long = System.currentTimeMillis
       if (isCache) {
         log.debug("Filter buckets by modification time")
         status = status.filter(x =>
         {
           log.debug(s"$x difference: " + (timestamp - x.getModificationTime).toString)
-          (timestamp - x.getModificationTime) < duration_cache * 1000
+          (timestamp - x.getModificationTime) < durationCache * 1000
         })
       }
       status.foreach(x => filenames += x.getPath.getName)
