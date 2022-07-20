@@ -140,4 +140,67 @@ class OTLTopTest extends CommandTest {
     assert(jsonCompare(actual, expected), f"Result : $actual\n---\nExpected : $expected")
   }
 
+  test("Test 8. Command: | top countfield=ElemsSize second_Field") {
+    val actual = execute("""top 2 countfield=ElemsSize second_Field""")
+    val expected =
+      """[
+        |{"second_Field":"ee","ElemsSize":10,"percent":50.0},
+        |{"second_Field":"aa","ElemsSize":4,"percent":20.0},
+        |{"second_Field":"cc","ElemsSize":3,"percent":15.0},
+        |{"second_Field":"dd","ElemsSize":2,"percent":10.0},
+        |{"second_Field":"bb","ElemsSize":1,"percent":5.0}]""".stripMargin
+    assert(jsonCompare(actual, expected), f"Result : $actual\n---\nExpected : $expected")
+  }
+
+  test("Test 9. Command: | top percentfield=procent random_Field") {
+    val actual = execute("""top percentfield=procent random_Field""")
+    val expected =
+      """[
+        |{"random_Field":"50","count":4,"procent":20.0},
+        |{"random_Field":"20","count":2,"procent":10.0},
+        |{"random_Field":"10","count":2,"procent":10.0},
+        |{"random_Field":"-90","count":1,"procent":5.0},
+        |{"random_Field":"30","count":1,"procent":5.0},
+        |{"random_Field":"0","count":1,"procent":5.0},
+        |{"random_Field":"110","count":1,"procent":5.0},
+        |{"random_Field":"5","count":1,"procent":5.0},
+        |{"random_Field":"100","count":1,"procent":5.0},
+        |{"random_Field":"70","count":1,"procent":5.0}
+        |]""".stripMargin
+    assert(jsonCompare(actual, expected), f"Result : $actual\n---\nExpected : $expected")
+  }
+
+  test("Test 10. Command: | top showcount=false random_Field") {
+    val actual = execute("""top showcount=false random_Field""")
+    val expected = """[
+                     |{"random_Field":"50","percent":20.0},
+                     |{"random_Field":"20","percent":10.0},
+                     |{"random_Field":"10","percent":10.0},
+                     |{"random_Field":"-90","percent":5.0},
+                     |{"random_Field":"30","percent":5.0},
+                     |{"random_Field":"0","percent":5.0},
+                     |{"random_Field":"110","percent":5.0},
+                     |{"random_Field":"5","percent":5.0},
+                     |{"random_Field":"100","percent":5.0},
+                     |{"random_Field":"70","percent":5.0}
+                     |]""".stripMargin
+    assert(jsonCompare(actual, expected), f"Result : $actual\n---\nExpected : $expected")
+  }
+
+  test("Test 11. Command: | top showperc=false random_Field") {
+    val actual= execute("""top showperc=false random_Field""")
+    val expected = """[
+                     |{"random_Field":"50","count":4},
+                     |{"random_Field":"20","count":2},
+                     |{"random_Field":"10","count":2},
+                     |{"random_Field":"-90","count":1},
+                     |{"random_Field":"30","count":1},
+                     |{"random_Field":"0","count":1},
+                     |{"random_Field":"110","count":1},
+                     |{"random_Field":"5","count":1},
+                     |{"random_Field":"100","count":1},
+                     |{"random_Field":"70","count":1}
+                     |]""".stripMargin
+    assert(jsonCompare(actual, expected), f"Result : $actual\n---\nExpected : $expected")
+  }
 }
