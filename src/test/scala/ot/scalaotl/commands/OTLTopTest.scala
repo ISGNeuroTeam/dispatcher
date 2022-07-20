@@ -145,10 +145,7 @@ class OTLTopTest extends CommandTest {
     val expected =
       """[
         |{"second_Field":"ee","ElemsSize":10,"percent":50.0},
-        |{"second_Field":"aa","ElemsSize":4,"percent":20.0},
-        |{"second_Field":"cc","ElemsSize":3,"percent":15.0},
-        |{"second_Field":"dd","ElemsSize":2,"percent":10.0},
-        |{"second_Field":"bb","ElemsSize":1,"percent":5.0}]""".stripMargin
+        |{"second_Field":"aa","ElemsSize":4,"percent":20.0}]""".stripMargin
     assert(jsonCompare(actual, expected), f"Result : $actual\n---\nExpected : $expected")
   }
 
