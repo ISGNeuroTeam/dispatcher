@@ -116,8 +116,7 @@ ot_simple_rest 1.7.0
 ot_simple 1.0.0  
 zeppelin-spl 2.2.0
 ot_simple_zeppelin 0.2.1
-nifi-custom-processors 0.1.12  
-nifi_processors 1.4.1  
+nifi_tools 1.0.5  
 
 ## Contributing
 
