@@ -3,17 +3,25 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
-### [Unreleased] 
-- Fixed OTLNomv command not deleted backticks bug 
-- Added documentation for OTLDedup command.
-- Problem with unworked consecutive parameter in OTLDedup solved.
-- OTLDedup dependency from OTLSort deleted.
-- OTLTop command refactored
-- Problem with non-work 0 limit solved
-- OTLTop tests extended and some of them corrected
 
+## [1.7.8] - 2022-07-22
+### Fixed
+- logging for IndexSearch and FileSystemSearch
+- regexp for RawRead search time field extraction
+- bug in OTLNomv command with not unremoved backticks
+- command OTLFileds aligned with the implementation in the Splunk
+- tests for RawRead, FullRead, OTLTop, OTLUntable, OTLTransaction, OTLReturn, OTLFields commands updated
+- test dataset csv-file for RawRead / FullRead tests (sensors.csv)
+- CommandTest refactored, added ability to select read command when running commands 
+- problem with unworked consecutive parameter in OTLDedup.
+- OTLDedup dependency from OTLSort deleted
+- problem with non-work 0 limit
+### Added
+- Documentation for RawRead, FullRead, OTLBaseCommand, OTLTop, OTLUntable, OTLTransaction, OTLReturn, OTLFields commands
+- Documentation for OTLDedup command
+- Methods readIndexDF, compareDataFrames, setNullableStateOfColumn for CommandTest
 
-## [1.7.7] - 2021-02-16
+## [1.7.7] - 2022-02-16
 ### Fixed
 - scala code formatting
 - return type added to some methods
