@@ -3,6 +3,9 @@ package ot.dispatcher
 import java.sql.{Connection, DriverManager, ResultSet}
 import ot.AppConfig.config
 
+import java.security.MessageDigest
+import javax.xml.bind.DatatypeConverter
+
 /** Provides all operations with DB.
  * [[getDBConnection]] - Returns connection to DB.
  * == Job Section ==
@@ -79,9 +82,9 @@ class SuperConnector {
 
   /** Registers new Job calculated cache. */
   def addNewCache(otlQuery: OTLQuery): Unit = {
-    val stm_ins_cache = dbConnection.prepareStatement(s"INSERT INTO CachesDL (original_otl, tws, twf, id, expiring_date, field_extraction, preview)" +
+    val stm_ins_cache = dbConnection.prepareStatement(s"INSERT INTO CachesDL (original_otl, tws, twf, id, expiring_date, field_extraction, preview, hashed_original_otl)" +
       s" VALUES($$SuperToken$$${otlQuery.original_otl}$$SuperToken$$, ${otlQuery.tws}, ${otlQuery.twf}, ${otlQuery.id}," +
-      s" to_timestamp(extract(epoch from now()) + ${otlQuery.cache_ttl}), ${otlQuery.field_extraction}, ${otlQuery.preview})")
+      s" to_timestamp(extract(epoch from now()) + ${otlQuery.cache_ttl}), ${otlQuery.field_extraction}, ${otlQuery.preview}, ${DatatypeConverter.printHexBinary(MessageDigest.getInstance("SHA-512").digest(otlQuery.original_otl.getBytes("UTF-8"))).toLowerCase})")
     stm_ins_cache.execute()
   }
 
