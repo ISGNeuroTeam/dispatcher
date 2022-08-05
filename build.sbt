@@ -2,7 +2,7 @@ name := "Dispatcher"
 
 organization := "ot.dispatcher"
 
-version := "1.7.7_hotfix_broken_cachesDL_after_hash_of_original_otl"
+version := "1.7.8"
 
 scalaVersion := "2.11.12"
 
