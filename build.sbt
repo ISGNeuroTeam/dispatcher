@@ -2,7 +2,7 @@ name := "Dispatcher"
 
 organization := "ot.dispatcher"
 
-version := "1.7.7"
+version := "1.7.7_hotfix_broken_cachesDL_after_hash_of_original_otl"
 
 scalaVersion := "2.11.12"
 
@@ -41,3 +41,4 @@ libraryDependencies += "org.json4s" %% "json4s-native" % "3.5.5"
 libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.8" % Test
 
 libraryDependencies += "io.spray" %% "spray-json" % "1.3.5" % Test
+
