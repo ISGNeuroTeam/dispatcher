@@ -6,7 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.7.8] - 2022-07-22
 ### Fixed
-- logging for IndexSearch and FileSystemSearch
+- logging for IndexSearch and FileSystemSearch (now loglevel for this classes must be set in loglevel.properties)
+- bloom filename must be set in application.conf
 - regexp for RawRead search time field extraction
 - bug in OTLNomv command with not unremoved backticks
 - command OTLFileds aligned with the implementation in the Splunk

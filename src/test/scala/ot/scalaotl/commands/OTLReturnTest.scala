@@ -33,7 +33,7 @@ class OTLReturnTest extends CommandTest {
     val thrown = intercept[Exception] {
       new Converter(mainQuery, cache).run
     }
-    assert(thrown.getMessage.endsWith("Command eval shoud have at least one argument"))
+    assert(thrown.getMessage.endsWith("Command eval should have at least one argument"))
   }
 
   test("Test 3. Command: | return expression for eval") {
