@@ -3,9 +3,11 @@ package ot.scalaotl.commands
 import ot.scalaotl.static.OtDatetime
 
 class OTLCollectTest extends CommandTest {
+  val new_index_name:String = "for_test"
 
   test("Test 0. Command: | collect") {
-    val actual = execute("""table _time, serialField, random_Field, WordField | collect index=for_test """)
+    cleanIndexFiles(s"$tmpDir/indexes/$new_index_name")
+    val actual = execute(s"""table _time, serialField, random_Field, WordField | collect index=$new_index_name """)
     val expected = f"""[
                       |{"_time":1568026476854,"serialField":"0","random_Field":"100","WordField":"qwe","_raw":"WordField=qwe,random_Field=100,serialField=0,_time=1568026476854"},
                       |{"_time":1568026476854,"serialField":"1","random_Field":"-90","WordField":"rty","_raw":"WordField=rty,random_Field=-90,serialField=1,_time=1568026476854"},
@@ -19,9 +21,11 @@ class OTLCollectTest extends CommandTest {
                       |{"_time":1568026476854,"serialField":"9","random_Field":"10","WordField":"USA","_raw":"WordField=USA,random_Field=10,serialField=9,_time=1568026476854"}
                       |]""".stripMargin
     assert(jsonCompare(actual, expected), f"Result : $actual\n---\nExpected : $expected")
+
   }
 
   test("Test 1. Command: | collect source=__source__ sourcetype=__sourcetype__") {
+    cleanIndexFiles(s"$tmpDir/indexes/$new_index_name")
     val actual = execute("""table _time, serialField, random_Field, WordField | collect index=for_test source=transactions sourcetype=transactions """)
     val expected = """[
                      |{"_time":1568026476854,"serialField":"0","random_Field":"100","WordField":"qwe","_source":"transactions","_sourcetype":"transactions","_raw":"_sourcetype=transactions,_source=transactions,WordField=qwe,random_Field=100,serialField=0,_time=1568026476854"},
@@ -36,10 +40,12 @@ class OTLCollectTest extends CommandTest {
                      |{"_time":1568026476854,"serialField":"9","random_Field":"10","WordField":"USA","_source":"transactions","_sourcetype":"transactions","_raw":"_sourcetype=transactions,_source=transactions,WordField=USA,random_Field=10,serialField=9,_time=1568026476854"}
                      |]""".stripMargin
     assert(jsonCompare(actual, expected), f"Result : $actual\n---\nExpected : $expected")
+
   }
 
   test("Test 2. Command: | collect mode=as-is") {
-    val actual = execute("""table _time, serialField, random_Field, WordField | collect index=for_test mode=as-is """)
+    cleanIndexFiles(s"$tmpDir/indexes/$new_index_name")
+    val actual = execute(s"""table _time, serialField, random_Field, WordField | collect index=$new_index_name mode=as-is """)
     val expected = """[
                      |{"_time":1568026476854,"serialField":"0","random_Field":"100","WordField":"qwe"},
                      |{"_time":1568026476854,"serialField":"1","random_Field":"-90","WordField":"rty"},
@@ -53,11 +59,13 @@ class OTLCollectTest extends CommandTest {
                      |{"_time":1568026476854,"serialField":"9","random_Field":"10","WordField":"USA"}
                      |]""".stripMargin
     assert(jsonCompare(actual, expected), f"Result : $actual\n---\nExpected : $expected")
+
   }
 
   // TODO Fix time problem.
   ignore("Test 3. Command: | collect [wo _time]") {
-    val actual = execute("""table serialField, random_Field, WordField | collect index=for_test """)
+    cleanIndexFiles(s"$tmpDir/indexes/$new_index_name")
+    val actual = execute(s"""table serialField, random_Field, WordField | collect index=$new_index_name """)
     val nowTime = OtDatetime.getCurrentTimeInSeconds() - 1
     val expected = f"""[
                       |{"serialField":"0","random_Field":"100","WordField":"qwe","_time":$nowTime,"_raw":"_time=$nowTime,WordField=qwe,random_Field=100,serialField=0"},

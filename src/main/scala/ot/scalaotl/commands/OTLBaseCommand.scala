@@ -82,7 +82,6 @@ abstract class OTLBaseCommand(sq: SimpleQuery, _seps: Set[String] = Set.empty) e
     }
   }
 
-
   def loggedTransform(_df: DataFrame): DataFrame = {
     log.debug(f"[SearchId:${sq.searchId}] ======= Starting command $commandname ========")
     log.debug(f"[SearchId:${sq.searchId}]Starting query with args : ${sq.args}," +

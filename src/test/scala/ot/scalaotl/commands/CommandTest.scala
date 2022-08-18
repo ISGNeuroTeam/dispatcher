@@ -188,7 +188,7 @@ abstract class CommandTest extends FunSuite with BeforeAndAfterAll {
    * Step3 If an external data schema is used, it will be written next to the parquet
    */
   override def beforeAll(): Unit = {
-    cleanIndexFiles()
+    cleanIndexFiles(tmpDir)
     if (List("RawRead", "FullRead").exists(this.getClass.getName.contains(_))){
       val df = spark.read.options(
         Map("inferSchema" -> "true", "delimiter" -> ",", "header" -> "true", "quote" -> "\"", "escape" -> "\"")
@@ -236,26 +236,12 @@ abstract class CommandTest extends FunSuite with BeforeAndAfterAll {
    * Recursively delete created indexes
    */
   override def afterAll(): Unit = {
-    cleanIndexFiles()
-    val indexesPath = new File(f"$tmpDir/indexes")
-    if(new Directory(indexesPath).list.isEmpty) new Directory(indexesPath.getParentFile).deleteRecursively()
+    cleanIndexFiles(tmpDir)
   }
 
-  def cleanIndexFiles(): AnyVal ={
-    if (List("RawRead", "FullRead").exists(this.getClass.getName.contains(_))){
-      for(i <- stfeRawSeparators.indices){
-        val indexDir = new Directory(new File(s"$tmpDir/indexes/$test_index-$i"))
-        if (indexDir.exists) indexDir.deleteRecursively()
-      }
-    }
-    else {
-      if (this.getClass.getSimpleName.contains("OTLCollect")) {
-        val indexDir = new Directory(new File(s"$tmpDir/indexes/for_test"))
-        if (indexDir.exists) indexDir.deleteRecursively()
-      }
-      val indexDir = new Directory(new File(s"$tmpDir/indexes/$test_index"))
-      if (indexDir.exists) indexDir.deleteRecursively()
-    }
+  def cleanIndexFiles(path: String): AnyVal ={
+    val indexDir = new Directory(new File(path))
+    if (indexDir.exists) indexDir.deleteRecursively()
   }
 
   def setNullableStateOfColumn(df: DataFrame, column: String, nullable: Boolean) : DataFrame = {
@@ -301,13 +287,4 @@ abstract class CommandTest extends FunSuite with BeforeAndAfterAll {
       )
     }
   }
-
-  def recursiveListFiles(f: File): Array[File] = {
-    val these = f.listFiles
-    these ++ these.filter(_.isDirectory).flatMap(recursiveListFiles)
-  }
-
-
-
-
 }
