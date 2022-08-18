@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - problem with unworked consecutive parameter in OTLDedup.
 - OTLDedup dependency from OTLSort deleted
 - problem with non-work 0 limit
+- problem with long OTL query by altered CachesDL table with new "hash" column
 ### Added
 - Documentation for RawRead, FullRead, OTLBaseCommand, OTLTop, OTLUntable, OTLTransaction, OTLReturn, OTLFields commands
 - Documentation for OTLDedup command
