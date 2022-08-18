@@ -7,8 +7,6 @@ import ot.scalaotl.extensions.StringExt._
 import org.apache.spark.sql.{functions => F}
 import org.apache.spark.sql.catalyst.expressions.Expression
 
-import scala.annotation.tailrec
-
 trait ExpressionParser extends DefaultParser {
 
   def getQuotesReplaceMap(q: String): Map[String, String] = """(["'])(?:(?=(\\?))\2.)*?\1""".r.findAllIn(q).toList.map { x => (x -> md5(x)) }.toMap
@@ -35,7 +33,7 @@ trait ExpressionParser extends DefaultParser {
       .toArray
   }
 
-  override def returnsParser: (String, Set[String]) => Return = (args: String, _) =>{
+  override def returnsParser = (args: String, _) =>{
       val caseExpr = findCaseString(args)
       val modfifArgs = if(caseExpr!="") args.replace(caseExpr, OtHash.md5(caseExpr)) else args
     val res=Return(
@@ -49,8 +47,7 @@ trait ExpressionParser extends DefaultParser {
       if (caseExpr!="") res.modifyEvalExprs(_.replace(OtHash.md5(caseExpr), caseExpr)) else res
   }
 
-  def findCaseString(str:String): String = {
-    @tailrec
+  def findCaseString(str:String) = {
     def getNextChar(str: String, index: Int, unb: Int): String = {
       str.charAt(index) match {
         case '(' => getNextChar(str, index + 1, unb + 1)

@@ -11,10 +11,20 @@ class SearchTimeFieldExtractionTest extends CommandTest {
                                    |  ]"""
 
   test("Search time field extraction| TEST 0. Search extracted nullable value fields "){
-    val query = createFullQuery(
-      s"""search index=$test_index | table tex.tFie.ld, text{}""",
-      s"""| read {"$test_index": {"query": "", "tws": 0, "twf": 0}} | table tex.tFie.ld, text{}""",
-      s"$test_index", fe = true)
+    val query = new OTLQuery(
+      id = 0,
+      original_otl = f"search index=* | table tex.tFie.ld, text{}",
+      service_otl = "| read {\"" + test_index + "\": {\"query\": \"\", \"tws\": 0, \"twf\": 0}} | table tex.tFie.ld, text{} ",
+      tws = 0,
+      twf = 0,
+      cache_ttl = 0,
+      indexes = Array(test_index),
+      subsearches = Map(),
+      username = "admin",
+      field_extraction = true,
+      preview = false
+    )
+
     val actual = execute(query)
     val expected = """[
                      |{"tex.tFie.ld":"abc","text{}":["RUB.0","RUB.00"]},
@@ -23,15 +33,24 @@ class SearchTimeFieldExtractionTest extends CommandTest {
                      |{"text{}":["GPB.0","GPB.00"]},
                      |{"text{}":["DRM.0","DRM.00"]}
                      |]""".stripMargin
+
     assert(jsonCompare(actual, expected), f"\nResult : $actual\n---\nExpected : $expected")
   }
-
-
   test("Search time field extraction| TEST 1.Search extracted multivalue fields "){
-    val query = createFullQuery(
-      s"""search index=$test_index | table num{}, text{}""",
-      s"""| read {"$test_index": {"query": "", "tws": 0, "twf": 0}} | table num{}, text{}""",
-      s"$test_index", fe = true)
+    val query = new OTLQuery(
+      id = 0,
+      original_otl = f"search index=* |table num{}, text{}",
+      service_otl = "| read {\"" + test_index + "\": {\"query\": \"\", \"tws\": 0, \"twf\": 0}} | table num{}, text{}",
+      tws = 0,
+      twf = 0,
+      cache_ttl = 0,
+      indexes = Array(test_index),
+      subsearches = Map(),
+      username = "admin",
+      field_extraction = true,
+      preview = false
+    )
+
     val actual = execute(query)
     val expected = """[
                      |{"num{}":["10","100"],"text{}":["RUB.0","RUB.00"]},
@@ -45,10 +64,20 @@ class SearchTimeFieldExtractionTest extends CommandTest {
   }
 
   test("Search time field extraction| TEST 2. Search extracted multivalue fields "){
-    val query = createFullQuery(
-      s"""search index=$test_index | table tex.t3{}.t1{}.ab.c, tex.t3.t1.ab.c, text3{}.t1{}.abc, text3.t1.abc, textField""",
-      s"""| read {"$test_index": {"query": "", "tws": 0, "twf": 0}} | table tex.t3{}.t1{}.ab.c, tex.t3.t1.ab.c, text3{}.t1{}.abc, text3.t1.abc, textField""",
-      s"$test_index", fe = true)
+    val query = new OTLQuery(
+      id = 0,
+      original_otl = f"search index=* | table tex.t3{}.t1{}.ab.c, tex.t3.t1.ab.c, text3{}.t1{}.abc, text3.t1.abc, textField ",
+      service_otl = "| read {\"" + test_index + "\": {\"query\": \"\", \"tws\": 0, \"twf\": 0}} | table tex.t3{}.t1{}.ab.c, tex.t3.t1.ab.c, text3{}.t1{}.abc, text3.t1.abc, textField ",
+      tws = 0,
+      twf = 0,
+      cache_ttl = 0,
+      indexes = Array(test_index),
+      subsearches = Map(),
+      username = "admin",
+      field_extraction = true,
+      preview = false
+    )
+
     val actual = execute(query)
     val expected = """[
                      |{"tex.t3{}.t1{}.ab.c":["cba","cba"]},
@@ -57,6 +86,7 @@ class SearchTimeFieldExtractionTest extends CommandTest {
                      |{},
                      |{}
                      |]""".stripMargin
+
     assert(jsonCompare(actual, expected), f"\nResult : $actual\n---\nExpected : $expected")
   }
 
