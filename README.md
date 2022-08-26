@@ -11,7 +11,7 @@ You'd to `publish local` dispatcher-sdk lib in order not to use unmanaged libs.
 ### Prerequisites
 Install:
 * java 1.8
-* sbt 1.3.8
+* sbt 1.8.0
 * scala 2.11.12
 
 ### Installing
@@ -28,6 +28,7 @@ We've tests for these and think it works... Maybe it is with little problems.
 * appendpipe
 * collect  
 * command  
+* dedup
 * eval (MV-subcommands don't work with SV-fields and vice verse, also some of them are not able to work with nulls)
 * fields    
 * fillnull 
@@ -47,9 +48,9 @@ We've tests for these and think it works... Maybe it is with little problems.
 * otoutputlookup
 * otstats
 * rename    
-* replace    
-* return  
-* reverse  
+* replace
+* return
+* reverse 
 * rex  
 * search   
 * spath  
@@ -57,6 +58,7 @@ We've tests for these and think it works... Maybe it is with little problems.
 * table    
 * tail 
 * timechart
+* transaction
 * union 
 * untable
 * where  
@@ -65,18 +67,15 @@ We've tests for these and think it works... Maybe it is with little problems.
 
 Untested but realized commands:
 * chart
-* convert  
-* dedup 
+* convert
 * delta  
 * eventstats
 * fieldsummary  
 * filldown
-* nomv  
 * rangemap  
 * sort  
 * streamstats
 * top
-* transaction
 * transpose  
 * outputlookup
 
@@ -108,7 +107,7 @@ config-1.3.4.jar
 json4s-ast_2.11-3.5.5.jar  
 json4s-native_2.11-3.5.5.jar  
 postgresql-42.2.5.jar  
-dispatcher-sdk_2.11-1.2.0.jar
+dispatcher-sdk_2.11-1.2.2.jar
 
 ## Compatible with
 
@@ -129,7 +128,7 @@ We use [SemVer](http://semver.org/) for versioning. For the versions available, 
 Nikolay Ryabykh (nryabykh@isgneuro.com)  
 Sergei Ermilov (sermilov@isgneuro.com)  
 Dmitriy Gusarov (dgusarov@isgneuro.com)  
-Andrey Starchenkov (astarchenkov@isgneuro.com)  
+Andrey Starchenkov (astarchenkov@isgneuro.com) 
 
 ## License
 
