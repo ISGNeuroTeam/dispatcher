@@ -4,31 +4,36 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.7.8] - 2022-07-22
-### Fixed
-- logging for IndexSearch and FileSystemSearch (now loglevel for this classes must be set in loglevel.properties)
-- bloom filename must be set in application.conf
-- regexp for RawRead search time field extraction
-- bug in OTLNomv command with not unremoved backticks
-- command OTLFileds aligned with the implementation in the Splunk
-- tests for RawRead, FullRead, OTLTop, OTLUntable, OTLTransaction, OTLReturn, OTLFields commands updated
-- test dataset csv-file for RawRead / FullRead tests (sensors.csv)
-- CommandTest refactored, added ability to select read command when running commands 
-- problem with unworked consecutive parameter in OTLDedup.
-- OTLDedup dependency from OTLSort deleted
-- problem with non-work 0 limit
-- problem with long OTL query by altered CachesDL table with new "hash" column
+## [1.8.0] - 2022-08-26
 ### Added
-- Documentation for RawRead, FullRead, OTLBaseCommand, OTLTop, OTLUntable, OTLTransaction, OTLReturn, OTLFields commands
-- Documentation for OTLDedup command
-- Methods readIndexDF, compareDataFrames, setNullableStateOfColumn for CommandTest
+- test dataset csv-file for RawRead / FullRead tests (sensors.csv).
+- logging for IndexSearch and FileSystemSearch (now loglevel for this classes must be set in loglevel.properties).
+- ability to select read command when running OTL-queries (otstats or read).
+- methods readIndexDF, compareDataFrames, setNullableStateOfColumn for CommandTest.
+- documentation for RawRead, FullRead, OTLBaseCommand, OTLTop, OTLUntable, OTLTransaction, OTLReturn, OTLFields commands.
+- documentation for OTLDedup command.
+### Changed
+- command OTLFields aligned with the implementation in the Splunk.
+- commands OTLUntable, OTLTransaction, OTLReturn, OTLFields now return an empty dataframe for invalid arguments.
+ - bloom filename must be set in application.conf.
+- tests for RawRead, FullRead, OTLTop, OTLUntable, OTLTransaction, OTLReturn, OTLFields commands updated.
+### Fixed
+- regexp for RawRead search time field extraction.
+- bug in OTLNomv command with not unremoved backticks.
+- problem with unworked consecutive parameter in OTLDedup.
+- OTLDedup dependency from OTLSort deleted.
+- problem with non-work 0 limit.
+
+## [1.7.8] - 2022-08-05
+### Fixed
+-  problem with long OTL query by altered CachesDL table with new "hash" column.
 
 ## [1.7.7] - 2022-02-16
 ### Fixed
-- scala code formatting
-- return type added to some methods
-- commented out some unused values
-- some code has been improved
+- scala code formatting.
+- return type added to some methods.
+- commented out some unused values.
+- some code has been improved.
 
 ## [1.7.6] - 2021-12-27
 ### Fixed

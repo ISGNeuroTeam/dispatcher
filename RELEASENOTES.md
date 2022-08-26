@@ -1,15 +1,29 @@
+## [1.8.0]
+### New
+- command OTLFields aligned with the implementation in the Splunk.
+- commands OTLUntable, OTLTransaction, OTLReturn, OTLFields now return an empty dataframe for invalid arguments.
+- bloom filename must be set in application.conf.
+### Bugfix
+- regexp for RawRead search time field extraction.
+- bug in OTLNomv command with not unremoved backticks.
+- problem with unworked consecutive parameter in OTLDedup.
+- OTLDedup dependency from OTLSort deleted.
+- problem with non-work 0 limit.
+
 # [1.7.8] - Hotfix
 ### Hotfix
 Fixed problem with long OTL query by altered CachesDL table with new "hash" column.
 
-# [1.7.7] - Hotfix
-TODO
+# [1.7.7] - Bugfix
+We have fixed few bugs in the Dispatcher core and some OTL commands.
 
-# [1.7.6] - Hotfix
-TODO
+## [1.7.6] - Hotfix
+### Hotfix
+Updated log4j to 2.17.0.
 
-# [1.7.5] - Hotfix
-TODO
+## [1.7.5] - Hotfix
+### Hotfix
+Fixed log4j RCE.
 
 # [1.7.4] - Hotfix
 ### Hotfix
