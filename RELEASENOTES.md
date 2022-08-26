@@ -1,13 +1,12 @@
 ## [1.8.0]
 ### New
-- command OTLFields aligned with the implementation in the Splunk.
-- commands OTLUntable, OTLTransaction, OTLReturn, OTLFields now return an empty dataframe for invalid arguments.
-- bloom filename must be set in application.conf.
+- command fields aligned with the implementation in the Splunk.
+- commands untable, transaction, return, fields now return an empty dataframe for invalid arguments.
+- bloom filter filename must be set in application.conf.
 ### Bugfix
-- regexp for RawRead search time field extraction.
-- bug in OTLNomv command with not unremoved backticks.
-- problem with unworked consecutive parameter in OTLDedup.
-- OTLDedup dependency from OTLSort deleted.
+- regexp for search command in search time field extraction.
+- bug in nomv command with not unremoved backticks.
+- problem with unworked consecutive parameter in dedup command.
 - problem with non-work 0 limit.
 
 # [1.7.8] - Hotfix

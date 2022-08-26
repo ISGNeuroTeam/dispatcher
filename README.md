@@ -47,7 +47,6 @@ We've tests for these and think it works... Maybe it is with little problems.
 * otmakeresults
 * otoutputlookup
 * otstats
-* read
 * rename    
 * replace
 * return
