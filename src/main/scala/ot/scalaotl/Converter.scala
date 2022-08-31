@@ -13,6 +13,7 @@ import ot.dispatcher.OTLQuery
 import scala.util.Try
 import org.apache.spark.sql.{DataFrame, Row}
 import ot.AppConfig.getLogLevel
+import ot.dispatcher.sdk.core.CustomException.E00002
 import ot.scalaotl.commands.service.ReloadCommand
 
 /**
@@ -69,12 +70,17 @@ class Converter(otlQuery: OTLQuery, cache: Map[String, DataFrame]) extends OTLSp
 
   def getTransformers(commands: Seq[String]): Seq[OTLBaseCommand] = {
     val commandPattern = """^(\w+|--)(\s+(.*))?""".r
+    case class Command(cmd: String, args: String)
     commands.map { x =>
       {
-        val commandPattern(cmd, _, argsNullable) = x
-        val args = if (argsNullable == null) "" else argsNullable
+        val command: Command = x match {
+          case commandPattern(cmd, _, null) => Command(cmd, "")
+          case commandPattern(cmd, _, args) => Command(cmd, args)
+          case _ => throw E00002(otlQuery.id, f"Incorrect command name in '$x'")
+        }
+
         val sq = new SimpleQuery(
-          args = collectSubsearch(cmd, args),
+          args = collectSubsearch(command.cmd, command.args),
           searchId = otlQuery.id,
           cache = cache,
           subsearches = otlQuery.subsearches,
@@ -83,7 +89,7 @@ class Converter(otlQuery: OTLQuery, cache: Map[String, DataFrame]) extends OTLSp
           searchTimeFieldExtractionEnables = otlQuery.field_extraction,
           preview = otlQuery.preview
         )
-        Converter.getClassByName(cmd, sq)
+        Converter.getClassByName(command.cmd, sq)
       }
     }
   }

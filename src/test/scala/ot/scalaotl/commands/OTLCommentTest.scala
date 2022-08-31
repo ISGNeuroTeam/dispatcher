@@ -38,4 +38,13 @@ class OTLCommentTest extends CommandTest {
     val expected = readIndexDF(test_index).select(F.col("_time"), F.col("_raw"))
     compareDataFrames(actual, expected)
   }
+
+  test("Test 3. Command: | --fields _time (incorrect command name)") {
+    val query = createQuery("""fields _time, _raw | --fields _time""",
+      "otstats", s"$test_index")
+    val thrown = intercept[Exception] {
+      val actual = new Converter(query).run
+    }
+    assert(thrown.getMessage.contains("Incorrect command name"))
+  }
 }
