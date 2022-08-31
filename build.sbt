@@ -2,7 +2,7 @@ name := "Dispatcher"
 
 organization := "ot.dispatcher"
 
-version := "1.8.0"
+version := "1.8.1"
 
 scalaVersion := "2.11.12"
 
