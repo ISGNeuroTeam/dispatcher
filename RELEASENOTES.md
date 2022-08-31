@@ -1,10 +1,16 @@
+## [1.8.1]
+### Added
+- new command -- for sql-like comments
+### Fixed
+- accurate percentile calculation for stats functions
+
 ## [1.8.0]
 ### New
 - command fields aligned with the implementation in the Splunk.
 - commands untable, transaction, return, fields now return an empty dataframe for invalid arguments.
 - bloom filter filename must be set in application.conf.
 ### Bugfix
-- regexp for search command in search time field extraction.
+- regexp for search command in search time field extraction. Now search can extract next types of _raw field: json, key=value, key value. However, the last two types allow spaces before and after the delimiter.  
 - bug in nomv command with not unremoved backticks.
 - problem with unworked consecutive parameter in dedup command.
 - problem with non-work 0 limit.
