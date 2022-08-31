@@ -68,10 +68,11 @@ class Converter(otlQuery: OTLQuery, cache: Map[String, DataFrame]) extends OTLSp
     .toList
 
   def getTransformers(commands: Seq[String]): Seq[OTLBaseCommand] = {
-      val commandPattern = """^(\w+|--)\s+(.*)""".r
+    val commandPattern = """^(\w+|--)(\s+(.*))?""".r
     commands.map { x =>
       {
-        val commandPattern(cmd, args) = x
+        val commandPattern(cmd, _, argsNullable) = x
+        val args = if (argsNullable == null) "" else argsNullable
         val sq = new SimpleQuery(
           args = collectSubsearch(cmd, args),
           searchId = otlQuery.id,
