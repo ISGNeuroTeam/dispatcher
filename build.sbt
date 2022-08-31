@@ -1,4 +1,4 @@
-name := "Dispatcher"
+name := "dispatcher"
 
 organization := "ot.dispatcher"
 

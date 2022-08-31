@@ -34,12 +34,12 @@ fi \n
 --executor-cores 1 \\\n
 --executor-memory 6G \\\n
 --conf "spark.sql.autoBroadcastJoinThreshold=-1" \\\n
---conf "spark.application.config=/opt/otp/Dispatcher/application.conf" \\\n
+--conf "spark.application.config=/opt/otp/dispatcher/application.conf" \\\n
 --conf "spark.blacklist.enable=true" \\\n
 --conf "spark.driver.maxResultSize=4G" \\\n
 --conf "spark.dynamicAllocation.enabled=false" \\\n
 --conf "spark.locality.wait=0" \\\n
---conf "spark.scheduler.allocation.file=/opt/otp/Dispatcher/fairscheduler.xml" \\\n
+--conf "spark.scheduler.allocation.file=/opt/otp/dispatcher/fairscheduler.xml" \\\n
 --conf "spark.scheduler.mode=FAIR" \\\n
 --conf "spark.shuffle.service.enabled=false" \\\n
 --conf "spark.speculation=true" \\\n
@@ -47,8 +47,8 @@ fi \n
 --conf "spark.sql.crossJoin.enabled=true" \\\n
 --conf "spark.sql.files.ignoreCorruptFiles=true" \\\n
 --conf "spark.sql.files.ignoreMissingFiles=true" \\\n
---conf "spark.driver.extraClassPath=/opt/otp/Dispatcher/mssql-jdbc-8.2.0.jre8.jar" \\\n
---conf "spark.executor.extraClassPath=/opt/otp/Dispatcher/mssql-jdbc-8.2.0.jre8.jar" \\\n
+--conf "spark.driver.extraClassPath=/opt/otp/dispatcher/mssql-jdbc-8.2.0.jre8.jar" \\\n
+--conf "spark.executor.extraClassPath=/opt/otp/dispatcher/mssql-jdbc-8.2.0.jre8.jar" \\\n
 --jars `find $$(cd ..; pwd)/$(PROJECT_NAME) -name "*.jar" | xargs | sed -r 's/ /,/g'` \\\n
 --class $(APP_CLASS) $$(cd ..; pwd)/$(PROJECT_NAME)/jars/ot.$(PROJECT_NAME_LOW_CASE)/$(PROJECT_NAME_LOW_CASE)_$(SCALA_VERSION)/$(PROJECT_NAME_LOW_CASE)_$(SCALA_VERSION)-$(VERSION).jar
 endef
