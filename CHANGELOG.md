@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.1] - 2022-08-31
+### Added
+- new command -- for sql-like comments
+### Fixed
+- accurate percentile calculation for stats functions
+
 ## [1.8.0] - 2022-08-26
 ### Added
 - test dataset csv-file for RawRead / FullRead tests (sensors.csv).
@@ -18,7 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - bloom filter filename must be set in application.conf.
 - tests for RawRead, FullRead, OTLTop, OTLUntable, OTLTransaction, OTLReturn, OTLFields classes updated.
 ### Fixed
-- regexp for search command in search time field extraction.
+- regexp for search command in search time field extraction. Now search can extract next types of _raw field: json, key=value, key value. However, the last two types allow spaces before and after the delimiter.
 - bug in nomv command with not unremoved backticks.
 - problem with unworked consecutive parameter in OTLDedup.
 - OTLDedup dependency from OTLSort deleted.
