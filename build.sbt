@@ -43,4 +43,6 @@ libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.8" % Test
 
 libraryDependencies += "io.spray" %% "spray-json" % "1.3.5" % Test
 
+libraryDependencies += "org.apache.kafka" % "kafka-clients" % "3.2.1"
+
 Test / parallelExecution := false
