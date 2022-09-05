@@ -1,6 +1,7 @@
 package ot.dispatcher
 
 import org.apache.kafka.clients.consumer.{ConsumerRecords, KafkaConsumer}
+import org.apache.kafka.clients.producer.KafkaProducer
 import org.apache.kafka.common.errors.WakeupException
 import play.api.libs.json.{JsValue, Json}
 
@@ -11,11 +12,16 @@ import scala.collection.JavaConverters._
 
 class SuperKafkaConnector() {
   var consumer: KafkaConsumer[String, String] = createConsumer
+
   var topic: String = _
+
+  var producer: KafkaProducer[String, JsValue] = _
+
   def this(topic: String) {
     this()
     this.topic = topic
     subscribeConsumer()
+    producer = createProducer
   }
 
   private def createConsumer(): KafkaConsumer[String, String] = {
@@ -61,5 +67,13 @@ class SuperKafkaConnector() {
       simpleMovingConnector.consumer.close
     }
     commands
+  }
+
+  private def createProducer(): KafkaProducer[String, JsValue] = {
+    val props = new Properties
+    props.put("bootstrap.servers", "localhost:9090")
+    props.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer")
+    props.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer")
+    new KafkaProducer[String, JsValue](props)
   }
 }
