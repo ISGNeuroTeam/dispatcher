@@ -1,6 +1,6 @@
 package ot.dispatcher.MaintenanceFunctions
 
-import ot.dispatcher.{CacheManager, SuperConnector}
+import ot.dispatcher.{CacheManager, SuperDbConnector}
 
 /** Removes cache files from RAM cache and DB rows.
  *
@@ -10,7 +10,7 @@ object Cleaner {
 
   def clearCache(systemMaintenanceArgs: Map[String, Any]): Unit = {
 
-    val superConnector: SuperConnector = systemMaintenanceArgs("superConnector").asInstanceOf[SuperConnector]
+    val superConnector: SuperDbConnector = systemMaintenanceArgs("superConnector").asInstanceOf[SuperDbConnector]
     val cacheManager: CacheManager = systemMaintenanceArgs("cacheManager").asInstanceOf[CacheManager]
     val oldCaches = superConnector.deleteOldCache()
     while (oldCaches.next()) {

@@ -3,8 +3,8 @@ package ot.dispatcher
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.DataFrame
 import ot.AppConfig._
-import ot.scalaotl.Converter
 import ot.dispatcher.sdk.core.CustomException.{E00008, E00009, E00010}
+import ot.scalaotl.Converter
 
 /** Represents the start point of main calculation process for Job.
  *
@@ -12,7 +12,7 @@ import ot.dispatcher.sdk.core.CustomException.{E00008, E00009, E00010}
  * @param superConnector [[SuperVisor]] instance for DB updates depending on Job states.
  * @author Andrey Starchenkov (astarchenkov@ot.ru)
  */
-class SuperCalculator(cacheManager: CacheManager, superConnector: SuperConnector) {
+class SuperCalculator(cacheManager: CacheManager, superConnector: SuperDbConnector) {
 
   val log: Logger = Logger.getLogger("CalculatorLogger")
   log.setLevel(Level.toLevel(getLogLevel(config, "calculator")))
