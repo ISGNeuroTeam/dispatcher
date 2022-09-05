@@ -3,7 +3,7 @@ package ot.dispatcher.MaintenanceFunctions
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.SparkSession
 import ot.AppConfig._
-import ot.dispatcher.SuperConnector
+import ot.dispatcher.SuperDbConnector
 
 /** Removes cache files from RAM cache and DB rows.
  *
@@ -17,7 +17,7 @@ object Canceller {
 
   def cancelJobs(systemMaintenanceArgs: Map[String, Any]): Unit = {
 
-    val superConnector: SuperConnector = systemMaintenanceArgs("superConnector").asInstanceOf[SuperConnector]
+    val superConnector: SuperDbConnector = systemMaintenanceArgs("superConnector").asInstanceOf[SuperDbConnector]
     val sparkSession: SparkSession = systemMaintenanceArgs("sparkSession").asInstanceOf[SparkSession]
     val expiredJobs = superConnector.getExpiredQueries
     while (expiredJobs.next()) {

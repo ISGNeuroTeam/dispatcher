@@ -45,4 +45,6 @@ libraryDependencies += "io.spray" %% "spray-json" % "1.3.5" % Test
 
 libraryDependencies += "org.apache.kafka" % "kafka-clients" % "3.2.1"
 
+libraryDependencies += "com.typesafe.play" %% "play-json" % "2.7.4"
+
 Test / parallelExecution := false

@@ -1,14 +1,14 @@
 package ot.dispatcher
 
-import java.sql.ResultSet
-import java.util.Calendar
-
-import org.apache.spark.sql.SparkSession
 import org.apache.log4j.{Level, Logger}
+import org.apache.spark.sql.SparkSession
 import ot.AppConfig
 import ot.AppConfig._
-import ot.dispatcher.sdk.core.CustomException.E00017
 import ot.dispatcher.sdk.core.CustomException
+import ot.dispatcher.sdk.core.CustomException.E00017
+
+import java.sql.ResultSet
+import java.util.Calendar
 
 /** Gets settings from config file and then runs infinitive loop of user's and system's queries.
  *
@@ -31,13 +31,16 @@ class SuperVisor {
   val sparkSession: SparkSession = getSparkSession
   log.info("SparkSession started.")
   // Step 3. Loads connector to DB.
-  val superConnector = new SuperConnector()
-  log.info("SuperConnector is ready.")
-  // Step 4. Loads RAM cache manager.
+  val superDbConnector = new SuperDbConnector()
+  log.info("SuperDbConnector is ready.")
+  //Step 4. Load connector to Kafka.
+  val superKafkaConnector = new SuperKafkaConnector("otl_kafka_stream")
+  log.info("SuperKafkaConnector is ready.")
+  // Step 5. Loads RAM cache manager.
   val cacheManager = new CacheManager(sparkSession)
   log.info("CacheManager started.")
   // Step 5. Loads calculation manager.
-  val superCalculator = new SuperCalculator(cacheManager, superConnector)
+  val superCalculator = new SuperCalculator(cacheManager, superDbConnector)
   log.info("SuperCalculator started.")
 
   /** Starts infinitive loop. */
@@ -109,7 +112,7 @@ class SuperVisor {
   def restorationMaintenance(): Unit = {
     log.trace("Restoration Maintenance section started.")
     val restorationMaintenanceArgs = Map(
-      "superConnector" -> superConnector,
+      "superConnector" -> superDbConnector,
       "cacheManager" -> cacheManager,
       "sparkSession" -> sparkSession
     )
@@ -128,7 +131,7 @@ class SuperVisor {
     log.trace("System Maintenance section started.")
     val systemMaintenanceArgs = Map(
       "cacheManager" -> cacheManager,
-      "superConnector" -> superConnector,
+      "superConnector" -> superDbConnector,
       "sparkSession" -> sparkSession
     )
     val sm = new SystemMaintenance(systemMaintenanceArgs)
@@ -144,19 +147,19 @@ class SuperVisor {
    */
   def userMaintenance(): Unit = {
     // Gets new Jobs.
-    val res = superConnector.getNewQueries
+    val res = superDbConnector.getNewQueries
+    val commandStructs = superKafkaConnector.getNewCommands
 
     import scala.concurrent.{ExecutionContext, Future}
     import ExecutionContext.Implicits.global
-    import scala.util.{Success, Failure}
-
+    import scala.util.{Failure, Success}
     // Starts for each Job calculation process in Future.
     while (res.next()) {
 
       val otlQuery = getOTLQueryObject(res)
       log.info(otlQuery)
       log.debug(s"Job ${otlQuery.id} is setting to running.")
-      superConnector.setJobStateRunning(otlQuery.id)
+      superDbConnector.setJobStateRunning(otlQuery.id)
       val future = Future(futureCalc(otlQuery))
       // Sets logging for future branches depending on it's final state.
       future.onComplete {
@@ -167,7 +170,9 @@ class SuperVisor {
       }
       log.info(s"Job ${otlQuery.id} is running")
     }
+    for (comStruct <- commandStructs) {
 
+    }
   }
 
   /** Returns Job ID for logging.
@@ -190,35 +195,35 @@ class SuperVisor {
         superCalculator.calc(otlQuery)
         if (otlQuery.cache_ttl != 0) {
           // Registers new cache id DB.
-          superConnector.addNewCache(otlQuery)
+          superDbConnector.addNewCache(otlQuery)
         }
         // Marks Job in DB as finished.
-        superConnector.setJobStateFinished(otlQuery.id)
+        superDbConnector.setJobStateFinished(otlQuery.id)
         otlQuery.id
 
       } catch {
 
         // Error branch. Marks Job as failed.
         case error: CustomException =>
-          val jobState = superConnector.getJobState(otlQuery.id)
+          val jobState = superDbConnector.getJobState(otlQuery.id)
           if (jobState == "canceled") {
             throw E00017(otlQuery.id)
           } else {
-            superConnector.setJobStateFailed(otlQuery.id, error.getLocalizedMessage)
-            superConnector.unlockCaches(otlQuery.id)
+            superDbConnector.setJobStateFailed(otlQuery.id, error.getLocalizedMessage)
+            superDbConnector.unlockCaches(otlQuery.id)
             throw error
           }
         case error: OutOfMemoryError =>
-          superConnector.setJobStateFailed(otlQuery.id, error.getLocalizedMessage)
-          superConnector.unlockCaches(otlQuery.id)
+          superDbConnector.setJobStateFailed(otlQuery.id, error.getLocalizedMessage)
+          superDbConnector.unlockCaches(otlQuery.id)
           throw error
         case error: Exception =>
-          superConnector.setJobStateFailed(otlQuery.id, error.getLocalizedMessage)
-          superConnector.unlockCaches(otlQuery.id)
+          superDbConnector.setJobStateFailed(otlQuery.id, error.getLocalizedMessage)
+          superDbConnector.unlockCaches(otlQuery.id)
           throw error
         case throwable: Throwable =>
-          superConnector.setJobStateFailed(otlQuery.id, throwable.getLocalizedMessage)
-          superConnector.unlockCaches(otlQuery.id)
+          superDbConnector.setJobStateFailed(otlQuery.id, throwable.getLocalizedMessage)
+          superDbConnector.unlockCaches(otlQuery.id)
           throw throwable
       }
     }
