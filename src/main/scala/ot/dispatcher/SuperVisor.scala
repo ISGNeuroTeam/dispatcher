@@ -27,6 +27,8 @@ class SuperVisor {
   // Step 1. Loads logger.
   val log: Logger = Logger.getLogger("VisorLogger")
   log.setLevel(Level.toLevel(getLogLevel(config, "visor")))
+  //Generate computing node uuid
+  val computingNodeUuid = UUID.randomUUID
   // Step 2. Loads Spark's session and runtime configs.
   val sparkSession: SparkSession = getSparkSession
   log.info("SparkSession started.")
@@ -50,12 +52,14 @@ class SuperVisor {
     // Step 6. Runs restoring actions after reboot or first start.
     restorationMaintenance()
     log.info("Dispatcher restored DB and RAM Cache.")
-    // Step 7. Register calculation node in Kafka
+    // Step 7. Register computing node in Kafka
     registerNode()
-    log.info("Spark calculation node registered in Kafka")
+    log.info("Spark computing node registered in Kafka")
     // Step 8. Runs infinitive loop of system maintenance and user's queries.
     runInfiniteLoop()
-
+    // Step 9. Unregister computing node in Kafka
+    unregisterNode()
+    log.info("Spark computing node unregistered in Kafka")
   }
 
   /** Returns Spark session and loads config.
@@ -78,7 +82,6 @@ class SuperVisor {
   }
 
   def registerNode() = {
-    val computingNodeUuid = UUID.randomUUID
     var hostId = UUID.randomUUID
     while (hostId.compareTo(computingNodeUuid) == 0) {
       hostId = UUID.randomUUID
@@ -291,6 +294,19 @@ class SuperVisor {
       preview = res.getBoolean("preview")
     )
     otlQuery
+  }
+
+  def unregisterNode() = {
+    val commandName = "UNREGISTER_COMPUTING_NODE"
+    val unregisterMessage =
+      s"""
+         |{
+         |"computing_node_uuid": "${computingNodeUuid}",
+         |"command_name": "${commandName}",
+         |"command": {}
+         |}
+         |""".stripMargin
+    superKafkaConnector.sendMessage("computing_node_control", commandName, unregisterMessage)
   }
 
 }
