@@ -8,7 +8,7 @@ import ot.dispatcher.sdk.core.CustomException
 import ot.dispatcher.sdk.core.CustomException.E00017
 
 import java.sql.ResultSet
-import java.util.Calendar
+import java.util.{Calendar, UUID}
 
 /** Gets settings from config file and then runs infinitive loop of user's and system's queries.
  *
@@ -50,7 +50,10 @@ class SuperVisor {
     // Step 6. Runs restoring actions after reboot or first start.
     restorationMaintenance()
     log.info("Dispatcher restored DB and RAM Cache.")
-    // Step 7. Runs infinitive loop of system maintenance and user's queries.
+    // Step 7. Register calculation node in Kafka
+    registerNode()
+    log.info("Spark calculation node registered in Kafka")
+    // Step 8. Runs infinitive loop of system maintenance and user's queries.
     runInfiniteLoop()
 
   }
@@ -72,6 +75,30 @@ class SuperVisor {
 
     spark.sparkContext.setLogLevel(getLogLevel(config, "spark"))
     spark
+  }
+
+  def registerNode() = {
+    val computingNodeUuid = UUID.randomUUID
+    var hostId = UUID.randomUUID
+    while (hostId.compareTo(computingNodeUuid) == 0) {
+      hostId = UUID.randomUUID
+    }
+    val commandName = "REGISTER_COMPUTING_NODE"
+    val registerMessage =
+      s"""
+         |{
+         |"computing_node_uuid": "${computingNodeUuid}",
+         |"command_name": "${commandName}",
+         |"command": {
+         |    "computing_node_type": "SPARK",
+         |    "host_id": "${hostId}",
+         |    "resources": {
+         |      "job_capacity": 999999999
+         |    }
+         |  }
+         |}
+         |""".stripMargin
+    superKafkaConnector.sendMessage("computing_node_control", commandName, registerMessage)
   }
 
   /** Starts infinitive loop with System's and User's maintenance.
