@@ -10,19 +10,11 @@ import java.util
 import java.util.Properties
 import scala.collection.JavaConverters._
 
-class SuperKafkaConnector() {
+class SuperKafkaConnector(topic: String) {
   var consumer: KafkaConsumer[String, String] = createConsumer
+  subscribeConsumer()
 
-  var topic: String = _
-
-  var producer: KafkaProducer[String, JsValue] = _
-
-  def this(topic: String) {
-    this()
-    this.topic = topic
-    subscribeConsumer()
-    producer = createProducer
-  }
+  var producer: KafkaProducer[String, JsValue] = createProducer
 
   private def createConsumer(): KafkaConsumer[String, String] = {
     val props = new Properties
@@ -39,7 +31,7 @@ class SuperKafkaConnector() {
   }
 
   def getNewCommands(): List[JsValue] = {
-    val simpleMovingConnector = new SuperKafkaConnector
+    val simpleMovingConnector = new SuperKafkaConnector(topic)
     val mainThread = Thread.currentThread
     Runtime.getRuntime.addShutdownHook(new Thread(){
       override def run(): Unit = {
