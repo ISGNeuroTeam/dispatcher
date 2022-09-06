@@ -1,7 +1,7 @@
 package ot.dispatcher
 
 import org.apache.kafka.clients.consumer.{ConsumerRecords, KafkaConsumer}
-import org.apache.kafka.clients.producer.KafkaProducer
+import org.apache.kafka.clients.producer.{KafkaProducer, ProducerRecord}
 import org.apache.kafka.common.errors.WakeupException
 import play.api.libs.json.{JsValue, Json}
 
@@ -75,5 +75,20 @@ class SuperKafkaConnector() {
     props.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer")
     props.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer")
     new KafkaProducer[String, JsValue](props)
+  }
+
+  def sendMessage(topic: String, key: String, value: String): Boolean = {
+    try {
+      val jsonValue = Json.parse(value)
+      val record = new ProducerRecord[String, JsValue](topic, key, jsonValue)
+      producer.send(record).get()
+      true
+    } catch {
+      case e: Exception => {
+        e.printStackTrace()
+        false
+      }
+    }
+
   }
 }
