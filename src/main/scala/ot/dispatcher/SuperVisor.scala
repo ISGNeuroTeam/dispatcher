@@ -205,6 +205,27 @@ class SuperVisor {
     }
   }
 
+  def resourcesStateNotify(): Unit = {
+    val sc = sparkSession.sparkContext
+    val allExecutors = sc.getExecutorMemoryStatus.keys
+    val driverHost: String = sc.getConf.get("spark.driver.host")
+    val activeExecutorsCount = allExecutors.filter(! _.split(":")(0).equals(driverHost)).toList.size
+    val commandName = "RESOURCE_STATUS"
+    val resourceStatusMessage =
+      s"""
+         |{
+         |"computing_node_uuid": "${computingNodeUuid}",
+         |"command_name": "${commandName}"
+         |"command": {
+         |    "resources": {
+         |      "job_capacity": ${activeExecutorsCount.toString}
+         |    }
+         |  }
+         |}
+         |""".stripMargin
+    superKafkaConnector.sendMessage("computing_node_control", commandName, resourceStatusMessage)
+  }
+
   /** Returns Job ID for logging.
    * Makes calculation, saves cache and works with exceptions.
    *
