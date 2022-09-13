@@ -1,12 +1,12 @@
 package ot.dispatcher
 
-import akka.actor.Actor
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.SparkSession
 import ot.AppConfig
 import ot.AppConfig._
 import ot.dispatcher.kafka.context.CommandsContainer
-import play.api.libs.json.JsValue
+import ot.dispatcher.sdk.core.CustomException
+import ot.dispatcher.sdk.core.CustomException.E00017
 
 import java.sql.ResultSet
 import java.util.{Calendar, UUID}
@@ -127,9 +127,6 @@ class SuperVisor {
     var negativeDeltaCounter: Int = 0
     val negativeWarnThreshold: Int = config.getInt("loop.negative_warn_threshold")
 
-    /*val actorSystem = ActorSystem("kafkaActorSystem")
-    val kafkaClient = actorSystem.actorOf(Props[KafkaClientActor], name = "kafkaClient")
-    kafkaClient ! "start"*/
     new Thread(){
       override def run(): Unit = superKafkaConnector.getNewCommands(computingNodeUuid.toString)}.start()
 
@@ -159,8 +156,8 @@ class SuperVisor {
   def restorationMaintenance(): Unit = {
     log.trace("Restoration Maintenance section started.")
     val restorationMaintenanceArgs = Map(
-      //"superConnector" -> superDbConnector,
-      //"cacheManager" -> cacheManager,
+      "superConnector" -> superDbConnector,
+      "cacheManager" -> cacheManager,
       "sparkSession" -> sparkSession
     )
 
@@ -197,14 +194,14 @@ class SuperVisor {
    */
   def userMaintenance(): Unit = {
     // Gets new Jobs.
-    //val res = superDbConnector.getNewQueries
+    val res = superDbConnector.getNewQueries
     val commandStructs = CommandsContainer.syncValues
 
     import scala.concurrent.{ExecutionContext, Future}
     import ExecutionContext.Implicits.global
     import scala.util.{Failure, Success}
     // Starts for each Job calculation process in Future.
-    /*while (res.next()) {
+    while (res.next()) {
 
       val otlQuery = getOTLQueryObject(res)
       log.info(otlQuery)
@@ -219,46 +216,7 @@ class SuperVisor {
           error.printStackTrace()
       }
       log.info(s"Job ${otlQuery.id} is running")
-    }*/
-    if (kafkaExists) {
-      val changedVals = Array[JsValue]()
-      CommandsContainer.changedValues.copyToArray(changedVals)
-      for (comStruct <- commandStructs.toArray) {
-        //send to exec_env
-        val cmIns = comStruct.asInstanceOf[JsValue]
-        if (!changedVals.contains(cmIns)) {
-          if ((cmIns \ "status").as[String] == "CANCELLED") {
-
-          } else {
-            jobStatusNotify("", "RUNNING", "")
-            println("proceed " + cmIns.toString)
-            val execEnvFuture = Future(execEnvFutureCalc(cmIns))
-            execEnvFuture.onComplete {
-              case Success(value) => log.info(s"Future Job is finished.")
-              case Failure(exception) =>
-                log.error(s"Future failed: ${exception.getLocalizedMessage}.")
-                notifyError(exception.getLocalizedMessage)
-            }
-          }
-          CommandsContainer.changedValues += cmIns
-        }
-      }
     }
-  }
-
-  def jobStatusNotify(uuid: String, status: String, statusText: String): Unit = {
-    val message =
-      s"""
-        |{
-        |"uuid": "${uuid}",
-        |"status": "${status}",
-        |"status_text": "${statusText}"
-        |}
-        |""".stripMargin
-  }
-
-  def execEnvFutureCalc(otlCommand: JsValue) = {
-
   }
 
   /** Returns Job ID for logging.
@@ -267,7 +225,7 @@ class SuperVisor {
    * @param otlQuery Job object from DB.
    * @return Job ID.
    */
-  /*def futureCalc(otlQuery: OTLQuery): Integer = {
+  def futureCalc(otlQuery: OTLQuery): Integer = {
 
     import scala.concurrent.blocking
     blocking {
@@ -313,21 +271,6 @@ class SuperVisor {
           throw throwable
       }
     }
-  }*/
-
-  def notifyError(error: String): Unit = {
-    val commandName = "ERROR_OCCURED"
-    val errorMessage =
-      s"""
-         |{
-         |"computing_node_uuid": "${computingNodeUuid}",
-         |"command_name": "${commandName}"
-         |"command": {
-         |    "error": "${error}"
-         |  }
-         |}
-         |""".stripMargin
-    superKafkaConnector.sendMessage("computing_node_control", errorMessage)
   }
 
   def sha256Hash(text: String): String = String.format(
@@ -378,14 +321,6 @@ class SuperVisor {
          |}
          |""".stripMargin
     superKafkaConnector.sendMessage("computing_node_control", commandName, unregisterMessage)
-  }
-
-  class KafkaClientActor extends Actor {
-    def receive: Receive = {
-      case "start" => {
-        superKafkaConnector.getNewCommands("")
-      }
-    }
   }
 
 }
