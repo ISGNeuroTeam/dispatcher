@@ -276,6 +276,17 @@ class SuperVisor {
     )
   )
 
+  def jobStatusNotify(uuid: String, status: String, statusText: String): Unit = {
+    val message =
+      s"""
+         |{
+         |"uuid": "${uuid}",
+         |"status": "${status}",
+         |"status_text": "${statusText}"
+         |}
+         |""".stripMargin
+  }
+
   /** Returns instance of [[ot.dispatcher.OTLQuery]] case class from parsed SQL query.
    * Parses DB response to Scala types.
    *
