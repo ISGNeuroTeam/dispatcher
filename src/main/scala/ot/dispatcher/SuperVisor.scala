@@ -270,6 +270,21 @@ class SuperVisor {
     }
   }
 
+  def notifyError(error: String): Unit = {
+    val commandName = "ERROR_OCCURED"
+    val errorMessage =
+      s"""
+         |{
+         |"computing_node_uuid": "${computingNodeUuid}",
+         |"command_name": "${commandName}"
+         |"command": {
+         |    "error": "${error}"
+         |  }
+         |}
+         |""".stripMargin
+    superKafkaConnector.sendMessage("computing_node_control", commandName, errorMessage)
+  }
+
   def sha256Hash(text: String): String = String.format(
     "%064x", new java.math.BigInteger(1, java.security.MessageDigest.getInstance("SHA-256")
       .digest(text.trim.getBytes("UTF-8"))
