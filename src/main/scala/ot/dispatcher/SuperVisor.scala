@@ -176,10 +176,7 @@ class SuperVisor {
     val systemMaintenanceArgs = Map(
       "cacheManager" -> cacheManager,
       "superConnector" -> superDbConnector,
-      "sparkSession" -> sparkSession,
-      "kafkaConnector" -> superKafkaConnector,
-      "computingNodeUuid" -> computingNodeUuid,
-      "kafkaExists" -> kafkaExists
+      "sparkSession" -> sparkSession
     )
     val sm = new SystemMaintenance(systemMaintenanceArgs)
     sm.run()
