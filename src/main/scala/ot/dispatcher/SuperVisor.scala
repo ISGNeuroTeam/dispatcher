@@ -1,6 +1,5 @@
 package ot.dispatcher
 
-import akka.actor.Actor
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.SparkSession
 import ot.AppConfig
@@ -230,35 +229,20 @@ class SuperVisor {
           if ((cmIns \ "status").as[String] == "CANCELLED") {
 
           } else {
-            jobStatusNotify("", "RUNNING", "")
+           // jobStatusNotify("", "RUNNING", "")
             println("proceed " + cmIns.toString)
             val execEnvFuture = Future(execEnvFutureCalc(cmIns))
             execEnvFuture.onComplete {
               case Success(value) => log.info(s"Future Job is finished.")
               case Failure(exception) =>
                 log.error(s"Future failed: ${exception.getLocalizedMessage}.")
-                notifyError(exception.getLocalizedMessage)
+                //notifyError(exception.getLocalizedMessage)
             }
           }
           CommandsContainer.changedValues += cmIns
         }
       }
     }
-  }
-
-  def jobStatusNotify(uuid: String, status: String, statusText: String): Unit = {
-    val message =
-      s"""
-        |{
-        |"uuid": "${uuid}",
-        |"status": "${status}",
-        |"status_text": "${statusText}"
-        |}
-        |""".stripMargin
-  }
-
-  def execEnvFutureCalc(otlCommand: JsValue) = {
-
   }
 
   /** Returns Job ID for logging.
@@ -315,19 +299,8 @@ class SuperVisor {
     }
   }*/
 
-  def notifyError(error: String): Unit = {
-    val commandName = "ERROR_OCCURED"
-    val errorMessage =
-      s"""
-         |{
-         |"computing_node_uuid": "${computingNodeUuid}",
-         |"command_name": "${commandName}"
-         |"command": {
-         |    "error": "${error}"
-         |  }
-         |}
-         |""".stripMargin
-    superKafkaConnector.sendMessage("computing_node_control", errorMessage)
+  def execEnvFutureCalc(otlCommand: JsValue) = {
+
   }
 
   def sha256Hash(text: String): String = String.format(
@@ -378,14 +351,6 @@ class SuperVisor {
          |}
          |""".stripMargin
     superKafkaConnector.sendMessage("computing_node_control", commandName, unregisterMessage)
-  }
-
-  class KafkaClientActor extends Actor {
-    def receive: Receive = {
-      case "start" => {
-        superKafkaConnector.getNewCommands("")
-      }
-    }
   }
 
 }
