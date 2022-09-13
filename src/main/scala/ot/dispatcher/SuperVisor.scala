@@ -176,7 +176,9 @@ class SuperVisor {
     val systemMaintenanceArgs = Map(
       "cacheManager" -> cacheManager,
       "superConnector" -> superDbConnector,
-      "sparkSession" -> sparkSession
+      "sparkSession" -> sparkSession,
+      "kafkaConnector" -> superKafkaConnector,
+      "lastFinishedCommand" -> ""
     )
     val sm = new SystemMaintenance(systemMaintenanceArgs)
     sm.run()
@@ -285,6 +287,7 @@ class SuperVisor {
          |"status_text": "${statusText}"
          |}
          |""".stripMargin
+    superKafkaConnector.sendMessage("nodejob_status", "JOB_STATUS_NOTIFY", message)
   }
 
   /** Returns instance of [[ot.dispatcher.OTLQuery]] case class from parsed SQL query.
