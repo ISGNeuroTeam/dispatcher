@@ -178,7 +178,8 @@ class SuperVisor {
       "superConnector" -> superDbConnector,
       "sparkSession" -> sparkSession,
       "kafkaConnector" -> superKafkaConnector,
-      "computingNodeUuid" -> computingNodeUuid
+      "computingNodeUuid" -> computingNodeUuid,
+      "kafkaExists" -> kafkaExists
     )
     val sm = new SystemMaintenance(systemMaintenanceArgs)
     sm.run()
