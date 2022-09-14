@@ -28,48 +28,64 @@ class SuperVisor {
   // Step 1. Loads logger.
   val log: Logger = Logger.getLogger("VisorLogger")
   log.setLevel(Level.toLevel(getLogLevel(config, "visor")))
-  //Generate computing node uuid
-  val computingNodeUuid = UUID.randomUUID
-  // Step 2. Loads Spark's session and runtime configs.
+  //Step 2. Generate computing node uuid
+  var computingNodeUuid: UUID = getComputingNodeUuid()
+  // Step 3. Loads Spark's session and runtime configs.
   val sparkSession: SparkSession = getSparkSession
   log.info("SparkSession started.")
-  // Step 3. Loads connector to DB.
+  // Step 4. Loads connector to DB.
   val superDbConnector = new SuperDbConnector()
   log.info("SuperDbConnector is ready.")
-  //Step 4. Load connector to Kafka.
-  val superKafkaConnector = new SuperKafkaConnector("otl_kafka_stream")
-  val kafkaExists: Boolean = config.getString("kafka.computing_node_mode_enabled").asInstanceOf[Boolean]
+  //Step 5. Load interactor with Kafka.
+  val computingNodeInteractor = new ComputingNodeInteractor(config.getInt("kafka.port"))
+  val kafkaExists: Boolean = config.getBoolean("kafka.computing_node_mode_enabled")
   if (kafkaExists) {
     log.info("SuperKafkaConnector is ready.")
-  } else {
-    log.info("SuperKafkaConnector is not ready. Kafka service isn't exists in system.")
   }
-  // Step 5. Loads RAM cache manager.
+  // Step 6. Loads RAM cache manager.
   val cacheManager = new CacheManager(sparkSession)
   log.info("CacheManager started.")
-  // Step 5. Loads calculation manager.
+  // Step 7. Loads calculation manager.
   val superCalculator = new SuperCalculator(cacheManager, superDbConnector)
   log.info("SuperCalculator started.")
 
   /** Starts infinitive loop. */
   def run(): Unit = {
-
     log.info("SuperVisor started.")
     // Step 6. Runs restoring actions after reboot or first start.
     restorationMaintenance()
     log.info("Dispatcher restored DB and RAM Cache.")
     // Step 7. Register computing node in Kafka
     if (kafkaExists) {
-      registerNode()
+      computingNodeInteractor.registerNode(computingNodeUuid)
       log.info("Spark computing node registered in Kafka")
     }
     // Step 8. Runs infinitive loop of system maintenance and user's queries.
     runInfiniteLoop()
     // Step 9. Unregister computing node in Kafka
     if (kafkaExists) {
-      unregisterNode()
+      computingNodeInteractor.unregisterNode(computingNodeUuid)
       log.info("Spark computing node unregistered in Kafka")
     }
+  }
+
+  def getComputingNodeUuid(): UUID = {
+    var result: UUID = null
+    try {
+      result = UUID.fromString(config.getString("node.uuid"))
+    } catch {
+      case e: Exception => generateNodeUuid()
+    }
+    if (result == null) {
+      generateNodeUuid()
+    } else {
+      result
+    }
+  }
+
+  private def generateNodeUuid(): UUID = {
+    val bytesContainer: String = "uuid_text"
+    UUID.nameUUIDFromBytes(bytesContainer.getBytes())
   }
 
   /** Returns Spark session and loads config.
@@ -77,7 +93,6 @@ class SuperVisor {
    * @return Spark's session instance.
    */
   def getSparkSession: SparkSession = {
-
     val spark = SparkSession.builder()
       .appName(config.getString("spark.appName"))
       .master(config.getString("spark.master"))
@@ -89,30 +104,6 @@ class SuperVisor {
 
     spark.sparkContext.setLogLevel(getLogLevel(config, "spark"))
     spark
-  }
-
-  def registerNode() = {
-    var hostId = UUID.randomUUID
-    while (hostId.compareTo(computingNodeUuid) == 0) {
-      hostId = UUID.randomUUID
-    }
-    val commandName = "REGISTER_COMPUTING_NODE"
-    val registerMessage =
-      s"""
-         |{
-         |"computing_node_uuid": "${computingNodeUuid}",
-         |"command_name": "${commandName}",
-         |"command": {
-         |    "computing_node_type": "SPARK",
-         |    "host_id": "${hostId}",
-         |    "resources": {
-         |      "job_capacity": 999999999
-         |    }
-         |  }
-         |}
-         |""".stripMargin
-    superKafkaConnector.sendMessage("computing_node_control", commandName, registerMessage)
-    println("id: " + computingNodeUuid.toString)
   }
 
   /** Starts infinitive loop with System's and User's maintenance.
@@ -128,7 +119,9 @@ class SuperVisor {
     val negativeWarnThreshold: Int = config.getInt("loop.negative_warn_threshold")
 
     new Thread(){
-      override def run(): Unit = superKafkaConnector.getNewCommands(computingNodeUuid.toString)}.start()
+      override def run(): Unit = {
+      }
+    }
 
     while (true) {
       val delta = Calendar.getInstance().getTimeInMillis - loopEndTime
@@ -305,19 +298,6 @@ class SuperVisor {
       preview = res.getBoolean("preview")
     )
     otlQuery
-  }
-
-  def unregisterNode() = {
-    val commandName = "UNREGISTER_COMPUTING_NODE"
-    val unregisterMessage =
-      s"""
-         |{
-         |"computing_node_uuid": "${computingNodeUuid}",
-         |"command_name": "${commandName}",
-         |"command": {}
-         |}
-         |""".stripMargin
-    superKafkaConnector.sendMessage("computing_node_control", commandName, unregisterMessage)
   }
 
 }

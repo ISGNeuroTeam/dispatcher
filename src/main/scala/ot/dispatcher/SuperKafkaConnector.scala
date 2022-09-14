@@ -11,14 +11,15 @@ import java.util
 import java.util.Properties
 import scala.collection.JavaConverters._
 
-class SuperKafkaConnector(topic: String) {
+class SuperKafkaConnector(val port: Int) {
   var consumer: KafkaConsumer[String, String] = createConsumer
 
   var producer: KafkaProducer[String, String] = createProducer
 
   private def createConsumer(): KafkaConsumer[String, String] = {
+
     val props = new Properties
-    props.put("bootstrap.servers", "localhost:9092")
+    props.put(s"bootstrap.servers", s"localhost:${port}")
     props.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer")
     props.put("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer")
     props.put("auto.offset.reset", "latest")
@@ -34,24 +35,10 @@ class SuperKafkaConnector(topic: String) {
   def getNewCommands(nodeUuid: String): Unit = {
     println("start commands getting")
     subscribeConsumer(nodeUuid)
-    val simpleMovingConnector = new SuperKafkaConnector(topic)
-    val mainThread = Thread.currentThread
-    Runtime.getRuntime.addShutdownHook(new Thread() {
-      override def run(): Unit = {
-        consumer.wakeup
-        try {
-          mainThread.join
-        } catch {
-          case e: InterruptedException => e.printStackTrace
-        }
-      }
-    })
     try {
-      simpleMovingConnector.consumer.subscribe(util.Arrays.asList(topic))
       while (true) {
         val records: ConsumerRecords[String, String] = consumer.poll(Duration.ofMillis(100))
         for (record <- records.asScala) {
-          println("received " + record.value())
           CommandsContainer.syncValues.add(Json.parse(record.value()))
         }
         for (sv <- CommandsContainer.syncValues.toArray) {
@@ -59,15 +46,12 @@ class SuperKafkaConnector(topic: String) {
           if (CommandsContainer.changedValues.contains(svIns)) {
             CommandsContainer.syncValues.remove(svIns)
             CommandsContainer.changedValues.remove(CommandsContainer.changedValues.indexOf(svIns))
-            println("deleted " + svIns)
           }
         }
-        simpleMovingConnector.consumer.commitSync
       }
     } catch {
       case e: WakeupException =>
     } finally {
-      simpleMovingConnector.consumer.close
     }
   }
 
