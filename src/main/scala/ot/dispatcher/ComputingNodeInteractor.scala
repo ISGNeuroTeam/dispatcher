@@ -1,12 +1,32 @@
 package ot.dispatcher
 
+import org.apache.log4j.{Level, Logger}
+import ot.AppConfig.{config, getLogLevel}
+
 import java.util.UUID
 import scala.sys.process._
 
-class ComputingNodeInteractor(externalPort: Int) {
-  val superKafkaConnector = new SuperKafkaConnector(externalPort)
+/**
+ * Provides functional API for spark computing node interaction with Kafka
+ * @param ipAddress - address of node where kafka service hosted
+ * @param externalPort - kafka service port
+ */
+class ComputingNodeInteractor(val ipAddress: String, val externalPort: Int) {
+  val log: Logger = Logger.getLogger("NodeInteractorLogger")
+  log.setLevel(Level.toLevel(getLogLevel(config, "node_interactor")))
 
+  /**
+   * Instance of inner connector to Kafka
+   */
+  val superKafkaConnector = new SuperKafkaConnector(ipAddress, externalPort)
+
+  /**
+   * Send registration message with information about spark computing node to Kafka
+   * @param computingNodeUuid - unique identifier of computing node
+   * @return
+   */
   def registerNode(computingNodeUuid: UUID) = {
+    //host id defining through Java sys.process
     val p = Process("hostid")
     val hostId: String = p.!!.trim()
 
@@ -27,8 +47,14 @@ class ComputingNodeInteractor(externalPort: Int) {
          |}
          |""".stripMargin
     superKafkaConnector.sendMessage("computing_node_control", commandName, registerMessage)
+    log.info(s"Registering Node with ID ${computingNodeUuid}, Host ID: ${hostId}")
   }
 
+  /**
+   * Send spark computing node's unregistration message to Kafka
+   * @param computingNodeUuid - unique identifier of computing node
+   * @return
+   */
   def unregisterNode(computingNodeUuid: UUID) = {
     val commandName = "UNREGISTER_COMPUTING_NODE"
     val unregisterMessage =
@@ -40,5 +66,6 @@ class ComputingNodeInteractor(externalPort: Int) {
          |}
          |""".stripMargin
     superKafkaConnector.sendMessage("computing_node_control", commandName, unregisterMessage)
+    log.info(s"Unregistering Node with ID ${computingNodeUuid}")
   }
 }
