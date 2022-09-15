@@ -30,6 +30,7 @@ class SuperVisor {
   log.setLevel(Level.toLevel(getLogLevel(config, "visor")))
   //Step 2. Generate computing node uuid
   var computingNodeUuid: UUID = getComputingNodeUuid()
+  log.info(s"Computing node uuid: ${computingNodeUuid.toString}")
   // Step 3. Loads Spark's session and runtime configs.
   val sparkSession: SparkSession = getSparkSession
   log.info("SparkSession started.")
@@ -37,15 +38,23 @@ class SuperVisor {
   val superDbConnector = new SuperDbConnector()
   log.info("SuperDbConnector is ready.")
   //Step 5. Load interactor with Kafka.
-  val computingNodeInteractor = new ComputingNodeInteractor(config.getInt("kafka.port"))
+  val kafkaIpAddress: String = config.getString("kafka.ip_address")
+  val kafkaPort: Int = config.getInt("kafka.port")
+  val computingNodeInteractor = new ComputingNodeInteractor(kafkaIpAddress, kafkaPort)
+  //Step 6. Kafka service existing checking
   val kafkaExists: Boolean = config.getBoolean("kafka.computing_node_mode_enabled")
   if (kafkaExists) {
     log.info("SuperKafkaConnector is ready.")
+    log.info("Computing Node Mode is enabled")
+    log.info(s"Kafka ip address: ${kafkaIpAddress}")
+    log.info(s"Kafka port: ${kafkaPort}")
+  } else {
+    log.info("Computing Node Mode is disabled")
   }
-  // Step 6. Loads RAM cache manager.
+  // Step 7. Loads RAM cache manager.
   val cacheManager = new CacheManager(sparkSession)
   log.info("CacheManager started.")
-  // Step 7. Loads calculation manager.
+  // Step 8. Loads calculation manager.
   val superCalculator = new SuperCalculator(cacheManager, superDbConnector)
   log.info("SuperCalculator started.")
 
@@ -69,6 +78,10 @@ class SuperVisor {
     }
   }
 
+  /**
+   * Get computing node uuid from config or generate it if not exists
+   * @return computing node uuid
+   */
   def getComputingNodeUuid(): UUID = {
     var result: UUID = null
     try {
@@ -83,6 +96,10 @@ class SuperVisor {
     }
   }
 
+  /**
+   * Generate computing node uuid
+   * @return computing node uuid
+   */
   private def generateNodeUuid(): UUID = {
     val bytesContainer: String = "uuid_text"
     UUID.nameUUIDFromBytes(bytesContainer.getBytes())

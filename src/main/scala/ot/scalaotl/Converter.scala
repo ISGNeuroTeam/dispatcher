@@ -2,18 +2,13 @@ package ot.scalaotl
 
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.types.{StringType, StructField, StructType}
-import ot.scalaotl.commands._
-import ot.scalaotl.commands.local._
-import ot.scalaotl.extensions.RegexExt._
-import ot.scalaotl.extensions.StringExt._
-import ot.scalaotl.extensions.DataFrameExt._
-import ot.scalaotl.static.OtHash
-import ot.dispatcher.OTLQuery
-
-import scala.util.Try
 import org.apache.spark.sql.{DataFrame, Row}
 import ot.AppConfig.getLogLevel
+import ot.dispatcher.OTLQuery
+import ot.scalaotl.commands._
 import ot.scalaotl.commands.service.ReloadCommand
+import ot.scalaotl.extensions.DataFrameExt._
+import ot.scalaotl.extensions.StringExt._
 
 /**
  * Transforms OTL queries to Spark queries, calculate resulting Spark DataFrame.
@@ -70,20 +65,20 @@ class Converter(otlQuery: OTLQuery, cache: Map[String, DataFrame]) extends OTLSp
   def getTransformers(commands: Seq[String]): Seq[OTLBaseCommand] = {
     val commandPattern = """^(\w+)\s*(.*)""".r
     commands.map { x =>
-      {
-        val commandPattern(cmd, args) = x
-        val sq = new SimpleQuery(
-          args = collectSubsearch(cmd, args),
-          searchId = otlQuery.id,
-          cache = cache,
-          subsearches = otlQuery.subsearches,
-          tws = otlQuery.tws,
-          twf = otlQuery.twf,
-          searchTimeFieldExtractionEnables = otlQuery.field_extraction,
-          preview = otlQuery.preview
-        )
-        Converter.getClassByName(cmd, sq)
-      }
+    {
+      val commandPattern(cmd, args) = x
+      val sq = new SimpleQuery(
+        args = collectSubsearch(cmd, args),
+        searchId = otlQuery.id,
+        cache = cache,
+        subsearches = otlQuery.subsearches,
+        tws = otlQuery.tws,
+        twf = otlQuery.twf,
+        searchTimeFieldExtractionEnables = otlQuery.field_extraction,
+        preview = otlQuery.preview
+      )
+      Converter.getClassByName(cmd, sq)
+    }
     }
   }
 
@@ -97,10 +92,10 @@ class Converter(otlQuery: OTLQuery, cache: Map[String, DataFrame]) extends OTLSp
 
   def run = transformers.foldLeft(df) {
     (accum, tr) =>
-      {
-        if (tr.getClass.getName.contains("OTLRead") || tr.getClass.getName.contains("OTLInputlookup") || tr.getClass.getName.contains("OTLLookup") || tr.getClass.getName.contains("RawRead") || tr.getClass.getName.contains("FullRead")) tr.setFieldsUsedInFullQuery(fieldsUsed)
-        tr.safeTransform(accum)
-      }
+    {
+      if (tr.getClass.getName.contains("OTLRead") || tr.getClass.getName.contains("OTLInputlookup") || tr.getClass.getName.contains("OTLLookup") || tr.getClass.getName.contains("RawRead") || tr.getClass.getName.contains("FullRead")) tr.setFieldsUsedInFullQuery(fieldsUsed)
+      tr.safeTransform(accum)
+    }
   }
 
   def findSubsearches(s: String) = {
