@@ -1,15 +1,15 @@
 package ot.dispatcher
 
 import java.util.UUID
+import scala.sys.process._
 
 class ComputingNodeInteractor(externalPort: Int) {
   val superKafkaConnector = new SuperKafkaConnector(externalPort)
 
   def registerNode(computingNodeUuid: UUID) = {
-    var hostId = UUID.randomUUID
-    while (hostId.compareTo(computingNodeUuid) == 0) {
-      hostId = UUID.randomUUID
-    }
+    val p = Process("hostid")
+    val hostId: String = p.!!.trim()
+
     val commandName = "REGISTER_COMPUTING_NODE"
     val registerMessage =
       s"""
