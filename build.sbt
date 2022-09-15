@@ -47,6 +47,4 @@ libraryDependencies += "org.apache.kafka" % "kafka-clients" % "3.2.1"
 
 libraryDependencies += "com.typesafe.play" %% "play-json" % "2.7.4"
 
-libraryDependencies += "com.typesafe.akka" %% "akka-actor" % "2.5.32"
-
 Test / parallelExecution := false
