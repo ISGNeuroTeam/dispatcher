@@ -1,6 +1,6 @@
 package ot.dispatcher
 
-import ot.dispatcher.MaintenanceFunctions.Notifier
+import ot.dispatcher.MaintenanceFunctions.{Canceller, Cleaner, Notifier, Tracker}
 
 /** Runs System's maintenance.
  * 1. Clear expired caches.
@@ -13,9 +13,9 @@ class SystemMaintenance(systemMaintenanceArgs: Map[String, Any]) {
 
   def run(): Unit = {
 
-    //Cleaner.clearCache(systemMaintenanceArgs)
-    //Canceller.cancelJobs(systemMaintenanceArgs)
-    //Tracker.keepAlive(systemMaintenanceArgs)
+    Cleaner.clearCache(systemMaintenanceArgs)
+    Canceller.cancelJobs(systemMaintenanceArgs)
+    Tracker.keepAlive(systemMaintenanceArgs)
     if (systemMaintenanceArgs("kafkaExists").asInstanceOf[Boolean]) {
       Notifier.resourcesStateNotify(systemMaintenanceArgs)
     }
