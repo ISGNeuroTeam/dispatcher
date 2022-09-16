@@ -1,9 +1,9 @@
 package ot.dispatcher
 
-import java.sql.{Connection, DriverManager, ResultSet}
 import ot.AppConfig.config
 
 import java.security.MessageDigest
+import java.sql.{Connection, DriverManager, ResultSet}
 import javax.xml.bind.DatatypeConverter
 
 /** Provides all operations with DB.
@@ -28,7 +28,7 @@ import javax.xml.bind.DatatypeConverter
  *
  * @author Andrey Starchenkov (astarchenkov@ot.ru)
  */
-class SuperConnector {
+class SuperDbConnector {
 
   private val dbConnection = getDBConnection
   private val jobTimeout = config.getString("searches.timeout")

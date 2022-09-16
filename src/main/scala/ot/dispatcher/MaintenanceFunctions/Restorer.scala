@@ -1,6 +1,6 @@
 package ot.dispatcher.MaintenanceFunctions
 
-import ot.dispatcher.{CacheManager, SuperConnector}
+import ot.dispatcher.{CacheManager, SuperDbConnector}
 
 /** Consists of restoring DB and caches after reboot.
  *
@@ -13,7 +13,7 @@ object Restorer {
    * @param systemMaintenanceArgs Map with all args for different functions.
    */
   def restoreDB(systemMaintenanceArgs: Map[String, Any]): Unit = {
-    val superConnector: SuperConnector = systemMaintenanceArgs("superConnector").asInstanceOf[SuperConnector]
+    val superConnector: SuperDbConnector = systemMaintenanceArgs("superConnector").asInstanceOf[SuperDbConnector]
     superConnector.interruptJobs()
     superConnector.clearCaches()
     superConnector.unlockCaches()
