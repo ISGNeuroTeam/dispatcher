@@ -3,7 +3,7 @@ package ot.dispatcher.MaintenanceFunctions
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.SparkSession
 import ot.AppConfig._
-import ot.dispatcher.SuperConnector
+import ot.dispatcher.SuperDbConnector
 
 object Tracker {
 
@@ -17,14 +17,14 @@ object Tracker {
     val nowTime = System.currentTimeMillis() / 1000
     if (nowTime > lastCheck + checkInterval) {
       log.trace(s"System time: $nowTime, Last check: $lastCheck.")
-      val superConnector: SuperConnector = systemMaintenanceArgs("superConnector").asInstanceOf[SuperConnector]
+      val superConnector: SuperDbConnector = systemMaintenanceArgs("superConnector").asInstanceOf[SuperDbConnector]
       val sparkSession: SparkSession = systemMaintenanceArgs("sparkSession").asInstanceOf[SparkSession]
       lastCheck = superConnector.tick(sparkSession.sparkContext.applicationId)
     }
   }
 
   def registerDispatcher(restorationMaintenanceArgs: Map[String, Any]): Unit = {
-    val superConnector: SuperConnector = restorationMaintenanceArgs("superConnector").asInstanceOf[SuperConnector]
+    val superConnector: SuperDbConnector = restorationMaintenanceArgs("superConnector").asInstanceOf[SuperDbConnector]
     val sparkSession: SparkSession = restorationMaintenanceArgs("sparkSession").asInstanceOf[SparkSession]
     lastCheck = superConnector.firstTick(sparkSession.sparkContext.applicationId)
     log.info(s"Register SuperDispatcher (${sparkSession.sparkContext.applicationId}) at $lastCheck.")
