@@ -47,4 +47,6 @@ libraryDependencies += "org.apache.kafka" % "kafka-clients" % "3.2.1"
 
 libraryDependencies += "com.typesafe.play" %% "play-json" % "2.7.4"
 
+dependencyOverrides += "com.fasterxml.jackson.core" % "jackson-databind" % "2.6.7.1"
+
 Test / parallelExecution := false
