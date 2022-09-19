@@ -1,3 +1,8 @@
+## [1.9.0]
+### New
+- Connection to Kafka service
+- Spark Computing Node Mode for Architecture 2.0
+
 ## [1.8.0]
 ### New
 - command fields aligned with the implementation in the Splunk.

@@ -5,6 +5,12 @@ jdbc {
   password = "password"
 }
 
+kafka {
+  computing_node_mode_enabled = false
+  ip_address = "localhost"
+  port = 9092
+}
+
 indexes {
   fs_disk = "file:/"
   path_disk = "///opt/otp/indexes/"
