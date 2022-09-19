@@ -74,4 +74,19 @@ class ComputingNodeInteractor(val ipAddress: String, val externalPort: Int) {
       override def run(): Unit = superKafkaConnector.getNewJobs(computingNodeUuid.toString)
     }.start()
   }
+
+  def notifyError(computingNodeUuid: UUID, error: String) = {
+    val commandName = "ERROR_OCCURED"
+    val errorMessage =
+      s"""
+         |{
+         |"computing_node_uuid": "${computingNodeUuid}",
+         |"command_name": "${commandName}"
+         |"command": {
+         |    "error": "${error}"
+         |  }
+         |}
+         |""".stripMargin
+    superKafkaConnector.sendMessage("computing_node_control", commandName, errorMessage)
+  }
 }

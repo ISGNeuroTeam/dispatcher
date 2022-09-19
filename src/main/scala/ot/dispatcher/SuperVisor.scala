@@ -243,7 +243,7 @@ class SuperVisor {
               case Success(value) => log.info(s"Future Job is finished.")
               case Failure(exception) =>
                 log.error(s"Future failed: ${exception.getLocalizedMessage}.")
-              //notifyError(exception.getLocalizedMessage)
+              computingNodeInteractor.notifyError(exception.getLocalizedMessage)
             }
           }
           CommandsContainer.changedValues += cmJson
