@@ -227,15 +227,15 @@ class SuperVisor {
       CommandsContainer.changedValues.copyToArray(changedVals)
       for (comStruct <- commandStructs.toArray) {
         //send to exec_env
-        val cmIns = comStruct.asInstanceOf[JsValue]
-        if (!changedVals.contains(cmIns)) {
-          val status = (cmIns \ "status").as[String]
+        val cmJson = comStruct.asInstanceOf[JsValue]
+        if (!changedVals.contains(cmJson)) {
+          val status = (cmJson \ "status").as[String]
           if (status == "CANCELLED") {
 
           } else {
             // jobStatusNotify("", "RUNNING", "")
-            println("proceed " + cmIns.toString)
-            val execEnvFuture = Future(execEnvFutureCalc(cmIns))
+            //println("proceed " + cmJson.toString)
+            val execEnvFuture = Future(execEnvFutureCalc(cmJson))
             execEnvFuture.onComplete {
               case Success(value) => log.info(s"Future Job is finished.")
               case Failure(exception) =>
@@ -243,7 +243,7 @@ class SuperVisor {
               //notifyError(exception.getLocalizedMessage)
             }
           }
-          CommandsContainer.changedValues += cmIns
+          CommandsContainer.changedValues += cmJson
         }
       }
     }
