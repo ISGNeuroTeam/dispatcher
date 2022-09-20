@@ -75,6 +75,23 @@ class ComputingNodeInteractor(val ipAddress: String, val externalPort: Int) {
     }.start()
   }
 
+  def resourcesStateNotify(computingNodeUuid: String, activeExecutorsCount: Int) = {
+    val commandName = "RESOURCE_STATUS"
+    val resourceStatusMessage =
+      s"""
+         |{
+         |"computing_node_uuid": "${computingNodeUuid}",
+         |"command_name": "${commandName}"
+         |"command": {
+         |    "resources": {
+         |      "job_capacity": ${activeExecutorsCount.toString}
+         |    }
+         |  }
+         |}
+         |""".stripMargin
+    superKafkaConnector.sendMessage("computing_node_control", commandName, resourceStatusMessage)
+  }
+
   def notifyError(computingNodeUuid: UUID, error: String) = {
     val commandName = "ERROR_OCCURED"
     val errorMessage =
@@ -88,5 +105,27 @@ class ComputingNodeInteractor(val ipAddress: String, val externalPort: Int) {
          |}
          |""".stripMargin
     superKafkaConnector.sendMessage("computing_node_control", commandName, errorMessage)
+  }
+
+  def jobStatusNotify(jobUuid: String, status: String, statusText: String, lastFinishedCommand: String = "") = {
+    val message = if (lastFinishedCommand.isEmpty) {
+      s"""
+         |{
+         |"uuid": "${jobUuid}",
+         |"status": "${status}",
+         |"status_text": "${statusText}"
+         |}
+         |""".stripMargin
+    } else {
+      s"""
+         |{
+         |"uuid": "${jobUuid}",
+         |"status": "${status}",
+         |"status_text": "${statusText}",
+         |"last_finished_command": "${lastFinishedCommand}"
+         |}
+         |""".stripMargin
+    }
+    superKafkaConnector.sendMessage("nodejob_status", "JOB_STATUS_NOTIFY", message)
   }
 }

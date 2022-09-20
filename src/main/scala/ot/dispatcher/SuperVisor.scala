@@ -11,6 +11,7 @@ import play.api.libs.json.JsValue
 
 import java.sql.ResultSet
 import java.util.{Calendar, UUID}
+import scala.collection.mutable.ArrayBuffer
 
 /** Gets settings from config file and then runs infinitive loop of user's and system's queries.
  *
@@ -58,6 +59,14 @@ class SuperVisor {
   // Step 8. Loads calculation manager.
   val superCalculator = new SuperCalculator(cacheManager, superDbConnector)
   log.info("SuperCalculator started.")
+
+  var jobIds = new ArrayBuffer[String]()
+
+  private var jobUuid = ""
+
+  private var jobStatuses = collection.mutable.Map[String, String]()
+
+  private var lastFinishedCommands = collection.mutable.Map[String, String]()
 
   /** Starts infinitive loop. */
   def run(): Unit = {
@@ -181,13 +190,17 @@ class SuperVisor {
   def systemMaintenance(): Unit = {
     // TODO Remove initialization of sm and sM in each loop.
     log.trace("System Maintenance section started.")
+    val runningJobIds = {for {j <- jobStatuses if j._2 == "RUNNING"}
+      yield j._1}.toSeq
     val systemMaintenanceArgs = Map(
       "cacheManager" -> cacheManager,
       "superConnector" -> superDbConnector,
       "sparkSession" -> sparkSession,
       "nodeInteractor" -> computingNodeInteractor,
       "computingNodeUuid" -> computingNodeUuid,
-      "kafkaExists" -> kafkaExists
+      "kafkaExists" -> kafkaExists,
+      "jobUuids" -> runningJobIds,
+      "lastFinishedCommands" -> lastFinishedCommands
     )
     val sm = new SystemMaintenance(systemMaintenanceArgs)
     sm.run()
@@ -233,17 +246,27 @@ class SuperVisor {
         val cmJson = comStruct.asInstanceOf[JsValue]
         if (!changedVals.contains(cmJson)) {
           val status = (cmJson \ "status").as[String]
+          jobUuid = (cmJson \ "uuid").as[String]
           if (status == "CANCELLED") {
-
+            val sc = sparkSession.sparkContext
+            if (jobIds.contains(jobUuid)) {
+              sc.cancelJobGroup(jobUuid)
+              jobIds.remove(jobIds.indexOf(jobUuid))
+              log.info(s"Job with uuid ${jobUuid} was canceled.")
+            } else {
+              log.info(s"Job with uuid ${jobUuid} isn't exists among launched jobs.")
+            }
           } else {
-            // jobStatusNotify("", "RUNNING", "")
-            //println("proceed " + cmJson.toString)
-            val execEnvFuture = Future(execEnvFutureCalc(cmJson))
+            val execEnvFuture = Future(execEnvFutureCalc(jobUuid, cmJson))
             execEnvFuture.onComplete {
               case Success(value) => log.info(s"Future Job is finished.")
-              case Failure(exception) =>
+              case Failure(exception) => {
                 log.error(s"Future failed: ${exception.getLocalizedMessage}.")
-              computingNodeInteractor.notifyError(computingNodeUuid, exception.getLocalizedMessage)
+                computingNodeInteractor.notifyError(computingNodeUuid, exception.getLocalizedMessage)
+                jobStatuses(jobUuid) = "FAILED"
+                val jobStatusText = exception.getLocalizedMessage
+                computingNodeInteractor.jobStatusNotify(jobUuid, jobStatuses(jobUuid), jobStatusText)
+              }
             }
           }
           CommandsContainer.changedValues += cmJson
@@ -306,8 +329,13 @@ class SuperVisor {
     }
   }
 
-  def execEnvFutureCalc(otlCommand: JsValue) = {
-
+  def execEnvFutureCalc(jobUuid: String, otlCommand: JsValue) = {
+      jobStatuses + (jobUuid -> "RUNNING")
+      computingNodeInteractor.jobStatusNotify(jobUuid, jobStatuses(jobUuid), "")
+      jobIds +: jobUuid
+      sparkSession.sparkContext.setJobGroup(jobUuid, s"jobs of uuid ${jobUuid}")
+      jobStatuses(jobUuid) = "FINISHED"
+      computingNodeInteractor.jobStatusNotify(jobUuid, "FINISHED", "")
   }
 
   def sha256Hash(text: String): String = String.format(
