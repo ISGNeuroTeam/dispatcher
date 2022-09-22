@@ -96,7 +96,7 @@ class SuperKafkaConnector(val ipAddress: String, val port: Int) {
   def sendMessage(topic: String, key: String, value: String): Boolean = {
     try {
       val record = new ProducerRecord[String, String](topic, key, value)
-      producer.send(record).get()
+      val a = producer.send(record).get()
       log.info(s"Successfully sending message to kafka with topic ${topic}, key ${key}, ${value}.")
       true
     } catch {

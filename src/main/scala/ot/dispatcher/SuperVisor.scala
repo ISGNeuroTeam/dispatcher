@@ -8,6 +8,7 @@ import ot.dispatcher.kafka.context.CommandsContainer
 import ot.dispatcher.sdk.core.CustomException
 import ot.dispatcher.sdk.core.CustomException.E00017
 import play.api.libs.json.JsValue
+import sparkexecenv.CommandExecutor
 
 import java.sql.ResultSet
 import java.util.{Calendar, UUID}
@@ -256,8 +257,8 @@ class SuperVisor {
             } else {
               log.info(s"Job with uuid ${jobUuid} isn't exists among launched jobs.")
             }
-          } else {
-            val execEnvFuture = Future(execEnvFutureCalc(jobUuid, cmJson))
+          } else if (status == "READY_TO_EXECUTE") {
+            val execEnvFuture = Future(execEnvFutureCalc(jobUuid, (cmJson \ "commands").as[List[JsValue]]))
             execEnvFuture.onComplete {
               case Success(value) => log.info(s"Future Job is finished.")
               case Failure(exception) => {
@@ -329,13 +330,18 @@ class SuperVisor {
     }
   }
 
-  def execEnvFutureCalc(jobUuid: String, otlCommand: JsValue) = {
+  def execEnvFutureCalc(jobUuid: String, otlCommands: List[JsValue]) = {
+    import scala.concurrent.blocking
+    blocking {
       jobStatuses + (jobUuid -> "RUNNING")
       computingNodeInteractor.jobStatusNotify(jobUuid, jobStatuses(jobUuid), "")
       jobIds +: jobUuid
+      val commandsExecutor = new CommandExecutor(Map(), "")
+      commandsExecutor.execute(otlCommands)
       sparkSession.sparkContext.setJobGroup(jobUuid, s"jobs of uuid ${jobUuid}")
       jobStatuses(jobUuid) = "FINISHED"
       computingNodeInteractor.jobStatusNotify(jobUuid, "FINISHED", "")
+    }
   }
 
   def sha256Hash(text: String): String = String.format(
