@@ -8,7 +8,7 @@ import ot.dispatcher.kafka.context.CommandsContainer
 import ot.dispatcher.sdk.core.CustomException
 import ot.dispatcher.sdk.core.CustomException.E00017
 import play.api.libs.json.JsValue
-import sparkexecenv.CommandExecutor
+import sparkexecenv.{BaseCommand, CommandExecutor, CommandsProvider}
 
 import java.sql.ResultSet
 import java.util.{Calendar, UUID}
@@ -148,6 +148,9 @@ class SuperVisor {
 
     computingNodeInteractor.launchJobsGettingProcess(computingNodeUuid)
 
+    val commandsProvider = new CommandsProvider
+    val commandClasses = commandsProvider.importCommands("", config.getString("commands.directory"))
+
     while (true) {
       val delta = Calendar.getInstance().getTimeInMillis - loopEndTime
 
@@ -163,7 +166,7 @@ class SuperVisor {
         negativeDeltaCounter = 0
 
         systemMaintenance()
-        userMaintenance()
+        userMaintenance(commandClasses)
         loopEndTime = Calendar.getInstance().getTimeInMillis
       } else {
         Thread.sleep(delta)
@@ -214,7 +217,7 @@ class SuperVisor {
    * 3. Starts future with it's calculation.
    * 4. Depending on state marks it failed or finished.
    */
-  def userMaintenance(): Unit = {
+  def userMaintenance(commandClasses: Map[String, Class[_ <: BaseCommand]]): Unit = {
     // Gets new Jobs.
     val res = superDbConnector.getNewQueries
     val commandStructs = CommandsContainer.syncValues
@@ -258,7 +261,7 @@ class SuperVisor {
               log.info(s"Job with uuid ${jobUuid} isn't exists among launched jobs.")
             }
           } else if (status == "READY_TO_EXECUTE") {
-            val execEnvFuture = Future(execEnvFutureCalc(jobUuid, (cmJson \ "commands").as[List[JsValue]]))
+            val execEnvFuture = Future(execEnvFutureCalc(jobUuid, (cmJson \ "commands").as[List[JsValue]], commandClasses))
             execEnvFuture.onComplete {
               case Success(value) => log.info(s"Future Job is finished.")
               case Failure(exception) => {
@@ -330,13 +333,13 @@ class SuperVisor {
     }
   }
 
-  def execEnvFutureCalc(jobUuid: String, otlCommands: List[JsValue]) = {
+  def execEnvFutureCalc(jobUuid: String, otlCommands: List[JsValue], commandClasses: Map[String, Class[_ <: BaseCommand]]) = {
     import scala.concurrent.blocking
     blocking {
       jobStatuses + (jobUuid -> "RUNNING")
       computingNodeInteractor.jobStatusNotify(jobUuid, jobStatuses(jobUuid), "")
       jobIds +: jobUuid
-      val commandsExecutor = new CommandExecutor(Map(), "")
+      val commandsExecutor = new CommandExecutor(commandClasses)
       commandsExecutor.execute(otlCommands)
       sparkSession.sparkContext.setJobGroup(jobUuid, s"jobs of uuid ${jobUuid}")
       jobStatuses(jobUuid) = "FINISHED"

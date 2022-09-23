@@ -12,6 +12,8 @@ retrieveManaged := true
 
 resolvers += Resolver.jcenterRepo
 
+resolvers += Resolver.file("file", new File("/home/rkpvteh/.ivy2/local/default/spark_exec_env_2.11/1.0.0/jars/"))
+
 resolvers += ("Sonatype OSS Snapshots" at (sys.env.getOrElse("NEXUS_OTP_URL_HTTPS","http://storage.dev.isgneuro.com")
   + "/repository/ot.platform-sbt-releases/")).withAllowInsecureProtocol(true)
 
