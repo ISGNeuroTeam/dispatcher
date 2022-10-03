@@ -16,15 +16,7 @@ object Notifier {
     val driverHost: String = sc.getConf.get("spark.driver.host")
     val activeExecutorsCount = allExecutors.filter(!_.split(""":""")(0).equals(driverHost)).toList.size
     nodeInteractor.resourcesStateNotify(computingNodeUuid.toString, activeExecutorsCount)
-  }
-
-  def jobStatusesNotify(systemMaintenanceArgs: Map[String, Any]): Unit = {
-    val nodeInteractor = systemMaintenanceArgs("nodeInteractor").asInstanceOf[ComputingNodeInteractor]
-    val runningJobIds = systemMaintenanceArgs("jobUuids").asInstanceOf[Seq[String]]
-    val lastFinishedCommands = systemMaintenanceArgs("lastFinishedCommands").asInstanceOf[Seq[String]]
-    for ((jid, i) <- runningJobIds.zipWithIndex) {
-      nodeInteractor.jobStatusNotify(jid, "RUNNING", "", lastFinishedCommands(i))
-    }
+    println("Notify resource state " + computingNodeUuid + " " + activeExecutorsCount)
   }
 
 }

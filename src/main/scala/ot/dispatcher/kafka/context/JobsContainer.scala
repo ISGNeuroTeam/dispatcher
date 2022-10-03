@@ -5,13 +5,11 @@ import play.api.libs.json.JsValue
 import java.util.concurrent.ConcurrentLinkedQueue
 import scala.collection.mutable.ArrayBuffer
 
-object CommandsContainer {
+object JobsContainer {
 
   var values: ArrayBuffer[JsValue] = ArrayBuffer[JsValue]()
 
   var syncValues: ConcurrentLinkedQueue[JsValue] = new ConcurrentLinkedQueue[JsValue]()
-
-  
 
   var changedValues: ArrayBuffer[JsValue] = new ArrayBuffer[JsValue]()
 }

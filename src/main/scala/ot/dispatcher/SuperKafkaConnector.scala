@@ -5,7 +5,7 @@ import org.apache.kafka.clients.producer.{KafkaProducer, ProducerRecord}
 import org.apache.kafka.common.errors.WakeupException
 import org.apache.log4j.{Level, Logger}
 import ot.AppConfig.{config, getLogLevel}
-import ot.dispatcher.kafka.context.CommandsContainer
+import ot.dispatcher.kafka.context.{JobsContainer, KafkaMessage}
 import play.api.libs.json.{JsValue, Json}
 
 import java.time.Duration
@@ -58,14 +58,16 @@ class SuperKafkaConnector(val ipAddress: String, val port: Int) {
       while (true) {
         val records: ConsumerRecords[String, String] = consumer.poll(Duration.ofMillis(100))
         for (record <- records.asScala) {
-          CommandsContainer.syncValues.add(Json.parse(record.value()))
+          JobsContainer.syncValues.add(Json.parse(record.value()))
           log.info(s"record with key ${record.key()} added to temporary storage")
+          println("Receive " + record.value())
         }
-        for (sv <- CommandsContainer.syncValues.toArray) {
+        for (sv <- JobsContainer.syncValues.toArray) {
           val svJson = sv.asInstanceOf[JsValue]
-          if (CommandsContainer.changedValues.contains(svJson)) {
-            CommandsContainer.syncValues.remove(svJson)
-            CommandsContainer.changedValues.remove(CommandsContainer.changedValues.indexOf(svJson))
+          if (JobsContainer.changedValues.contains(svJson)) {
+            JobsContainer.syncValues.remove(svJson)
+            JobsContainer.changedValues.remove(JobsContainer.changedValues.indexOf(svJson))
+            println("Deleted " + svJson)
           }
         }
       }
@@ -93,17 +95,18 @@ class SuperKafkaConnector(val ipAddress: String, val port: Int) {
    * @param value - kafka record value
    * @return - true if sending was successfull
    */
-  def sendMessage(topic: String, key: String, value: String): Boolean = {
+  def sendMessage(message: KafkaMessage): Unit = {
+    val topic = message.topic
+    val key = message.key
+    val value = message.value
     try {
       val record = new ProducerRecord[String, String](topic, key, value)
-      val a = producer.send(record).get()
+      producer.send(record)
       log.info(s"Successfully sending message to kafka with topic ${topic}, key ${key}, ${value}.")
-      true
     } catch {
       case e: Exception => {
         log.info(s"Sending message to kafka with topic ${topic}, key ${key}, ${value} was failed")
         log.debug(e.printStackTrace())
-        false
       }
     }
   }

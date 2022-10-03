@@ -18,7 +18,6 @@ class SystemMaintenance(systemMaintenanceArgs: Map[String, Any]) {
     Tracker.keepAlive(systemMaintenanceArgs)
     if (systemMaintenanceArgs("kafkaExists").asInstanceOf[Boolean]) {
       Notifier.resourcesStateNotify(systemMaintenanceArgs)
-      Notifier.jobStatusesNotify(systemMaintenanceArgs)
     }
   }
 }

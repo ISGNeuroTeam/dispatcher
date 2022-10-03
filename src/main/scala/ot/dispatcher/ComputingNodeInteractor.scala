@@ -4,7 +4,6 @@ import org.apache.log4j.{Level, Logger}
 import ot.AppConfig.{config, getLogLevel}
 
 import java.util.UUID
-import scala.sys.process._
 
 /**
  * Provides functional API for spark computing node interaction with Kafka
@@ -20,53 +19,44 @@ class ComputingNodeInteractor(val ipAddress: String, val externalPort: Int) {
    */
   val superKafkaConnector = new SuperKafkaConnector(ipAddress, externalPort)
 
-  /**
-   * Send registration message with information about spark computing node to Kafka
-   * @param computingNodeUuid - unique identifier of computing node
-   * @return
-   */
-  def registerNode(computingNodeUuid: UUID) = {
-    //host id defining through Java sys.process
-    val p = Process("hostid")
-    val hostId: String = p.!!.trim()
-
-    val commandName = "REGISTER_COMPUTING_NODE"
-    val registerMessage =
-      s"""
-         |{
-         |"computing_node_uuid": "${computingNodeUuid}",
-         |"command_name": "${commandName}",
-         |"command": {
-         |    "computing_node_type": "SPARK",
-         |    "host_id": "${hostId}",
-         |    "otl_command_syntax": {},
-         |    "resources": {
-         |      "job_capacity": 999999999
-         |    }
-         |  }
-         |}
-         |""".stripMargin
-    superKafkaConnector.sendMessage("computing_node_control", commandName, registerMessage)
-    log.info(s"Registering Node with ID ${computingNodeUuid}, Host ID: ${hostId}")
+  def registerNode(computingNodeUuid: UUID, hostId: String) = {
+    val message = KafkaMessagesFactory.createRegisterNodeMessage(computingNodeUuid, hostId)
+    superKafkaConnector.sendMessage(message)
   }
 
-  /**
-   * Send spark computing node's unregistration message to Kafka
-   * @param computingNodeUuid - unique identifier of computing node
-   * @return
-   */
   def unregisterNode(computingNodeUuid: UUID) = {
-    val commandName = "UNREGISTER_COMPUTING_NODE"
-    val unregisterMessage =
-      s"""
-         |{
-         |"computing_node_uuid": "${computingNodeUuid}",
-         |"command_name": "${commandName}",
-         |"command": {}
-         |}
-         |""".stripMargin
-    superKafkaConnector.sendMessage("computing_node_control", commandName, unregisterMessage)
-    log.info(s"Unregistering Node with ID ${computingNodeUuid}")
+    val message = KafkaMessagesFactory.createUnregisterNodeMessage(computingNodeUuid)
+    superKafkaConnector.sendMessage(message)
+  }
+
+  def resourcesStateNotify(computingNodeUuid: String, activeExecutorsCount: Int) = {
+    val message = KafkaMessagesFactory.createResourcesStateNotifyMessage(computingNodeUuid, activeExecutorsCount)
+    superKafkaConnector.sendMessage(message)
+  }
+
+  def errorNotify(computingNodeUuid: UUID, error: String) = {
+    val message = KafkaMessagesFactory.createErrorNotifyMessage(computingNodeUuid, error)
+    superKafkaConnector.sendMessage(message)
+  }
+
+  def jobStatusNotify(jobUuid: String, status: String, statusText: String, lastFinishedCommand: String = "") = {
+    val message = KafkaMessagesFactory.createJobStatusNotifyMessage(jobUuid, status, statusText, lastFinishedCommand)
+    superKafkaConnector.sendMessage(message)
+  }
+
+  def logProgressMessage(jobUuid: String, message: String, commandName: String, commandIndexInPipeline: Int, totalCommandsInPipeline: Int, stage: Int, totalStages: Int, depth: Int) = {
+    val statusMessage = formatLogProgressMessage(message, commandName, commandIndexInPipeline, totalCommandsInPipeline, stage, totalStages, depth)
+    jobStatusNotify(jobUuid, "RUNNING", statusMessage)
+  }
+
+  private def formatLogProgressMessage(message: String, commandName: String, commandIndexInPipeline: Int, totalCommandsInPipeline: Int, stage: Int, totalStages: Int, depth: Int) = {
+    val commandMessage = "\t"*depth + s"${commandIndexInPipeline} out of ${totalCommandsInPipeline} command. Command ${commandName}"
+    val stageMessage = if (stage == 0) {
+      ""
+    } else {
+      s"${stage}/${totalStages}"
+    }
+    commandMessage + " " + stageMessage + " " + message
   }
 
   def launchJobsGettingProcess(computingNodeUuid: UUID) = {
@@ -75,57 +65,4 @@ class ComputingNodeInteractor(val ipAddress: String, val externalPort: Int) {
     }.start()
   }
 
-  def resourcesStateNotify(computingNodeUuid: String, activeExecutorsCount: Int) = {
-    val commandName = "RESOURCE_STATUS"
-    val resourceStatusMessage =
-      s"""
-         |{
-         |"computing_node_uuid": "${computingNodeUuid}",
-         |"command_name": "${commandName}"
-         |"command": {
-         |    "resources": {
-         |      "job_capacity": ${activeExecutorsCount.toString}
-         |    }
-         |  }
-         |}
-         |""".stripMargin
-    superKafkaConnector.sendMessage("computing_node_control", commandName, resourceStatusMessage)
-  }
-
-  def notifyError(computingNodeUuid: UUID, error: String) = {
-    val commandName = "ERROR_OCCURED"
-    val errorMessage =
-      s"""
-         |{
-         |"computing_node_uuid": "${computingNodeUuid}",
-         |"command_name": "${commandName}"
-         |"command": {
-         |    "error": "${error}"
-         |  }
-         |}
-         |""".stripMargin
-    superKafkaConnector.sendMessage("computing_node_control", commandName, errorMessage)
-  }
-
-  def jobStatusNotify(jobUuid: String, status: String, statusText: String, lastFinishedCommand: String = "") = {
-    val message = if (lastFinishedCommand.isEmpty) {
-      s"""
-         |{
-         |"uuid": "${jobUuid}",
-         |"status": "${status}",
-         |"status_text": "${statusText}"
-         |}
-         |""".stripMargin
-    } else {
-      s"""
-         |{
-         |"uuid": "${jobUuid}",
-         |"status": "${status}",
-         |"status_text": "${statusText}",
-         |"last_finished_command": "${lastFinishedCommand}"
-         |}
-         |""".stripMargin
-    }
-    superKafkaConnector.sendMessage("nodejob_status", "JOB_STATUS_NOTIFY", message)
-  }
 }

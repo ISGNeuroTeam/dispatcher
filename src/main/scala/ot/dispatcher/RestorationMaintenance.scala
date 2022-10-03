@@ -1,7 +1,5 @@
 package ot.dispatcher
 
-import ot.dispatcher.MaintenanceFunctions.{Restorer, Tracker}
-
 /** Restores DB and RAM Cache after reboot or on first run.
  * 1. Check DB scheme.
  * 2. Creates DB scheme if it is empty.
@@ -15,8 +13,8 @@ class RestorationMaintenance(restorationMaintenanceArgs: Map[String, Any]) {
 
   def run(): Unit = {
 
-    Restorer.restoreDB(restorationMaintenanceArgs)
+    /*Restorer.restoreDB(restorationMaintenanceArgs)
     Restorer.restoreCacheDirectory(restorationMaintenanceArgs)
-    Tracker.registerDispatcher(restorationMaintenanceArgs)
+    Tracker.registerDispatcher(restorationMaintenanceArgs)*/
   }
 }
