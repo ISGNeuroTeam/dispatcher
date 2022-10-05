@@ -2,10 +2,8 @@ package ot.dispatcher
 
 import ot.dispatcher.kafka.context.KafkaMessage
 
-import java.util.UUID
-
 object KafkaMessagesFactory {
-  def createRegisterNodeMessage(computingNodeUuid: UUID, hostId: String): KafkaMessage = {
+  def createRegisterNodeMessage(computingNodeUuid: String, hostId: String): KafkaMessage = {
     val commandName = "REGISTER_COMPUTING_NODE"
     val registerMessage = {
       s"""
@@ -19,9 +17,12 @@ object KafkaMessagesFactory {
          |      "test": {
          |        "rules": [
          |          {
+         |            "name": "arg1",
          |            "type": "kwarg",
          |            "key": "num",
-         |            "required": true
+         |            "inf": false,
+         |            "required": true,
+         |            "input_types": ["string"]
          |          }
          |        ]
          |      }
@@ -36,7 +37,7 @@ object KafkaMessagesFactory {
     createMessage("computing_node_control", commandName, registerMessage)
   }
 
-  def createUnregisterNodeMessage(computingNodeUuid: UUID): KafkaMessage = {
+  def createUnregisterNodeMessage(computingNodeUuid: String): KafkaMessage = {
     val commandName = "UNREGISTER_COMPUTING_NODE"
     val unregisterMessage =
       s"""
@@ -55,7 +56,7 @@ object KafkaMessagesFactory {
       s"""
          |{
          |"computing_node_uuid": "${computingNodeUuid}",
-         |"command_name": "${commandName}"
+         |"command_name": "${commandName}",
          |"command": {
          |    "resources": {
          |      "job_capacity": ${activeExecutorsCount.toString}
@@ -66,13 +67,13 @@ object KafkaMessagesFactory {
     createMessage("computing_node_control", commandName, resourceStatusMessage)
   }
 
-  def createErrorNotifyMessage(computingNodeUuid: UUID, error: String): KafkaMessage = {
+  def createErrorNotifyMessage(computingNodeUuid: String, error: String): KafkaMessage = {
     val commandName = "ERROR_OCCURED"
     val errorMessage =
       s"""
          |{
          |"computing_node_uuid": "${computingNodeUuid}",
-         |"command_name": "${commandName}"
+         |"command_name": "${commandName}",
          |"command": {
          |    "error": "${error}"
          |  }

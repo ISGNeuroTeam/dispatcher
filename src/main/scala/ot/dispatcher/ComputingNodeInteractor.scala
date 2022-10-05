@@ -3,8 +3,6 @@ package ot.dispatcher
 import org.apache.log4j.{Level, Logger}
 import ot.AppConfig.{config, getLogLevel}
 
-import java.util.UUID
-
 /**
  * Provides functional API for spark computing node interaction with Kafka
  * @param ipAddress - address of node where kafka service hosted
@@ -19,12 +17,12 @@ class ComputingNodeInteractor(val ipAddress: String, val externalPort: Int) {
    */
   val superKafkaConnector = new SuperKafkaConnector(ipAddress, externalPort)
 
-  def registerNode(computingNodeUuid: UUID, hostId: String) = {
+  def registerNode(computingNodeUuid: String, hostId: String) = {
     val message = KafkaMessagesFactory.createRegisterNodeMessage(computingNodeUuid, hostId)
     superKafkaConnector.sendMessage(message)
   }
 
-  def unregisterNode(computingNodeUuid: UUID) = {
+  def unregisterNode(computingNodeUuid: String) = {
     val message = KafkaMessagesFactory.createUnregisterNodeMessage(computingNodeUuid)
     superKafkaConnector.sendMessage(message)
   }
@@ -34,7 +32,7 @@ class ComputingNodeInteractor(val ipAddress: String, val externalPort: Int) {
     superKafkaConnector.sendMessage(message)
   }
 
-  def errorNotify(computingNodeUuid: UUID, error: String) = {
+  def errorNotify(computingNodeUuid: String, error: String) = {
     val message = KafkaMessagesFactory.createErrorNotifyMessage(computingNodeUuid, error)
     superKafkaConnector.sendMessage(message)
   }
@@ -59,9 +57,9 @@ class ComputingNodeInteractor(val ipAddress: String, val externalPort: Int) {
     commandMessage + " " + stageMessage + " " + message
   }
 
-  def launchJobsGettingProcess(computingNodeUuid: UUID) = {
+  def launchJobsGettingProcess(computingNodeUuid: String) = {
     new Thread() {
-      override def run(): Unit = superKafkaConnector.getNewJobs(computingNodeUuid.toString)
+      override def run(): Unit = superKafkaConnector.getNewJobs(computingNodeUuid)
     }.start()
   }
 

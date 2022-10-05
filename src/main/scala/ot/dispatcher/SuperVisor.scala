@@ -33,7 +33,7 @@ class SuperVisor {
   val log: Logger = Logger.getLogger("VisorLogger")
   log.setLevel(Level.toLevel(getLogLevel(config, "visor")))
   //Step 2. Generate computing node uuid
-  var computingNodeUuid: UUID = getComputingNodeUuid()
+  var computingNodeUuid: String = getComputingNodeUuid().toString.replace("-", "")
   log.info(s"Computing node uuid: ${computingNodeUuid.toString}")
   // Step 3. Loads Spark's session and runtime configs.
   val sparkSession: SparkSession = getSparkSession
@@ -69,22 +69,23 @@ class SuperVisor {
   /** Starts infinitive loop. */
   def run(): Unit = {
     log.info("SuperVisor started.")
-    // Step 6. Runs restoring actions after reboot or first start.
-    restorationMaintenance()
-    log.info("Dispatcher restored DB and RAM Cache.")
-    // Step 7. Register computing node in Kafka
+    // Step 9. Register computing node in Kafka
     if (kafkaExists) {
       //host id defining through Java sys.process
       val p = Process("hostid")
       val hostId: String = p.!!.trim()
+      //Node registartion
       computingNodeInteractor.registerNode(computingNodeUuid, hostId)
       log.info(s"Registering Node with ID ${computingNodeUuid}, Host ID: ${hostId}")
       log.info("Spark computing node registered in Kafka")
       println("Register node " + computingNodeUuid)
     }
-    // Step 8. Runs infinitive loop of system maintenance and user's queries.
+    // Step 10. Runs restoring actions after reboot or first start.
+    restorationMaintenance()
+    log.info("Dispatcher restored DB and RAM Cache.")
+    // Step 11. Runs infinitive loop of system maintenance and user's queries.
     runInfiniteLoop()
-    // Step 9. Unregister computing node in Kafka
+    // Step 12. Unregister computing node in Kafka
     if (kafkaExists) {
       computingNodeInteractor.unregisterNode(computingNodeUuid)
       log.info(s"Unregistering Node with ID ${computingNodeUuid}")
@@ -96,16 +97,10 @@ class SuperVisor {
    * @return computing node uuid
    */
   def getComputingNodeUuid(): UUID = {
-    var result: UUID = null
     try {
-      result = UUID.fromString(config.getString("node.uuid"))
+      UUID.fromString(config.getString("node.uuid"))
     } catch {
       case e: Exception => generateNodeUuid()
-    }
-    if (result == null) {
-      generateNodeUuid()
-    } else {
-      result
     }
   }
 
@@ -151,7 +146,7 @@ class SuperVisor {
     computingNodeInteractor.launchJobsGettingProcess(computingNodeUuid)
 
     val commandsProvider = new CommandsProvider(log)
-    val commandClasses = commandsProvider.importCommands("", config.getString("usercommands.directory"))
+    val commandClasses = commandsProvider.importCommands(config.getString("usercommands.directory"))
 
     while (true) {
       val delta = Calendar.getInstance().getTimeInMillis - loopEndTime
@@ -242,12 +237,9 @@ class SuperVisor {
     }
     if (kafkaExists) {
       try {
-        val changedVals = Array[JsValue]()
-        JobsContainer.changedValues.copyToArray(changedVals)
-        for (comStruct <- commandStructs.toArray) {
-          //send to exec_env
-          val cmJson = comStruct.asInstanceOf[JsValue]
-          if (!changedVals.contains(cmJson)) {
+        var cmJson = commandStructs.poll().asInstanceOf[JsValue]
+        while (cmJson != null) {
+            log.info("cmJson" + cmJson.toString() + cmJson.getClass.getName)
             val status = (cmJson \ "status").as[String]
             jobUuid = (cmJson \ "uuid").as[String]
             if (status == "CANCELLED") {
@@ -263,7 +255,9 @@ class SuperVisor {
             } else if (status == "READY_TO_EXECUTE") {
               println("Ready to exec " + jobUuid)
               log.info("Ready to exec " + jobUuid)
-              val execEnvFuture = Future(execEnvFutureCalc(jobUuid, (cmJson \ "commands").as[List[JsValue]], commandClasses))
+              val jsCommands = (cmJson \ "commands")
+              log.info("Js commands: " + jsCommands.toString + jsCommands.getClass.getName)
+              val execEnvFuture = Future(execEnvFutureCalc(jobUuid, jsCommands.as[List[JsValue]], commandClasses))
               execEnvFuture.onComplete {
                 case Success(value) => {
                   log.info(s"Future Job is finished.")
@@ -273,17 +267,16 @@ class SuperVisor {
                   log.error(s"Future failed: ${exception.getLocalizedMessage}.")
                   val jobStatusText = exception.getLocalizedMessage
                   computingNodeInteractor.jobStatusNotify(jobUuid, "FAILED", jobStatusText)
-                  log.info("Failed " + jobUuid + exception.getLocalizedMessage)
+                  log.error(s"Failed ${jobUuid} ", exception)
                   println("Failed " + jobUuid + exception.getLocalizedMessage)
                 }
               }
             }
-            JobsContainer.changedValues += cmJson
-          }
+          cmJson = commandStructs.poll().asInstanceOf[JsValue]
         }
       } catch {
         case e: Exception => computingNodeInteractor.errorNotify(computingNodeUuid, e.getLocalizedMessage)
-          println("Error " + e.getLocalizedMessage)
+          log.error("Error ", e)
       }
     }
   }
@@ -351,7 +344,7 @@ class SuperVisor {
       println("Start executing " + jobUuid)
       val res = commandsExecutor.execute(jobUuid, otlCommands)
       println(res.schema.sql)
-      computingNodeInteractor.jobStatusNotify(jobUuid, "FINISHED", "")
+      computingNodeInteractor.jobStatusNotify(jobUuid, "FINISHED", "12345")
     }
   }
 

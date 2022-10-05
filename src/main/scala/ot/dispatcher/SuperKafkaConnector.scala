@@ -58,17 +58,10 @@ class SuperKafkaConnector(val ipAddress: String, val port: Int) {
       while (true) {
         val records: ConsumerRecords[String, String] = consumer.poll(Duration.ofMillis(100))
         for (record <- records.asScala) {
-          JobsContainer.syncValues.add(Json.parse(record.value()))
+          val addedValue: JsValue = Json.parse(record.value()).as[JsValue]
+          JobsContainer.syncValues.add(addedValue)
           log.info(s"record with key ${record.key()} added to temporary storage")
           println("Receive " + record.value())
-        }
-        for (sv <- JobsContainer.syncValues.toArray) {
-          val svJson = sv.asInstanceOf[JsValue]
-          if (JobsContainer.changedValues.contains(svJson)) {
-            JobsContainer.syncValues.remove(svJson)
-            JobsContainer.changedValues.remove(JobsContainer.changedValues.indexOf(svJson))
-            println("Deleted " + svJson)
-          }
         }
       }
     } catch {
