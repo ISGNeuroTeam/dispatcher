@@ -1,10 +1,21 @@
 package ot.dispatcher
 
 import ot.dispatcher.kafka.context.KafkaMessage
+import play.api.libs.json.{JsArray, JsValue, Json}
+import sparkexecenv.CommandsProvider
 
 object KafkaMessagesFactory {
-  def createRegisterNodeMessage(computingNodeUuid: String, hostId: String): KafkaMessage = {
+  /**
+   * Generate message for node registration
+   * @param computingNodeUuid - unique identifier of computing node
+   * @param hostId - host id defining through Java sys.process
+   * @return target message
+   */
+  def createRegisterNodeMessage(computingNodeUuid: String, hostId: String, provider: CommandsProvider): KafkaMessage = {
     val commandName = "REGISTER_COMPUTING_NODE"
+    val syntax: List[JsValue] =  provider.getCommandSyntax
+    val syntaxArray = new JsArray(syntax.toIndexedSeq)
+    val syntaxJson = Json.stringify(syntaxArray)
     val registerMessage = {
       s"""
          |{
@@ -13,20 +24,7 @@ object KafkaMessagesFactory {
          |"command": {
          |    "computing_node_type": "SPARK",
          |    "host_id": "${hostId}",
-         |    "otl_command_syntax": {
-         |      "test": {
-         |        "rules": [
-         |          {
-         |            "name": "arg1",
-         |            "type": "kwarg",
-         |            "key": "num",
-         |            "inf": false,
-         |            "required": true,
-         |            "input_types": ["string"]
-         |          }
-         |        ]
-         |      }
-         |    },
+         |    "otl_command_syntax": {$syntaxJson},
          |    "resources": {
          |      "job_capacity": 999999999
          |    }
@@ -37,6 +35,11 @@ object KafkaMessagesFactory {
     createMessage("computing_node_control", commandName, registerMessage)
   }
 
+  /**
+   * Generate message for node unregistration
+   * @param computingNodeUuid - unique identifier of computing node
+   * @return target message
+   */
   def createUnregisterNodeMessage(computingNodeUuid: String): KafkaMessage = {
     val commandName = "UNREGISTER_COMPUTING_NODE"
     val unregisterMessage =
@@ -50,6 +53,12 @@ object KafkaMessagesFactory {
     createMessage("computing_node_control", commandName, unregisterMessage)
   }
 
+  /**
+   * Generate message for resources state sending
+   * @param computingNodeUuid - unique identifier of computing node
+   * @param activeExecutorsCount - count of active spark executors
+   * @return target message
+   */
   def createResourcesStateNotifyMessage(computingNodeUuid: String, activeExecutorsCount: Int): KafkaMessage = {
     val commandName = "RESOURCE_STATUS"
     val resourceStatusMessage =
@@ -67,6 +76,12 @@ object KafkaMessagesFactory {
     createMessage("computing_node_control", commandName, resourceStatusMessage)
   }
 
+  /**
+   * Generate message for error notifying
+   * @param computingNodeUuid - unique identifier of computing node
+   * @param error - error text
+   * @return target message
+   */
   def createErrorNotifyMessage(computingNodeUuid: String, error: String): KafkaMessage = {
     val commandName = "ERROR_OCCURED"
     val errorMessage =
@@ -82,6 +97,14 @@ object KafkaMessagesFactory {
     createMessage("computing_node_control", commandName, errorMessage)
   }
 
+  /**
+   * Generate message for job status notifying
+   * @param jobUuid - unique identifier of job
+   * @param status - status value from set {RUNNING, FINISHED, FAILED}
+   * @param statusText - text message, sending with status
+   * @param lastFinishedCommand - command, executed before current running command
+   * @return target message
+   */
   def createJobStatusNotifyMessage(jobUuid: String, status: String, statusText: String, lastFinishedCommand: String) = {
     val message = if (lastFinishedCommand.isEmpty) {
       s"""

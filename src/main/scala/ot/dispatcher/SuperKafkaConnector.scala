@@ -21,6 +21,7 @@ import scala.collection.JavaConverters._
 class SuperKafkaConnector(val ipAddress: String, val port: Int) {
   val log: Logger = Logger.getLogger("KafkaConnectorLogger")
   log.setLevel(Level.toLevel(getLogLevel(config, "kafka_connector")))
+  log.info("Start kafka connector")
 
   var consumer: KafkaConsumer[String, String] = createConsumer
   log.info("Create kafka consumer")
@@ -29,7 +30,6 @@ class SuperKafkaConnector(val ipAddress: String, val port: Int) {
   log.info("Create kafka producer")
 
   private def createConsumer(): KafkaConsumer[String, String] = {
-
     val props = new Properties
     props.put(s"bootstrap.servers", s"${ipAddress}:${port}")
     props.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer")
@@ -49,7 +49,7 @@ class SuperKafkaConnector(val ipAddress: String, val port: Int) {
 
   /**
    * Subscribe to Kafka <node_job> topic and get new jobs for node in real-time
-   * @param nodeUuid
+   * @param nodeUuid - computing node uuid, required for topic name constructing
    */
   def getNewJobs(nodeUuid: String): Unit = {
     log.info("Jobs getting from Kafka work started")
@@ -61,7 +61,6 @@ class SuperKafkaConnector(val ipAddress: String, val port: Int) {
           val addedValue: JsValue = Json.parse(record.value()).as[JsValue]
           JobsContainer.syncValues.add(addedValue)
           log.info(s"record with key ${record.key()} added to temporary storage")
-          println("Receive " + record.value())
         }
       }
     } catch {
@@ -73,20 +72,16 @@ class SuperKafkaConnector(val ipAddress: String, val port: Int) {
 
   /**
    * Subscribe Kafka consumer to topic
-   * @param topicName - name of topic
+   * @param topic - name of topic
    */
-  private def subscribeConsumer(topicName: String): Unit = {
-    val topic = topicName
+  private def subscribeConsumer(topic: String): Unit = {
     consumer.subscribe(util.Arrays.asList(topic))
-    log.info()
+    log.info(s"Computing node subscribe to topic ${topic}")
   }
 
   /**
    * Send any message to Kafka
-   * @param topic - kafka record topic
-   * @param key - kafka record key
-   * @param value - kafka record value
-   * @return - true if sending was successfull
+   * @param message - kafka record
    */
   def sendMessage(message: KafkaMessage): Unit = {
     val topic = message.topic

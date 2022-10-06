@@ -62,8 +62,13 @@ class SuperVisor {
   val superCalculator = new SuperCalculator(cacheManager, superDbConnector)
   log.info("SuperCalculator started.")
 
+  //Execution environment commands provider
+  val commandsProvider = new CommandsProvider(config.getString("usercommands.directory"), log)
+
+  //Identifiers of executing jobs
   var jobIds = new ArrayBuffer[String]()
 
+  //Identifier of job, running at the monent
   private var jobUuid = ""
 
   /** Starts infinitive loop. */
@@ -75,10 +80,9 @@ class SuperVisor {
       val p = Process("hostid")
       val hostId: String = p.!!.trim()
       //Node registartion
-      computingNodeInteractor.registerNode(computingNodeUuid, hostId)
+      computingNodeInteractor.registerNode(computingNodeUuid, hostId, commandsProvider)
       log.info(s"Registering Node with ID ${computingNodeUuid}, Host ID: ${hostId}")
       log.info("Spark computing node registered in Kafka")
-      println("Register node " + computingNodeUuid)
     }
     // Step 10. Runs restoring actions after reboot or first start.
     restorationMaintenance()
@@ -143,10 +147,11 @@ class SuperVisor {
     var negativeDeltaCounter: Int = 0
     val negativeWarnThreshold: Int = config.getInt("loop.negative_warn_threshold")
 
+    //Launch process of getting jobs from Kafka in separate thread
     computingNodeInteractor.launchJobsGettingProcess(computingNodeUuid)
 
-    val commandsProvider = new CommandsProvider(log)
-    val commandClasses = commandsProvider.importCommands(config.getString("usercommands.directory"))
+    //Importing commands for executing in spark execution environment
+    val commandClasses = commandsProvider.commandClasses
 
     while (true) {
       val delta = Calendar.getInstance().getTimeInMillis - loopEndTime
@@ -239,39 +244,36 @@ class SuperVisor {
       try {
         var cmJson = commandStructs.poll().asInstanceOf[JsValue]
         while (cmJson != null) {
-            log.info("cmJson" + cmJson.toString() + cmJson.getClass.getName)
-            val status = (cmJson \ "status").as[String]
+            //log.info("cmJson" + cmJson.toString() + cmJson.getClass.getName)
             jobUuid = (cmJson \ "uuid").as[String]
+            val status = (cmJson \ "status").as[String]
+            //Case of job cancelling
             if (status == "CANCELLED") {
               val sc = sparkSession.sparkContext
               if (jobIds.contains(jobUuid)) {
                 sc.cancelJobGroup(jobUuid)
                 jobIds.remove(jobIds.indexOf(jobUuid))
                 log.info(s"Job with uuid ${jobUuid} was canceled.")
-                println("Cancelled " + jobUuid)
               } else {
                 log.info(s"Job with uuid ${jobUuid} isn't exists among launched jobs.")
               }
-            } else if (status == "READY_TO_EXECUTE") {
-              println("Ready to exec " + jobUuid)
+            } //Case of job executing
+              else if (status == "READY_TO_EXECUTE") {
               log.info("Ready to exec " + jobUuid)
-              val jsCommands = (cmJson \ "commands")
-              log.info("Js commands: " + jsCommands.toString + jsCommands.getClass.getName)
+              val jsCommands = cmJson \ "commands"
+              //log.info("Js commands: " + jsCommands.toString + jsCommands.getClass.getName)
               val execEnvFuture = Future(execEnvFutureCalc(jobUuid, jsCommands.as[List[JsValue]], commandClasses))
               execEnvFuture.onComplete {
-                case Success(value) => {
-                  log.info(s"Future Job is finished.")
-                  println("Finished " + jobUuid)
-                }
-                case Failure(exception) => {
+                case Success(value) =>
+                  log.info(s"Future Job ${jobUuid} is finished.")
+                case Failure(exception) =>
                   log.error(s"Future failed: ${exception.getLocalizedMessage}.")
                   val jobStatusText = exception.getLocalizedMessage
                   computingNodeInteractor.jobStatusNotify(jobUuid, "FAILED", jobStatusText)
                   log.error(s"Failed ${jobUuid} ", exception)
-                  println("Failed " + jobUuid + exception.getLocalizedMessage)
-                }
               }
             }
+          jobUuid = ""
           cmJson = commandStructs.poll().asInstanceOf[JsValue]
         }
       } catch {
@@ -335,16 +337,20 @@ class SuperVisor {
     }
   }
 
+  /**
+   * Process job and send it to execution enviromnent for result generating
+   * @param jobUuid - unique identifier of job
+   * @param otlCommands - list of receiving otl commands in JSON format
+   * @param commandClasses - map of command names to extending BaseCommand OTL class classes-transformers
+   */
   def execEnvFutureCalc(jobUuid: String, otlCommands: List[JsValue], commandClasses: Map[String, Class[_ <: BaseCommand]]) = {
     import scala.concurrent.blocking
     blocking {
       sparkSession.sparkContext.setJobGroup(jobUuid, s"jobs of uuid ${jobUuid}")
       jobIds +: jobUuid
       val commandsExecutor = new CommandExecutor(commandClasses, computingNodeInteractor.logProgressMessage)
-      println("Start executing " + jobUuid)
-      val res = commandsExecutor.execute(jobUuid, otlCommands)
-      println(res.schema.sql)
-      computingNodeInteractor.jobStatusNotify(jobUuid, "FINISHED", "12345")
+      commandsExecutor.execute(jobUuid, otlCommands)
+      computingNodeInteractor.jobStatusNotify(jobUuid, "FINISHED", s"Job ${jobUuid} was finished succesfully")
     }
   }
 

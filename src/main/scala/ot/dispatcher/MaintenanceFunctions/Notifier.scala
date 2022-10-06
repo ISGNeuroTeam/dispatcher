@@ -14,7 +14,6 @@ object Notifier {
     val driverHost: String = sc.getConf.get("spark.driver.host")
     val activeExecutorsCount = allExecutors.filter(!_.split(""":""")(0).equals(driverHost)).toList.size
     nodeInteractor.resourcesStateNotify(computingNodeUuid.toString, activeExecutorsCount)
-    println("Notify resource state " + computingNodeUuid + " " + activeExecutorsCount)
   }
 
 }
