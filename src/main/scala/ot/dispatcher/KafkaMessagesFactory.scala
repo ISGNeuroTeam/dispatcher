@@ -1,7 +1,7 @@
 package ot.dispatcher
 
 import ot.dispatcher.kafka.context.KafkaMessage
-import play.api.libs.json.{JsArray, JsValue, Json}
+import play.api.libs.json.{JsValue, Json}
 import sparkexecenv.CommandsProvider
 
 object KafkaMessagesFactory {
@@ -13,9 +13,8 @@ object KafkaMessagesFactory {
    */
   def createRegisterNodeMessage(computingNodeUuid: String, hostId: String, provider: CommandsProvider): KafkaMessage = {
     val commandName = "REGISTER_COMPUTING_NODE"
-    val syntax: List[JsValue] =  provider.getCommandSyntax
-    val syntaxArray = new JsArray(syntax.toIndexedSeq)
-    val syntaxJson = Json.stringify(syntaxArray)
+    val syntax: JsValue =  provider.getCommandSyntax
+    val syntaxJson = Json.stringify(syntax)
     val registerMessage = {
       s"""
          |{
@@ -24,7 +23,7 @@ object KafkaMessagesFactory {
          |"command": {
          |    "computing_node_type": "SPARK",
          |    "host_id": "${hostId}",
-         |    "otl_command_syntax": {$syntaxJson},
+         |    "otl_command_syntax": $syntaxJson,
          |    "resources": {
          |      "job_capacity": 999999999
          |    }
