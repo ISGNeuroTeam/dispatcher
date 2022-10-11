@@ -4,6 +4,9 @@ import ot.dispatcher.kafka.context.KafkaMessage
 import play.api.libs.json.{JsValue, Json}
 import sparkexecenv.CommandsProvider
 
+/**
+ * Contains functions, which create standard messages in computing node - Kafka broker connection
+ */
 object KafkaMessagesFactory {
   /**
    * Generate message for node registration

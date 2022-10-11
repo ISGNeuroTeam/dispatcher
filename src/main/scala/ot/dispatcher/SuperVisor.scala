@@ -68,9 +68,6 @@ class SuperVisor {
   //Identifiers of executing jobs
   var jobIds = new ArrayBuffer[String]()
 
-  //Identifier of job, running at the monent
-  private var jobUuid = ""
-
   /** Starts infinitive loop. */
   def run(): Unit = {
     log.info("SuperVisor started.")
@@ -245,7 +242,7 @@ class SuperVisor {
         var cmJson = commandStructs.poll().asInstanceOf[JsValue]
         while (cmJson != null) {
             //log.info("cmJson" + cmJson.toString() + cmJson.getClass.getName)
-            jobUuid = (cmJson \ "uuid").as[String]
+            val jobUuid = (cmJson \ "uuid").as[String]
             val status = (cmJson \ "status").as[String]
             //Case of job cancelling
             if (status == "CANCELLED") {
@@ -273,7 +270,6 @@ class SuperVisor {
                   log.error(s"Failed ${jobUuid} ", exception)
               }
             }
-          jobUuid = ""
           cmJson = commandStructs.poll().asInstanceOf[JsValue]
         }
       } catch {
