@@ -12,8 +12,6 @@ retrieveManaged := true
 
 resolvers += Resolver.jcenterRepo
 
-resolvers += Resolver.file("file", new File("/home/rkpvteh/.ivy2/local/com.isgneuro/spark_exec_env_2.11/1.0.0/jars/"))
-
 resolvers += ("Sonatype OSS Snapshots" at (sys.env.getOrElse("NEXUS_OTP_URL_HTTPS","http://storage.dev.isgneuro.com")
   + "/repository/ot.platform-sbt-releases/")).withAllowInsecureProtocol(true)
 
@@ -49,7 +47,7 @@ libraryDependencies += "org.apache.kafka" % "kafka-clients" % "3.2.1"
 
 libraryDependencies += "com.typesafe.play" %% "play-json" % "2.7.4"
 
-libraryDependencies += "com.isgneuro" %% "spark_exec_env" % "1.0.0"
+libraryDependencies += "com.isgneuro" %% "spark_exec_env" % "1.0.3"
 
 dependencyOverrides += "com.fasterxml.jackson.core" % "jackson-databind" % "2.6.7.1"
 
