@@ -1,8 +1,8 @@
-name := "dispatcher"
+name := "Dispatcher"
 
 organization := "ot.dispatcher"
 
-version := "1.8.1"
+version := "1.9.0"
 
 scalaVersion := "2.11.12"
 
@@ -46,5 +46,7 @@ libraryDependencies += "io.spray" %% "spray-json" % "1.3.5" % Test
 libraryDependencies += "org.apache.kafka" % "kafka-clients" % "3.2.1"
 
 libraryDependencies += "com.typesafe.play" %% "play-json" % "2.7.4"
+
+dependencyOverrides += "com.fasterxml.jackson.core" % "jackson-databind" % "2.6.7.1"
 
 Test / parallelExecution := false
