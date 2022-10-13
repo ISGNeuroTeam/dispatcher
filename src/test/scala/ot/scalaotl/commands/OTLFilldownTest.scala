@@ -1,7 +1,7 @@
 package ot.scalaotl.commands
 
 class OTLFilldownTest extends CommandTest {
-  override val dataset: String = """[
+  override val dataset = """[
      {"_time": 0, "_raw": "{\"ID\":0,\"random_Field\": \"100\",\"field\": 10}"},
      {"_time": 0, "_raw": "{\"ID\":0}"},
      {"_time": 0, "_raw": "{\"ID\":0,\"random_Field\": \"150\"}"},

@@ -105,13 +105,13 @@ class OTLFilldown(sq: SimpleQuery) extends OTLBaseCommand(sq, _seps = Set("by"))
     } else {
       returns.flatFields
     }
-    val filldownColumns = fields.map(_.stripBackticks()).intersect(dfColumns)
-    log.debug(s"filldownColumns $filldownColumns")
+    val filldownedColumns = fields.map(_.stripBackticks()).intersect(dfColumns)
+    log.debug(s"filldownedColumns $filldownedColumns")
     val df_grouped = _df.withColumn("__internal__", lit(0))
     //Window with ordering for grouping by by-param
     val ws = Window.partitionBy(by).orderBy("__idx__").rowsBetween(Window.unboundedPreceding, Window.currentRow)
     //Replace null values in filldown columns
-    filldownColumns.foldLeft(df_grouped.withColumn("__idx__", monotonically_increasing_id)) {
+    filldownedColumns.foldLeft(df_grouped.withColumn("__idx__", monotonically_increasing_id)) {
       case (accum, item) => {
         val column = last(col(item), ignoreNulls = true).over(ws)
         accum.withColumn(item, column)
