@@ -5,7 +5,7 @@ import org.apache.kafka.clients.producer.{KafkaProducer, ProducerRecord}
 import org.apache.kafka.common.errors.WakeupException
 import org.apache.log4j.{Level, Logger}
 import ot.AppConfig.{config, getLogLevel}
-import ot.dispatcher.kafka.context.CommandsContainer
+import ot.dispatcher.kafka.context.{JobsContainer, KafkaMessage}
 import play.api.libs.json.{JsValue, Json}
 
 import java.time.Duration
@@ -15,12 +15,13 @@ import scala.collection.JavaConverters._
 
 /**
  * Provides API for immediate interaction with Kafka
- * @param ipAddress - address of node where kafka service hosted
- * @param port - kafka service port
+ * @param ipAddress address of node where kafka service hosted
+ * @param port kafka service port
  */
 class SuperKafkaConnector(val ipAddress: String, val port: Int) {
   val log: Logger = Logger.getLogger("KafkaConnectorLogger")
   log.setLevel(Level.toLevel(getLogLevel(config, "kafka_connector")))
+  log.info("Start kafka connector")
 
   var consumer: KafkaConsumer[String, String] = createConsumer
   log.info("Create kafka consumer")
@@ -29,7 +30,6 @@ class SuperKafkaConnector(val ipAddress: String, val port: Int) {
   log.info("Create kafka producer")
 
   private def createConsumer(): KafkaConsumer[String, String] = {
-
     val props = new Properties
     props.put(s"bootstrap.servers", s"${ipAddress}:${port}")
     props.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer")
@@ -49,7 +49,7 @@ class SuperKafkaConnector(val ipAddress: String, val port: Int) {
 
   /**
    * Subscribe to Kafka <node_job> topic and get new jobs for node in real-time
-   * @param nodeUuid
+   * @param nodeUuid computing node uuid, required for topic name constructing
    */
   def getNewJobs(nodeUuid: String): Unit = {
     log.info("Jobs getting from Kafka work started")
@@ -58,15 +58,9 @@ class SuperKafkaConnector(val ipAddress: String, val port: Int) {
       while (true) {
         val records: ConsumerRecords[String, String] = consumer.poll(Duration.ofMillis(100))
         for (record <- records.asScala) {
-          CommandsContainer.syncValues.add(Json.parse(record.value()))
+          val addedValue: JsValue = Json.parse(record.value()).as[JsValue]
+          JobsContainer.syncValues.add(addedValue)
           log.info(s"record with key ${record.key()} added to temporary storage")
-        }
-        for (sv <- CommandsContainer.syncValues.toArray) {
-          val svJson = sv.asInstanceOf[JsValue]
-          if (CommandsContainer.changedValues.contains(svJson)) {
-            CommandsContainer.syncValues.remove(svJson)
-            CommandsContainer.changedValues.remove(CommandsContainer.changedValues.indexOf(svJson))
-          }
         }
       }
     } catch {
@@ -78,32 +72,29 @@ class SuperKafkaConnector(val ipAddress: String, val port: Int) {
 
   /**
    * Subscribe Kafka consumer to topic
-   * @param topicName - name of topic
+   * @param topic name of topic
    */
-  private def subscribeConsumer(topicName: String): Unit = {
-    val topic = topicName
+  private def subscribeConsumer(topic: String): Unit = {
     consumer.subscribe(util.Arrays.asList(topic))
-    log.info()
+    log.info(s"Computing node subscribe to topic ${topic}")
   }
 
   /**
    * Send any message to Kafka
-   * @param topic - kafka record topic
-   * @param key - kafka record key
-   * @param value - kafka record value
-   * @return - true if sending was successfull
+   * @param message kafka record
    */
-  def sendMessage(topic: String, key: String, value: String): Boolean = {
+  def sendMessage(message: KafkaMessage): Unit = {
+    val topic = message.topic
+    val key = message.key
+    val value = message.value
     try {
       val record = new ProducerRecord[String, String](topic, key, value)
-      producer.send(record).get()
+      producer.send(record)
       log.info(s"Successfully sending message to kafka with topic ${topic}, key ${key}, ${value}.")
-      true
     } catch {
       case e: Exception => {
         log.info(s"Sending message to kafka with topic ${topic}, key ${key}, ${value} was failed")
         log.debug(e.printStackTrace())
-        false
       }
     }
   }
