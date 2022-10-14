@@ -22,7 +22,7 @@ class SortTransformer(sq: SimpleQuery, context: Option[SortContext] = None) exte
    * @return _df, sorted by field, specified in query
    */
   def transform(_df: DataFrame): DataFrame = {
-    val order: Array[String] = "\\s+".r.replaceAllIn(
+    val sortOrder: Array[String] = "\\s+".r.replaceAllIn(
       "[-+,']".r.replaceAllIn(args, ""),
       " "
     )
@@ -35,7 +35,7 @@ class SortTransformer(sq: SimpleQuery, context: Option[SortContext] = None) exte
           if (field.startsWith("-")) (sortBeautifier(field.drop(1)), "-")
           else if (field.startsWith("+")) (sortBeautifier(field.drop(1)), "+") else (sortBeautifier(field), "+")
       }.toMap
-    val sortList = order.intersect(_df.columns.toList)
+    val sortList = sortOrder.intersect(_df.columns.toList)
       .map(x => x.addSurroundedBackticks)
       .map { x => if (sortCols(x) == "+") asc(x) else desc(x) }
       .toList
