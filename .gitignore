@@ -24,4 +24,4 @@ src/test/resources/temp/
 lib_managed/
 build/
 .bsp
-/src/target/
+/src/target/*
