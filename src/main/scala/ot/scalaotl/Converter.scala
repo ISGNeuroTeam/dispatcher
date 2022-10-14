@@ -56,14 +56,14 @@ class Converter(otlQuery: OTLQuery, cache: Map[String, DataFrame]) extends OTLSp
   val fieldsUsed = getFieldsUsedInQuery(transformers)
   log.debug(f"Fields used in full query ${fieldsUsed.mkString("[", ", ","]")}")
 
-  def splitQuery(s: String): List[String] = s.withKeepQuotedText[String](str => str.replace("\\n", ""))
+  def splitQuery(s: String) = s.withKeepQuotedText[String](str => str.replace("\\n", ""))
     .withKeepTextInBrackets(_.split("\\|").toSeq,"\\[","\\]")
     .map(_.trim)
     .filterNot(_.isEmpty)
     .toList
 
   def getTransformers(commands: Seq[String]): Seq[OTLBaseCommand] = {
-      val commandPattern = """^(\w+|--)\s+(.*)""".r
+    val commandPattern = """^(\w+)\s*(.*)""".r
     commands.map { x =>
     {
       val commandPattern(cmd, args) = x
@@ -90,7 +90,7 @@ class Converter(otlQuery: OTLQuery, cache: Map[String, DataFrame]) extends OTLSp
     totalFieldsUsed.distinct
   }
 
-  def run: DataFrame = transformers.foldLeft(df) {
+  def run = transformers.foldLeft(df) {
     (accum, tr) =>
     {
       if (tr.getClass.getName.contains("OTLRead") || tr.getClass.getName.contains("OTLInputlookup") || tr.getClass.getName.contains("OTLLookup") || tr.getClass.getName.contains("RawRead") || tr.getClass.getName.contains("FullRead")) tr.setFieldsUsedInFullQuery(fieldsUsed)
@@ -98,7 +98,7 @@ class Converter(otlQuery: OTLQuery, cache: Map[String, DataFrame]) extends OTLSp
     }
   }
 
-  def findSubsearches(s: String): List[String] = {
+  def findSubsearches(s: String) = {
     val subsearchPattern = """subsearch=(\S+)(\s|$)""".r
     subsearchPattern.findAllIn(s).matchData.map(x => x.group(1)).toList
   }
