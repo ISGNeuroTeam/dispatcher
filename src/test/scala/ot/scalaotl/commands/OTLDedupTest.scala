@@ -2,7 +2,7 @@ package ot.scalaotl.commands
 
 class OTLDedupTest extends CommandTest {
 
-  override val dataset: String = """[
+  override val dataset = """[
     {"_time":"1570008000","dest_country":"Italy","sum":10,"text":"EUR","_raw":"_time=1570008000 dest_country=Italy text=EUR sum=10"},
     {"_time":"1570008001","dest_country":"Russia","sum":13,"text":"USD","_raw":"_time=1570008001 dest_country=Russia text=USD sum=13"},
     {"_time":"1570008002","dest_country":"Canada","sum":14,"text":"RUB","_raw":"_time=1570008002 dest_country=Canada text=RUB sum=14"},
