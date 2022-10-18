@@ -9,7 +9,7 @@ import sparkexecenv.CommandsProvider
  * @param ipAddress address of node where kafka service hosted
  * @param externalPort kafka service port
  */
-class ComputingNodeInteractor(val ipAddress: String, val externalPort: Int) {
+class ComputingNodeInteractor(val ipAddress: String, val externalPort: Int) extends ComputingNodeInteractable {
   val log: Logger = Logger.getLogger("NodeInteractorLogger")
   log.setLevel(Level.toLevel(getLogLevel(config, "node_interactor")))
 

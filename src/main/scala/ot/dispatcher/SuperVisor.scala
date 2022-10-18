@@ -44,9 +44,9 @@ class SuperVisor {
   //Step 5. Load interactor with Kafka.
   val kafkaIpAddress: String = config.getString("kafka.ip_address")
   val kafkaPort: Int = config.getInt("kafka.port")
-  val computingNodeInteractor = new ComputingNodeInteractor(kafkaIpAddress, kafkaPort)
-  //Step 6. Kafka service existing checking
   val kafkaExists: Boolean = config.getBoolean("kafka.computing_node_mode_enabled")
+  val computingNodeInteractor: ComputingNodeInteractable = if (kafkaExists){new ComputingNodeInteractor(kafkaIpAddress, kafkaPort)} else {new NullComputingNodeInteractor}
+  //Step 6. Kafka service existing checking
   if (kafkaExists) {
     log.info("SuperKafkaConnector is ready.")
     log.info("Computing Node Mode is enabled")
@@ -63,7 +63,11 @@ class SuperVisor {
   log.info("SuperCalculator started.")
 
   //Execution environment commands provider
-  val commandsProvider = new CommandsProvider(config.getString("usercommands.directory"), log)
+  val commandsProvider: Option[CommandsProvider] = if (kafkaExists) {
+    Some(new CommandsProvider(config.getString("usercommands.directory"), log))
+  } else {
+    None
+  }
 
   //Identifiers of executing jobs
   var jobIds = new ArrayBuffer[String]()
@@ -77,7 +81,7 @@ class SuperVisor {
       val p = Process("hostid")
       val hostId: String = p.!!.trim()
       //Node registartion
-      computingNodeInteractor.registerNode(computingNodeUuid, hostId, commandsProvider)
+      computingNodeInteractor.registerNode(computingNodeUuid, hostId, commandsProvider.get)
       log.info(s"Registering Node with ID ${computingNodeUuid}, Host ID: ${hostId}")
       log.info("Spark computing node registered in Kafka")
     }
@@ -144,11 +148,12 @@ class SuperVisor {
     var negativeDeltaCounter: Int = 0
     val negativeWarnThreshold: Int = config.getInt("loop.negative_warn_threshold")
 
-    //Launch process of getting jobs from Kafka in separate thread
-    computingNodeInteractor.launchJobsGettingProcess(computingNodeUuid)
-
-    //Importing commands for executing in spark execution environment
-    val commandClasses = commandsProvider.commandClasses
+    if (kafkaExists) {
+      //Launch process of getting jobs from Kafka in separate thread
+      computingNodeInteractor.launchJobsGettingProcess(computingNodeUuid)
+    }
+      //Importing commands for executing in spark execution environment
+    val commandClasses:  Map[String, Class[_ <: BaseCommand]] = if (kafkaExists) {commandsProvider.get.commandClasses} else {Map()}
 
     while (true) {
       val delta = Calendar.getInstance().getTimeInMillis - loopEndTime
