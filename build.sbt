@@ -2,7 +2,7 @@ name := "Dispatcher"
 
 organization := "ot.dispatcher"
 
-version := "1.9.0"
+version := "2.0.0"
 
 scalaVersion := "2.11.12"
 
@@ -46,6 +46,8 @@ libraryDependencies += "io.spray" %% "spray-json" % "1.3.5" % Test
 libraryDependencies += "org.apache.kafka" % "kafka-clients" % "3.2.1"
 
 libraryDependencies += "com.typesafe.play" %% "play-json" % "2.7.4"
+
+libraryDependencies += "com.isgneuro" %% "spark_exec_env" % "1.0.3"
 
 dependencyOverrides += "com.fasterxml.jackson.core" % "jackson-databind" % "2.6.7.1"
 

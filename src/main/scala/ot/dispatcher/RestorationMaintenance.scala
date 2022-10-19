@@ -20,5 +20,3 @@ class RestorationMaintenance(restorationMaintenanceArgs: Map[String, Any]) {
     Tracker.registerDispatcher(restorationMaintenanceArgs)
   }
 }
-
-

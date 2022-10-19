@@ -4,12 +4,16 @@ import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.SparkSession
 import ot.AppConfig
 import ot.AppConfig._
-import ot.dispatcher.kafka.context.CommandsContainer
+import ot.dispatcher.kafka.context.JobsContainer
 import ot.dispatcher.sdk.core.CustomException
 import ot.dispatcher.sdk.core.CustomException.E00017
+import play.api.libs.json.JsValue
+import sparkexecenv.{BaseCommand, CommandExecutor, CommandsProvider}
 
 import java.sql.ResultSet
 import java.util.{Calendar, UUID}
+import scala.collection.mutable.ArrayBuffer
+import scala.sys.process.Process
 
 /** Gets settings from config file and then runs infinitive loop of user's and system's queries.
  *
@@ -29,7 +33,7 @@ class SuperVisor {
   val log: Logger = Logger.getLogger("VisorLogger")
   log.setLevel(Level.toLevel(getLogLevel(config, "visor")))
   //Step 2. Generate computing node uuid
-  var computingNodeUuid: UUID = getComputingNodeUuid()
+  var computingNodeUuid: String = getComputingNodeUuid().toString.replace("-", "")
   log.info(s"Computing node uuid: ${computingNodeUuid.toString}")
   // Step 3. Loads Spark's session and runtime configs.
   val sparkSession: SparkSession = getSparkSession
@@ -40,9 +44,9 @@ class SuperVisor {
   //Step 5. Load interactor with Kafka.
   val kafkaIpAddress: String = config.getString("kafka.ip_address")
   val kafkaPort: Int = config.getInt("kafka.port")
-  val computingNodeInteractor = new ComputingNodeInteractor(kafkaIpAddress, kafkaPort)
-  //Step 6. Kafka service existing checking
   val kafkaExists: Boolean = config.getBoolean("kafka.computing_node_mode_enabled")
+  val computingNodeInteractor: ComputingNodeInteractable = if (kafkaExists){new ComputingNodeInteractor(kafkaIpAddress, kafkaPort)} else {new NullComputingNodeInteractor}
+  //Step 6. Kafka service existing checking
   if (kafkaExists) {
     log.info("SuperKafkaConnector is ready.")
     log.info("Computing Node Mode is enabled")
@@ -58,23 +62,38 @@ class SuperVisor {
   val superCalculator = new SuperCalculator(cacheManager, superDbConnector)
   log.info("SuperCalculator started.")
 
+  //Execution environment commands provider
+  val commandsProvider: Option[CommandsProvider] = if (kafkaExists) {
+    Some(new CommandsProvider(config.getString("usercommands.directory"), log))
+  } else {
+    None
+  }
+
+  //Identifiers of executing jobs
+  var jobIds = new ArrayBuffer[String]()
+
   /** Starts infinitive loop. */
   def run(): Unit = {
     log.info("SuperVisor started.")
-    // Step 6. Runs restoring actions after reboot or first start.
-    restorationMaintenance()
-    log.info("Dispatcher restored DB and RAM Cache.")
-    // Step 7. Register computing node in Kafka
+    // Step 9. Register computing node in Kafka
     if (kafkaExists) {
-      computingNodeInteractor.registerNode(computingNodeUuid)
+      //host id defining through Java sys.process
+      val p = Process("hostid")
+      val hostId: String = p.!!.trim()
+      //Node registartion
+      computingNodeInteractor.registerNode(computingNodeUuid, hostId, commandsProvider.get)
+      log.info(s"Registering Node with ID ${computingNodeUuid}, Host ID: ${hostId}")
       log.info("Spark computing node registered in Kafka")
     }
-    // Step 8. Runs infinitive loop of system maintenance and user's queries.
+    // Step 10. Runs restoring actions after reboot or first start.
+    restorationMaintenance()
+    log.info("Dispatcher restored DB and RAM Cache.")
+    // Step 11. Runs infinitive loop of system maintenance and user's queries.
     runInfiniteLoop()
-    // Step 9. Unregister computing node in Kafka
+    // Step 12. Unregister computing node in Kafka
     if (kafkaExists) {
       computingNodeInteractor.unregisterNode(computingNodeUuid)
-      log.info("Spark computing node unregistered in Kafka")
+      log.info(s"Unregistering Node with ID ${computingNodeUuid}")
     }
   }
 
@@ -83,16 +102,10 @@ class SuperVisor {
    * @return computing node uuid
    */
   def getComputingNodeUuid(): UUID = {
-    var result: UUID = null
     try {
-      result = UUID.fromString(config.getString("node.uuid"))
+      UUID.fromString(config.getString("node.uuid"))
     } catch {
       case e: Exception => generateNodeUuid()
-    }
-    if (result == null) {
-      generateNodeUuid()
-    } else {
-      result
     }
   }
 
@@ -135,10 +148,12 @@ class SuperVisor {
     var negativeDeltaCounter: Int = 0
     val negativeWarnThreshold: Int = config.getInt("loop.negative_warn_threshold")
 
-    new Thread(){
-      override def run(): Unit = {
-      }
+    if (kafkaExists) {
+      //Launch process of getting jobs from Kafka in separate thread
+      computingNodeInteractor.launchJobsGettingProcess(computingNodeUuid)
     }
+      //Importing commands for executing in spark execution environment
+    val commandClasses:  Map[String, Class[_ <: BaseCommand]] = if (kafkaExists) {commandsProvider.get.commandClasses} else {Map()}
 
     while (true) {
       val delta = Calendar.getInstance().getTimeInMillis - loopEndTime
@@ -155,7 +170,7 @@ class SuperVisor {
         negativeDeltaCounter = 0
 
         systemMaintenance()
-        userMaintenance()
+        userMaintenance(commandClasses)
         loopEndTime = Calendar.getInstance().getTimeInMillis
       } else {
         Thread.sleep(delta)
@@ -186,7 +201,10 @@ class SuperVisor {
     val systemMaintenanceArgs = Map(
       "cacheManager" -> cacheManager,
       "superConnector" -> superDbConnector,
-      "sparkSession" -> sparkSession
+      "sparkSession" -> sparkSession,
+      "nodeInteractor" -> computingNodeInteractor,
+      "computingNodeUuid" -> computingNodeUuid,
+      "kafkaExists" -> kafkaExists
     )
     val sm = new SystemMaintenance(systemMaintenanceArgs)
     sm.run()
@@ -199,10 +217,10 @@ class SuperVisor {
    * 3. Starts future with it's calculation.
    * 4. Depending on state marks it failed or finished.
    */
-  def userMaintenance(): Unit = {
+  def userMaintenance(commandClasses: Map[String, Class[_ <: BaseCommand]]): Unit = {
     // Gets new Jobs.
     val res = superDbConnector.getNewQueries
-    val commandStructs = CommandsContainer.syncValues
+    val commandStructs = JobsContainer.syncValues
 
     import scala.concurrent.{ExecutionContext, Future}
     import ExecutionContext.Implicits.global
@@ -223,6 +241,46 @@ class SuperVisor {
           error.printStackTrace()
       }
       log.info(s"Job ${otlQuery.id} is running")
+    }
+    if (kafkaExists) {
+      try {
+        var cmJson = commandStructs.poll().asInstanceOf[JsValue]
+        while (cmJson != null) {
+            //log.info("cmJson" + cmJson.toString() + cmJson.getClass.getName)
+            val jobUuid = (cmJson \ "uuid").as[String]
+            val status = (cmJson \ "status").as[String]
+            //Case of job cancelling
+            if (status == "CANCELLED") {
+              val sc = sparkSession.sparkContext
+              if (jobIds.contains(jobUuid)) {
+                sc.cancelJobGroup(jobUuid)
+                jobIds.remove(jobIds.indexOf(jobUuid))
+                log.info(s"Job with uuid ${jobUuid} was canceled.")
+              } else {
+                log.info(s"Job with uuid ${jobUuid} isn't exists among launched jobs.")
+              }
+            } //Case of job executing
+              else if (status == "READY_TO_EXECUTE") {
+              log.info("Ready to exec " + jobUuid)
+              val jsCommands = cmJson \ "commands"
+              //log.info("Js commands: " + jsCommands.toString + jsCommands.getClass.getName)
+              val execEnvFuture = Future(execEnvFutureCalc(jobUuid, jsCommands.as[List[JsValue]], commandClasses))
+              execEnvFuture.onComplete {
+                case Success(value) =>
+                  log.info(s"Future Job ${jobUuid} is finished.")
+                case Failure(exception) =>
+                  log.error(s"Future failed: ${exception.getLocalizedMessage}.")
+                  val jobStatusText = exception.getLocalizedMessage
+                  computingNodeInteractor.jobStatusNotify(jobUuid, "FAILED", jobStatusText)
+                  log.error(s"Failed ${jobUuid} ", exception)
+              }
+            }
+          cmJson = commandStructs.poll().asInstanceOf[JsValue]
+        }
+      } catch {
+        case e: Exception => computingNodeInteractor.errorNotify(computingNodeUuid, e.getLocalizedMessage)
+          log.error("Error ", e)
+      }
     }
   }
 
@@ -277,6 +335,23 @@ class SuperVisor {
           superDbConnector.unlockCaches(otlQuery.id)
           throw throwable
       }
+    }
+  }
+
+  /**
+   * Process job and send it to execution enviromnent for result generating
+   * @param jobUuid unique identifier of job
+   * @param otlCommands list of receiving otl commands in JSON format
+   * @param commandClasses map of command names to extending BaseCommand OTL class classes-transformers
+   */
+  def execEnvFutureCalc(jobUuid: String, otlCommands: List[JsValue], commandClasses: Map[String, Class[_ <: BaseCommand]]) = {
+    import scala.concurrent.blocking
+    blocking {
+      sparkSession.sparkContext.setJobGroup(jobUuid, s"jobs of uuid ${jobUuid}")
+      jobIds +: jobUuid
+      val commandsExecutor = new CommandExecutor(commandClasses, computingNodeInteractor.logProgressMessage)
+      commandsExecutor.execute(jobUuid, otlCommands)
+      computingNodeInteractor.jobStatusNotify(jobUuid, "FINISHED", s"Job ${jobUuid} was finished succesfully")
     }
   }
 

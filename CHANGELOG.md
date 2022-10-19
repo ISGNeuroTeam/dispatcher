@@ -1,8 +1,13 @@
-
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [2.0.0] - 2022-10-14
+### Added
+- Dispatcher working as Spark computing node in full accordance with requirements.
+- OTL commands processing through connection to Spark Execution Environment and work delegation to SEE.
+
 ## [1.9.0] - 2022-09-16
 ### Added
 - Dispatcher connection to Kafka service (Dispatcher as Spark computing node)

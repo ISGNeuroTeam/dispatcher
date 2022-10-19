@@ -1,3 +1,7 @@
+## [2.0.0]
+### New
+- Spark Computing Node Mode for Architecture 2.0 with OTL commands processing ability.
+
 ## [1.9.0]
 ### New
 - Connection to Kafka service
