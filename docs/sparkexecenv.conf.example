@@ -1,0 +1,7 @@
+systemcommands {
+data_file_name = "data.parquet"
+sys_read_interproc_name = "sys_read_interproc"
+sys_write_interproc_name = "sys_write_interproc"
+sys_write_result_name = "sys_write_result"
+interproc_storage_alias = "ips"
+}
