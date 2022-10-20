@@ -1,3 +1,10 @@
+## [2.0.1] - Hotfix
+### Hotfix
+- Fixed problem with not-worked command filldown without arguments.
+- Fixed problem with unworked consecutive parameter in dedup command.
+- application.conf.example changed for ability of working in Computing Node Mode. (Computing Node Mode - mode of Dispatcher's work, required for Architecture 2.0 )
+- Added config file for Spark Execution Environment - sparkexecenv.conf. (Spark Execution Environment require for work in Computing Node Mode.)
+
 ## [2.0.0]
 ### New
 - Spark Computing Node Mode for Architecture 2.0 with OTL commands processing ability.
