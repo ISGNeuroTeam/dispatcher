@@ -106,6 +106,7 @@ build: $(COMPONENTS)
 	cp target/scala-$(SCALA_VERSION)/$(PROJECT_NAME_LOW_CASE)_$(SCALA_VERSION)-$(VERSION).jar build/$(PROJECT_NAME)/jars/ot.$(PROJECT_NAME_LOW_CASE)/$(PROJECT_NAME_LOW_CASE)_$(SCALA_VERSION)/
 	cp start.sh build/$(PROJECT_NAME)/start.sh
 	cp docs/application.conf.example build/$(PROJECT_NAME)/
+	cp docs/sparkexecenv.conf.example build/$(PROJECT_NAME)/
 	cp docs/fairscheduler.xml.example build/$(PROJECT_NAME)/
 	cp docs/loglevel.properties.example build/$(PROJECT_NAME)/
 	cp README.md build/$(PROJECT_NAME)/

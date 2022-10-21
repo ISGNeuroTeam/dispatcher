@@ -1,3 +1,8 @@
+## [2.0.2] - Hotfix
+### Hotfix
+- Added copying of sparkexecenv.conf.example file to dispatcher directory in deployment process.
+- For start.sh paths generation project name replaced from Dispatcher to dispatcher.
+
 ## [2.0.1] - Hotfix
 ### Hotfix
 - Fixed problem with not-worked command filldown without arguments.
