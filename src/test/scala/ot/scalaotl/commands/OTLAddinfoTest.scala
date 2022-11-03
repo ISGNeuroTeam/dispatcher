@@ -1,12 +1,6 @@
 package ot.scalaotl.commands
 
-import ot.dispatcher.SuperVisor
-
 class OTLAddinfoTest extends CommandTest{
-
-  test ("") {
-    val visor = new SuperVisor
-  }
 
   test("Test 0. Command: | addinfo") {
     val actual = execute("""addinfo """)
