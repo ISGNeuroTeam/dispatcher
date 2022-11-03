@@ -1,8 +1,8 @@
 package ot.dispatcher
 
+import com.isgneuro.sparkexecenv.CommandsProvider
 import org.apache.log4j.{Level, Logger}
 import ot.AppConfig.{config, getLogLevel}
-import sparkexecenv.CommandsProvider
 
 /**
  * Provides functional API for spark computing node interaction with Kafka

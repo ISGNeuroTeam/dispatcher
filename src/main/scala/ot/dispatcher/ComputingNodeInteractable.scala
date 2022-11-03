@@ -1,6 +1,6 @@
 package ot.dispatcher
 
-import sparkexecenv.CommandsProvider
+import com.isgneuro.sparkexecenv.CommandsProvider
 
 trait ComputingNodeInteractable {
   /**

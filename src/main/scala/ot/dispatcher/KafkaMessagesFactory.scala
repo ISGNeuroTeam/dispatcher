@@ -1,8 +1,8 @@
 package ot.dispatcher
 
+import com.isgneuro.sparkexecenv.CommandsProvider
 import ot.dispatcher.kafka.context.KafkaMessage
 import play.api.libs.json.{JsValue, Json}
-import sparkexecenv.CommandsProvider
 
 /**
  * Contains functions, which create standard messages in computing node - Kafka broker connection
