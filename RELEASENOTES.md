@@ -1,3 +1,8 @@
+## [2.0.3] - Hotfix
+### Hotfix
+- Changed number of spark_exec_env version.
+- Deleting copying of sparkexecenv.conf.example to app directory because spark_exec_env library isn't need config file now and use standard not-changed values for working.
+
 ## [2.0.2] - Hotfix
 ### Hotfix
 - Added copying of sparkexecenv.conf.example file to dispatcher directory in deployment process.

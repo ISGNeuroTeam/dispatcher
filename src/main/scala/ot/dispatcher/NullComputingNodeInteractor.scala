@@ -1,5 +1,5 @@
 package ot.dispatcher
-import sparkexecenv.CommandsProvider
+import com.isgneuro.sparkexecenv.CommandsProvider
 
 class NullComputingNodeInteractor extends ComputingNodeInteractable {
   /**

@@ -1,5 +1,6 @@
 package ot.dispatcher
 
+import com.isgneuro.sparkexecenv.{BaseCommand, CommandExecutor, CommandsProvider}
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.SparkSession
 import ot.AppConfig
@@ -8,7 +9,6 @@ import ot.dispatcher.kafka.context.JobsContainer
 import ot.dispatcher.sdk.core.CustomException
 import ot.dispatcher.sdk.core.CustomException.E00017
 import play.api.libs.json.JsValue
-import sparkexecenv.{BaseCommand, CommandExecutor, CommandsProvider}
 
 import java.sql.ResultSet
 import java.util.{Calendar, UUID}
