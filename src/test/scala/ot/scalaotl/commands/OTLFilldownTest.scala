@@ -26,6 +26,7 @@ class OTLFilldownTest extends CommandTest {
     ]""".stripMargin
     assert(jsonCompare(actual, expected), f"Result : $actual\n---\nExpected : $expected")
   }
+
   test("Test 1. Command: table a | filldown field") {
     val actual = execute("""| filldown field | table field """)
     val expected = """[
@@ -40,7 +41,24 @@ class OTLFilldownTest extends CommandTest {
         ]""".stripMargin
     assert(jsonCompare(actual, expected), f"Result : $actual\n---\nExpected : $expected")
   }
-  test("Test 2. Command: table a | filldown field by ID") {
+
+  test("Test 2. Command: table a | filldown field, random_Field, ID") {
+    val actual = execute("""| filldown field, random_Field, ID | table field, random_Field, ID """)
+    val expected =
+      """[
+        {"field" : "10"},
+        {"field" : "10"},
+        {"field" : "10"},
+        {"field" : "10"},
+        {"field" : "10"},
+        {"field" : "20"},
+        {"field" : "20"},
+        {"field" : "20"}
+        ]""".stripMargin
+    assert(jsonCompare(actual, expected), f"Result : $actual\n---\nExpected : $expected")
+  }
+
+  test("Test 3. Command: table a | filldown field by ID") {
     val actual = execute("""| filldown field by ID | table field, ID """)
     val expected = """[
     {"field":"10","ID":"0"},
@@ -54,7 +72,8 @@ class OTLFilldownTest extends CommandTest {
     ]""".stripMargin
     assert(jsonCompare(actual, expected), f"Result : $actual\n---\nExpected : $expected")
   }
-  test("Test 3. Command: table a | filldown field, random_Field by ID") {
+
+  test("Test 4. Command: table a | filldown field, random_Field by ID") {
     val actual = execute("""| filldown field, random_Field by ID | table field, random_Field, ID""")
     val expected = """[
     {"field":"10","random_Field":"100","ID":"0"},
