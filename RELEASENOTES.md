@@ -1,3 +1,12 @@
+## [1.1.0] - Control options in commands readFile and writeFile
+### New
+- Arg "header" to readFile and writeFile commands. Now you can disable a header of a csv file.
+- Default value "parquet" to "format" arg in readFile and writeFile commands. Now you can skip required before arg "format=". 
+- Arg "mode"  ('overwrite', 'append', 'ignore', 'error', 'errorifexists') to writeFile command. Now you can append data instead of overwriting it.
+- Arg "numPartitions" to writeFile command. Now you can control the number of output files.
+- Arg "partitionBy" to writeFile command. Partitioning is now available.
+- Aliases "put" and "get" to writeFile and readFile commands.
+
 # [1.0.3] - Repository improvements
 ### Changed
 - plugin.conf.example.
