@@ -4,9 +4,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.1] - 2023-01-12
+### Fixed
+- Test writeFile.
+- Changelog.
+
 ## [1.1.0] - 2023-01-12
 ### Changed
-- Local resolver in build.sbt
+- Local resolver to Production (network) resolver in build.sbt. No more need in publishLocal.
 ### Added
 - Arg "header" to readFile and writeFile commands.
 - Default value "parquet" to "format" arg in readFile and writeFile commands.

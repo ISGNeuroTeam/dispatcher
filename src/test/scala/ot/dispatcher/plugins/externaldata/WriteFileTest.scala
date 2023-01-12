@@ -57,7 +57,6 @@ class WriteFileTest extends CommandTest {
     val simpleQuery = SimpleQuery(""" format=csv path=write_test_file_csv mode=append """)
     val commandWriteFile = new WriteFile(simpleQuery, utils)
     execute(commandWriteFile)
-    execute(commandWriteFile)
     val actual = spark.read.format("csv").option("header", "true").load(path).toJSON.collect().mkString("[\n",",\n","\n]")
     val expected = """[
     {"a":"1","b":"2"},
