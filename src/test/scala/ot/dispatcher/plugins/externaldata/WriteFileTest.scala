@@ -42,5 +42,54 @@ class WriteFileTest extends CommandTest {
     assert(jsonCompare(actual, expected), f"Result : $actual\n---\nExpected : $expected")
   }
 
+  test("Test 3. Command: | writeFile with default params") {
+    val path = new File("src/test/resources/temp/write_test_file_parquet").getAbsolutePath
+    val simpleQuery = SimpleQuery(""" path=write_test_file_parquet """)
+    val commandWriteFile = new WriteFile(simpleQuery, utils)
+    execute(commandWriteFile)
+    val actual = spark.read.format("parquet").option("header", "true").load(path).toJSON.collect().mkString("[\n",",\n","\n]")
+    val expected = dataset
+    assert(jsonCompare(actual, expected), f"Result : $actual\n---\nExpected : $expected")
+  }
+
+  test("Test 4. Command: | writeFile mode=append") {
+    val path = new File("src/test/resources/temp/write_test_file_csv").getAbsolutePath
+    val simpleQuery = SimpleQuery(""" format=csv path=write_test_file_csv mode=append """)
+    val commandWriteFile = new WriteFile(simpleQuery, utils)
+    execute(commandWriteFile)
+    execute(commandWriteFile)
+    val actual = spark.read.format("csv").option("header", "true").load(path).toJSON.collect().mkString("[\n",",\n","\n]")
+    val expected = """[
+    {"a":"1","b":"2"},
+    {"a":"10","b":"20"},
+    {"a":"1","b":"2"},
+    {"a":"10","b":"20"}
+    ]""".stripMargin
+    assert(jsonCompare(actual, expected), f"Result : $actual\n---\nExpected : $expected")
+  }
+
+  test("Test 5. Command: | writeFile numPartitions=1") {
+    val path = new File("src/test/resources/temp/write_test_file_csv").getAbsolutePath
+    val simpleQuery = SimpleQuery(""" format=csv path=write_test_file_csv numPartitions=1 """)
+    val commandWriteFile = new WriteFile(simpleQuery, utils)
+    execute(commandWriteFile)
+    val actual = spark.read.format("csv").option("header", "true").load(path).toJSON.collect().mkString("[\n",",\n","\n]")
+    val expected = dataset
+    assert(jsonCompare(actual, expected), f"Result : $actual\n---\nExpected : $expected")
+  }
+
+  test("Test 6. Command: | writeFile partitionBy=a") {
+    val path = new File("src/test/resources/temp/write_test_file_csv").getAbsolutePath
+    val simpleQuery = SimpleQuery(""" format=csv path=write_test_file_csv partitionBy=a """)
+    val commandWriteFile = new WriteFile(simpleQuery, utils)
+    execute(commandWriteFile)
+    val actual = spark.read.format("csv").option("header", "true").load(path).toJSON.collect().mkString("[\n",",\n","\n]")
+    val expected = """[
+                     |{"b":"20","a":10},
+                     |{"b":"2","a":1}
+                     |]""".stripMargin
+    assert(jsonCompare(actual, expected), f"Result : $actual\n---\nExpected : $expected")
+  }
+
 }
 
