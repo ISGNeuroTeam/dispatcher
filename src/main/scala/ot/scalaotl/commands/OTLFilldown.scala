@@ -111,10 +111,11 @@ class OTLFilldown(sq: SimpleQuery) extends OTLBaseCommand(sq, _seps = Set("by"))
       }
      // _df.schema.filter(s => s.)
       val fdf = _df.filter(query)
-      val fdfView = fdf.c*/
+      val fdfView = fdf.c
       val aaa = _df.select(col("ID"), when(col("ID").isNull, null))
-      val isa = aaa.isEmpty
-      dfColumns.filter(c => !(_df.select(col(c), when(col(c).isNull, null)).isEmpty)).toList
+      val isa = aaa.isEmpty*/
+      val dfNulled = _df.filter(row => row.anyNull)
+      dfColumns.filter(c => !(_df.select(col(c)).filter(row => row.isNullAt(0)).isEmpty)).toList
     } else {
       returns.flatFields
     }
