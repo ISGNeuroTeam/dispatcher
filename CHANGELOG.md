@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.1.2] - 2023-01-13
 ### Added
 - A scheme merging option (mergeSchema) to readFile.
+- A schema inferring option (inferSchema) to readFile.
 
 ## [1.1.1] - 2023-01-12
 ### Fixed
