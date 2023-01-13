@@ -1,3 +1,7 @@
+## [1.1.2] - Schema Merging
+### Added
+- A scheme merging option (mergeSchema) to readFile. Now you can read partitions of a "file" with different schemes.
+
 ## [1.1.0] - Control options in commands readFile and writeFile
 ### New
 - Arg "header" to readFile and writeFile commands. Now you can disable a header of a csv file.

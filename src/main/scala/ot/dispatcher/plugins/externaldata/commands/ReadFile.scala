@@ -12,9 +12,11 @@ import ot.dispatcher.sdk.PluginUtils
  */
 class ReadFile(sq: SimpleQuery, utils: PluginUtils) extends ExternalFile(sq, utils) {
 
+  val mergeSchema: String = getKeyword("mergeSchema").getOrElse("false")
+
   override def transform(_df: DataFrame): DataFrame = {
     val sparkSession = SparkSession.builder().getOrCreate()
-    val df = sparkSession.read.format(format).option("header", header).load(absolutePath)
+    val df = sparkSession.read.format(format).options(Map("header" -> header, "mergeSchema" -> mergeSchema)).load(absolutePath)
     df
   }
 
