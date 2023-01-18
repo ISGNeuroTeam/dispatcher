@@ -108,15 +108,20 @@ class OTLFilldown(sq: SimpleQuery) extends OTLBaseCommand(sq, _seps = Set("by"))
   val optionalKeywords = Set.empty[String]
 
   /**
+   * Parameter, defining necessary of searching targeting columns for command in case of missing list of columns
+   */
+  val isDefineTargetColumns: String = getKeyword("defineTargetColumns").getOrElse("false")
+
+  /**
+   * //Define field for grouping. If by-param not exists, this field is fictive.
+   */
+  val groups = getPositional("by").getOrElse(List("__internal__"))
+
+  /**
    * @param _df input __dataframe__, passed by the [[Converter]] when executing an OTL query
    * @return _df with events combined by specified field
    */
   override def transform(_df: DataFrame): DataFrame = {
-    //Define field for grouping. If by-param not exists, this field is fictive.
-    val groups = positionalsMap.get("by") match {
-      case Some(Positional("by", groups)) => groups
-      case _ => List("__internal__")
-    }
     val by = if (groups.isEmpty) {
       "__internal__"
     } else {
@@ -125,9 +130,9 @@ class OTLFilldown(sq: SimpleQuery) extends OTLBaseCommand(sq, _seps = Set("by"))
     //Define fields for null replacing
     val dfColumns = _df.schema.filter(s => s.nullable).map(_.name).toList
     val fields = if (returns.flatFields.isEmpty) {
-      keywordsMap.get("defineTargetColumns") match {
+      isDefineTargetColumns match {
         //if defineTargetColumns, than search columns, where null values exists, else all columns will be filldowned
-        case Some(Keyword("defineTargetColumns", "true")) => dfColumns.filter(c => !(_df.select(col(c)).filter(row => row.isNullAt(0)).isEmpty))
+        case "true" => dfColumns.filter(c => !(_df.select(col(c)).filter(row => row.isNullAt(0)).isEmpty))
         case _ => dfColumns
       }
     } else {
