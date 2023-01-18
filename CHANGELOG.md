@@ -2,9 +2,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+## [2.1.0] - 2023-01-18
+### Changed
+- Filldown command optimized for case of missing of targeting colums.
+- Added keyword _defineTargetColumns_ to filldown syntax. 
+
 ## [2.0.3] - 2022-11-03 
 ### Changed
--Number of spark_exec_env version.
+- Number of spark_exec_env version.
 ### Removed
 - All actions with sparkexecenv.conf
 
