@@ -1,3 +1,8 @@
+## [2.1.0]
+### New
+- Filldown command optimized for case of missing of targeting columns.
+- Added keyword _defineTargetColumns_ to filldown syntax.
+
 ## [2.0.3] - Hotfix
 ### Hotfix
 - Changed number of spark_exec_env version.
