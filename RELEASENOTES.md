@@ -1,3 +1,7 @@
+## [2.1.1] - Hotfix
+### Hotfix
+- Setted default accuracy argument in percentile_approx spark function calls.
+
 ## [2.1.0]
 ### New
 - Filldown command optimized for case of missing of targeting columns.

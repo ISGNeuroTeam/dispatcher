@@ -1,16 +1,14 @@
 package ot.scalaotl
 package static
 
+import org.apache.spark.sql.functions.expr
+import org.apache.spark.sql.{Column, DataFrame}
 import ot.scalaotl.StatsFunc
 import ot.scalaotl.commands.OTLEval
-import ot.scalaotl.extensions.DataFrameExt._
 import ot.scalaotl.extensions.ColumnExt._
-import ot.scalaotl.extensions.StringExt._
+import ot.scalaotl.extensions.DataFrameExt._
 
 import scala.util.matching.Regex
-
-import org.apache.spark.sql.{ Column, DataFrame }
-import org.apache.spark.sql.functions.expr
 
 object StatsFunctions {
   val funclist = List("max", "min", "dc", "distinct_count", "earliest", "latest", "count", "p\\d+", "approxdc", "avg", "mean",
@@ -31,10 +29,10 @@ object StatsFunctions {
   def getExpr(func: String, field: String, newfield: String = ""): Column = {
     val rexPerc: Regex = raw"^p\d+".r
     val exprStr = func match {
-      case "median" => s"percentile_approx($field, 0.5, 10)"
+      case "median" => s"percentile_approx($field, 0.5)"
       case rexPerc(_*) => {
         val p = func.stripPrefix("perc").stripPrefix("p").toDouble / 100
-        s"percentile_approx($field, $p, 10)"
+        s"percentile_approx($field, $p)"
       }
       case _ => s"${exprSwitcher.getOrElse(func, func)}($field)"
     }
