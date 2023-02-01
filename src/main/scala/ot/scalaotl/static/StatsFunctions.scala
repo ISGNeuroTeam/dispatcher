@@ -29,10 +29,10 @@ object StatsFunctions {
   def getExpr(func: String, field: String, newfield: String = ""): Column = {
     val rexPerc: Regex = raw"^p\d+".r
     val exprStr = func match {
-      case "median" => s"percentile_approx($field, 0.5)"
+      case "median" => s"percentile_approx($field, 0.5, 10)"
       case rexPerc(_*) => {
         val p = func.stripPrefix("perc").stripPrefix("p").toDouble / 100
-        s"percentile_approx($field, $p)"
+        s"percentile_approx($field, $p, 10)"
       }
       case _ => s"${exprSwitcher.getOrElse(func, func)}($field)"
     }
