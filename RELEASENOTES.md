@@ -1,6 +1,6 @@
 ## [2.1.2] - Hotfix
 ### Hotfix
-- Rollback of hotfix 2.1.1.
+- Rollback of hotfix 2.1.1. 
 
 ## [2.1.1] - Hotfix
 ### Hotfix

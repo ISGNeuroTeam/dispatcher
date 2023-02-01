@@ -5,7 +5,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [2.1.2] - 2023-02-01
 ### Fixed
-- Rollback of hotfix 2.1.1.
+- Rollback of hotfix 2.1.1. 
 
 ## [2.1.1] - 2023-01-30
 ### Fixed
