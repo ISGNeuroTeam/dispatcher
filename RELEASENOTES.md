@@ -1,3 +1,7 @@
+## [2.1.2] - Hotfix
+### Hotfix
+- Rollback of hotfix 2.1.1.
+
 ## [2.1.1] - Hotfix
 ### Hotfix
 - Setted default accuracy argument in percentile_approx spark function calls.
