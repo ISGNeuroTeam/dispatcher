@@ -22,7 +22,7 @@ class OTLStatsTest extends CommandTest {
   }
 
   test("Test 2. Command: | stats count by absent_column") {
-    val actual = execute(""" stats count by absent_column""") //count number of null values
+    val actual = execute(""" stats p85(random_Field)""") //count number of null values
     val expected = """[
                      |{"count":10}
                      |]""".stripMargin

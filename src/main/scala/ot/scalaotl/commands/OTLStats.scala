@@ -2,11 +2,11 @@ package ot.scalaotl
 package commands
 
 import org.apache.spark.sql.types.{StringType, StructField, StructType}
-import ot.scalaotl.parsers.{StatsParser, WildcardParser}
-import ot.scalaotl.static.StatsFunctions
+import org.apache.spark.sql.{DataFrame, Row}
 import ot.scalaotl.extensions.DataFrameExt._
 import ot.scalaotl.extensions.StringExt._
-import org.apache.spark.sql.{DataFrame, Row}
+import ot.scalaotl.parsers.{StatsParser, WildcardParser}
+import ot.scalaotl.static.StatsFunctions
 
 class OTLStats(sq: SimpleQuery) extends OTLBaseCommand(sq, _seps = Set("by")) with StatsParser with WildcardParser {
   val requiredKeywords = Set.empty[String]
@@ -16,12 +16,26 @@ class OTLStats(sq: SimpleQuery) extends OTLBaseCommand(sq, _seps = Set("by")) wi
   override val fieldsGenerated: List[String] = getFieldsGenerated(returns)
 
   override def transform(_df: DataFrame): DataFrame = {
+    val dd = _df.rdd
+    val dLastVal = dd.zipWithUniqueId.map(_.swap).top(1)(Ordering[Long].on(_._1)).headOption.map(_._2)
+    val drLastVal = dLastVal.get.getAs[String]("__well_num")
+
+    /*val repartDf = _df.repartition(1).toDF
+    val sortList = List("_time").intersect(_df.columns.toList).map(x => x.addSurroundedBackticks).map(x => asc(x))
+    val sortedDf = repartDf.sort(sortList: _*)
+    val rdd = sortedDf.rdd
+    val dCount = rdd.count()
+    val parts = rdd.getNumPartitions
+    val lastVal = rdd.zipWithUniqueId.map(_.swap).top(1)(Ordering[Long].on(_._1)).headOption.map(_._2)
+    val rLastVal = lastVal.get.getAs[String]("__well_num")*/
     // Sort DF if "earliest" or "latest" functions
     val sortNeeded = returns.funcs.map(_.func).intersect(List("earliest", "latest")).nonEmpty
-    val dfSorted = if (sortNeeded) _df.orderBy("_time") else _df
+    val workDf = _df.withFake
+    //val w = Window.partitionBy("__fake__").orderBy("_time")
+    val dfSorted = if (sortNeeded) workDf.orderBy("_time") else workDf
 
     // Calculate evaluated field. Add __fake__ column for possible 'count' function
-    val dfWithEvals = StatsFunctions.calculateEvals(returns.evals, dfSorted).withFake
+    val dfWithEvals = StatsFunctions.calculateEvals(returns.evals, dfSorted)
 
     // Replace wildcards with actual column names
     val cols: Array[String] = dfWithEvals.columns
@@ -45,6 +59,7 @@ class OTLStats(sq: SimpleQuery) extends OTLBaseCommand(sq, _seps = Set("by")) wi
       case _ => StatsFunctions.applyFuncs(rWcFunks, rdfWithEvals)
     }
     val serviceFields = dfCalculated.columns.filter(x => x.matches("__.*__") || x.startsWith("__fake__"))
+    val dfView = dfCalculated.collect()
     dfCalculated.dropFake.drop(serviceFields: _*)
   }
 
