@@ -16,8 +16,9 @@ class OTLDelta(sq: SimpleQuery) extends OTLBaseCommand(sq) with ReplaceParser {
     returns.fields.foldLeft(_df) {
       case (accum, ReturnField(newfield, field)) =>
         val nf = if (newfield == field) s"delta($field)" else newfield
+        val workAccum = accum.repartition(1)
         //Indexing of dataframe
-        var extendedAccum = accum.withColumn("__id__", monotonically_increasing_id()).withColumn("zero", lit(0)).withColumn("p", lit(p + 1))
+        var extendedAccum = workAccum.withColumn("__id__", monotonically_increasing_id()).withColumn("zero", lit(0)).withColumn("p", lit(p + 1))
         //Creating of dataframe with columns whose values contain sliding partitioning
         //Cycle to p - size of delta
         for (i <- 0 to p) {
@@ -45,7 +46,7 @@ class OTLDelta(sq: SimpleQuery) extends OTLBaseCommand(sq) with ReplaceParser {
             col("d" + i)).when(preCalcDeltaWithRemainderAccum("rm") < preCalcDeltaWithRemainderAccum("zero"), col("d0")).otherwise(col(nf)))
           calcDeltaAccum = preCalcDeltaWithDeductibleValsAccum.drop("d" + i, "item" + i)
         }
-        calcDeltaAccum = calcDeltaAccum.drop("rm", "zero", "__id__", "p", "start_p")
+        calcDeltaAccum = calcDeltaAccum.drop("__id__", "rm", "zero", "p", "start_p")
         //Delta value calced
         calcDeltaAccum.withColumn(nf, col(field) - col(nf))
     }

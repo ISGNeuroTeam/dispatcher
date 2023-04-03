@@ -16,13 +16,13 @@ class OTLStatsTest extends CommandTest {
   test("Test 1. Command: | stats. Multiple words in 'as' statement") {
     val actual = execute(""" stats min(serialField) as "min sf", max(random_Field) as maxrf """)
     val expected = """[
-      |{"min sf":"0", "maxrf":"60"}
+                     |{"min sf":"0", "maxrf":"60"}
     ]""".stripMargin
     assert(jsonCompare(actual, expected), f"Result : $actual\n---\nExpected : $expected")
   }
 
   test("Test 2. Command: | stats count by absent_column") {
-    val actual = execute(""" stats p85(random_Field)""") //count number of null values
+    val actual = execute(""" stats count by absent_column""") //count number of null values
     val expected = """[
                      |{"count":10}
                      |]""".stripMargin
