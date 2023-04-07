@@ -79,6 +79,21 @@ Untested but realized commands:
 * transpose  
 * outputlookup
 
+## Window functions performance problem
+
+There are commands that have performance problems on large amounts of data (commands built on spark window functions): appendCols, dedup, delta, filldown, head, eval, stats, streamstats, tail, top, lookup, latestrow, rare.
+These problems are internal to Spark and cannot be resolved as part of the platform development process. To solve the problem, platform users are recommended to reduce the amount of data to which these commands will be applied (by filtering or limiting).
+
+## For the platform administrator: 
+### spark configuration options to increase the performance of problematic commands:
+* spark.sql.shuffle.partitions. Default value: 5000. Increase it to increase performance, but be careful: large values can cause commands to fail at very small volumes.
+
+* spark.driver.maxResultSize. Default value: 6G. Increase according to hardware capabilities.
+
+* spark.default.parallelism. Default value: 8. Adjust according to the situation and hardware capabilities.
+
+* spark.executor.cores. Default value: 4. Adjust according to the situation and hardware capabilities
+
 ## Running the tests
 
 sbt test

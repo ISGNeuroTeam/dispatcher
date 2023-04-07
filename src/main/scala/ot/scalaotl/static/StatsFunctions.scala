@@ -1,16 +1,14 @@
 package ot.scalaotl
 package static
 
+import org.apache.spark.sql.functions.expr
+import org.apache.spark.sql.{Column, DataFrame}
 import ot.scalaotl.StatsFunc
 import ot.scalaotl.commands.OTLEval
-import ot.scalaotl.extensions.DataFrameExt._
 import ot.scalaotl.extensions.ColumnExt._
-import ot.scalaotl.extensions.StringExt._
+import ot.scalaotl.extensions.DataFrameExt._
 
 import scala.util.matching.Regex
-
-import org.apache.spark.sql.{ Column, DataFrame }
-import org.apache.spark.sql.functions.expr
 
 object StatsFunctions {
   val funclist = List("max", "min", "dc", "distinct_count", "earliest", "latest", "count", "p\\d+", "approxdc", "avg", "mean",
