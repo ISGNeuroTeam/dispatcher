@@ -20,7 +20,7 @@ class OTLJoinTest extends CommandTest {
 
   test("Test 0. Command: | join with out null columns") {
 
-    val ssQuery = createQuery("eval random_Field=null | table serialField, random_Field")
+    val ssQuery = createQuery("eval random_Field=serialField*10 | table serialField, random_Field")
     val cacheDF = new Converter(ssQuery).run
     val cacheMap = Map("id1" -> cacheDF)
 

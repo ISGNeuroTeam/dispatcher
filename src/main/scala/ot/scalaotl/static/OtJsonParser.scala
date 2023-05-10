@@ -1,10 +1,9 @@
 package ot.scalaotl
 package static
 
+import org.apache.spark.sql.functions.udf
 import org.json4s._
 import org.json4s.native.JsonMethods._
-import org.apache.spark.sql.functions.udf
-import scala.reflect.runtime.universe._
 
 import scala.util.matching.Regex
 
@@ -62,6 +61,7 @@ class OtJsonParser extends Serializable {
   def parseSpaths(jsonStr: String, spaths: Set[String]): Map[String, String] = {
   val json = parse(jsonStr)
     val extracted = json.extract[Map[String,Any]]
+    val fictFields = spaths.diff(extracted.keys.toSet)
     //val flattened =
       flattenWithFilter(extracted,"", spaths.map(_.replace("{}","\\{\\d+\\}").replace("*",".*").r).toList );
 //    flattened.toList.groupBy(_._1.replaceAll("\\{\\d+\\}","{}")).map{case (k,v) => (k, v.sortBy(_._1).map(_._2))}

@@ -125,6 +125,7 @@ class RawRead(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLIndexes with E
         try {
           // Read index data (only _time and _raw) and make field extraction
           val fdfe: DataFrame = extractFields(s.search())
+          val fdfeView = fdfe.collect()
           // If the index for some reason already contained an index field, it will be removed
           // because the value of the index field may differ from the name of the index directory
           val ifdfe = if (fieldsUsedInFullQuery.contains("index"))
@@ -196,13 +197,15 @@ class RawRead(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLIndexes with E
     val stfeFieldsStr = extractedFields.map(x => s""""${x.replaceAll("\\{(\\d+)}", "{}")}"""").mkString(", ")
     val mdf = df.withColumn("__fields__", expr(s"""array($stfeFieldsStr)"""))
       .withColumn("stfe", udf(col("_raw"), col("__fields__")))
+    val mdfView = mdf.collect()
     val fields: Seq[String] = if (extractedFields.exists(_.contains("*"))) {
       val sdf = mdf.agg(flatten(collect_set(map_keys(col("stfe")))).as("__schema__"))
+      val sdfView = sdf.collect()
       sdf.first.getAs[Seq[String]](0)
     } else extractedFields
     val existedFields = mdf.notNullColumns
     fields.foldLeft(mdf) { (acc, f) => {
-      if (!existedFields.contains(f)) {
+      val res = if (!existedFields.contains(f)) {
         if (f.contains("{}"))
           acc.withColumn(f, col("stfe")(f))
         else {
@@ -212,6 +215,9 @@ class RawRead(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLIndexes with E
           acc.withColumn(f, col("stfe")(f.replaceFirst("\\{\\d+}", "{}"))(index))
         }
       } else acc
+      val resView = res.collect()
+      val a = 0
+      res
     }
     }.drop("__fields__", "stfe")
   }
@@ -223,6 +229,7 @@ class RawRead(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLIndexes with E
    * @return [[DataFrame]]  - outgoing dataframe with OTL-command results
    */
   override def transform(_df: DataFrame): DataFrame = {
+    val dfView = _df.collect()
     log.debug(s"searchId = $searchId queryMap: $indexQueriesMap")
     val dfInit = searchMap(indexQueriesMap)
     val dfLimit = getKeyword("limit") match {
