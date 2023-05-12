@@ -3,7 +3,6 @@ package commands
 
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.DataFrame
-import org.apache.spark.sql.functions.lit
 import ot.AppConfig.{config, getLogLevel}
 import ot.dispatcher.sdk.core.CustomException.{E00012, E00013, E00014}
 import ot.scalaotl.extensions.StringExt._
@@ -121,14 +120,15 @@ abstract class OTLBaseCommand(sq: SimpleQuery, _seps: Set[String] = Set.empty) e
     validateArgs()
     val nullFields = fieldsUsed.distinct.map(_.stripBackticks()).diff(_df.columns.map(_.stripBackticks())).filter(!_.contains("*"))
     val _dfView = _df.collect()
-    val ndf = nullFields.foldLeft(_df) { (acc, col) => acc.withColumn(col, lit(null)) }
+    val ndf = _df
+      //nullFields.foldLeft(_df) { (acc, col) => acc.withColumn(col, lit(null)) }
     val ndfView = ndf.collect()
     Try(loggedTransform(ndf)) match {
       case Success(df) => df
       case Failure(ex) if ex.getClass.getSimpleName.contains("CustomException") =>
         log.error(ex.getMessage)
         throw ex
-      //Working with udf exceptions when call df.show
+      //Working with udf exceptions when call df.show+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
       case Failure(ex: InvocationTargetException) =>
         val exception = ex.getTargetException match {
           case e1 if !e1.getMessage.startsWith("Job aborted due to stage failure") => e1

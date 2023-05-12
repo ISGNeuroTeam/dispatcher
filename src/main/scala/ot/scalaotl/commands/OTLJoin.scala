@@ -37,7 +37,7 @@ class OTLJoin(sq: SimpleQuery) extends OTLBaseCommand(sq) {
         val joinedDf = workDf.join(workJdf, joinOn, getKeyword("type").getOrElse("left"))
         val joinedView = joinedDf.collect()
         val resultDf = notJoinBothCols.foldLeft(joinedDf) { case (accum, item) =>
-          accum.withColumn(item, when(accum(item + rightSide).isNull, col(item + leftSide)).otherwise(col(item + rightSide)))
+          accum.withColumn(item, when(accum(item + "rightSide").isNull, col(item + leftSide)).otherwise(col(item + rightSide)))
             .drop(item + leftSide).drop(item + rightSide)
         }
         if (getKeyword("max").getOrElse("0") == "1") {
