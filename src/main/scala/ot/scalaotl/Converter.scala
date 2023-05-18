@@ -93,14 +93,19 @@ class Converter(otlQuery: OTLQuery, cache: Map[String, DataFrame]) extends OTLSp
   def run = {
     val dfView = df.collect()
     val a = 0
-    transformers.foldLeft(df) {
+    val resultDf = transformers.foldLeft(df) {
       (accum, tr) =>
       {
         val accumView = accum.collect()
-        if (tr.getClass.getName.contains("OTLRead") || tr.getClass.getName.contains("OTLInputlookup") || tr.getClass.getName.contains("OTLLookup") || tr.getClass.getName.contains("RawRead") || tr.getClass.getName.contains("FullRead")) tr.setFieldsUsedInFullQuery(fieldsUsed)
+        //if (tr.getClass.getName.contains("OTLRead") || tr.getClass.getName.contains("OTLInputlookup") || tr.getClass.getName.contains("OTLLookup") || tr.getClass.getName.contains("RawRead") || tr.getClass.getName.contains("FullRead")) tr.setFieldsUsedInFullQuery(fieldsUsed)
         tr.safeTransform(accum)
       }
     }
+    val lastTransformer = transformers.last
+    if (lastTransformer.getClass.getName.contains("OTLField") && !lastTransformer.fieldsUsed.contains("_raw"))
+      resultDf.drop("_raw")
+    else
+      resultDf
   }
 
   def findSubsearches(s: String) = {

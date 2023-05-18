@@ -3,10 +3,14 @@ package commands
 
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.DataFrame
+import org.apache.spark.sql.expressions.UserDefinedFunction
+import org.apache.spark.sql.functions.{collect_set, flatten, map_keys}
 import ot.AppConfig.{config, getLogLevel}
 import ot.dispatcher.sdk.core.CustomException.{E00012, E00013, E00014}
+import ot.scalaotl.extensions.DataFrameExt._
 import ot.scalaotl.extensions.StringExt._
 import ot.scalaotl.parsers._
+import ot.scalaotl.static.FieldExtractor
 import ot.scalaotl.utils.logging.StatViewer
 
 import scala.util.{Failure, Success, Try}
@@ -80,6 +84,7 @@ abstract class OTLBaseCommand(sq: SimpleQuery, _seps: Set[String] = Set.empty) e
   }
 
   def loggedTransform(_df: DataFrame): DataFrame = {
+    val dfView = _df.collect()
     log.debug(f"[SearchId:${sq.searchId}] ======= Starting command $commandname ========")
     log.debug(f"[SearchId:${sq.searchId}]Starting query with args : ${sq.args}," +
       f" id: ${sq.searchId}, " +
@@ -123,7 +128,9 @@ abstract class OTLBaseCommand(sq: SimpleQuery, _seps: Set[String] = Set.empty) e
     val ndf = _df
       //nullFields.foldLeft(_df) { (acc, col) => acc.withColumn(col, lit(null)) }
     val ndfView = ndf.collect()
-    Try(loggedTransform(ndf)) match {
+    val workDf = makeFieldExtraction(ndf, fieldsUsed.map(_.stripBackticks).diff(ndf.columns), FieldExtractor.extractUDF)
+    val workDfView = workDf.collect()
+    Try(loggedTransform(workDf)) match {
       case Success(df) => df
       case Failure(ex) if ex.getClass.getSimpleName.contains("CustomException") =>
         log.error(ex.getMessage)
@@ -143,5 +150,37 @@ abstract class OTLBaseCommand(sq: SimpleQuery, _seps: Set[String] = Set.empty) e
         log.error(f"Error in  '$commandname' command: ${ex.getMessage}")
         throw E00014(sq.searchId, commandname, ex)
     }
+  }
+
+  private def makeFieldExtraction(df: DataFrame, extractedFields: Seq[String], udf: UserDefinedFunction): DataFrame = {
+
+    import org.apache.spark.sql.functions.{col, expr}
+
+    val stfeFieldsStr = extractedFields.map(x => s""""${x.replaceAll("\\{(\\d+)}", "{}")}"""").mkString(", ")
+    val mdf = df.withColumn("__fields__", expr(s"""array($stfeFieldsStr)"""))
+      .withColumn("stfe", udf(col("_raw"), col("__fields__")))
+    val mdfView = mdf.collect()
+    val fields: Seq[String] = if (extractedFields.exists(_.contains("*"))) {
+      val sdf = mdf.agg(flatten(collect_set(map_keys(col("stfe")))).as("__schema__"))
+      val sdfView = sdf.collect()
+      sdf.first.getAs[Seq[String]](0)
+    } else extractedFields
+    val existedFields = mdf.notNullColumns
+    fields.foldLeft(mdf) { (acc, f) => {
+      val res = if (!existedFields.contains(f)) {
+        if (f.contains("{}"))
+          acc.withColumn(f, col("stfe")(f))
+        else {
+          val m = "\\{(\\d+)}".r.pattern.matcher(f)
+          var index = if (m.find()) m.group(1).toInt - 1 else 0
+          index = if (index < 0) 0 else index
+          acc.withColumn(f, col("stfe")(f.replaceFirst("\\{\\d+}", "{}"))(index))
+        }
+      } else acc
+      val resView = res.collect()
+      val a = 0
+      res
+    }
+    }.drop("__fields__", "stfe")
   }
 }

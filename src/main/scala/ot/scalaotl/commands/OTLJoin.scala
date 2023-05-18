@@ -29,15 +29,16 @@ class OTLJoin(sq: SimpleQuery) extends OTLBaseCommand(sq) {
       log.debug(f"[SearchId:${sq.searchId}] Columns join on: ${joinOn.mkString(", ")}")
       log.debug(f"[SearchId:${sq.searchId}] Columns in both dataframes: ${bothCols.mkString(", ")}")
       if (joinOn.forall(bothCols.contains)) {
-        notJoinBothCols = bothCols.diff(joinOn)
-        val workDf = createStructChangedDf(_df, leftSide)
+        notJoinBothCols = bothCols.diff(joinOn.union(List("_raw")))
+        val preWorkDf = if (!jdf.isEmpty && jdf.columns.contains("_raw")) _df.drop("_raw") else _df
+        val workDf = createStructChangedDf(preWorkDf, leftSide)
         val workDfView = workDf.collect()
         val workJdf = createStructChangedDf(jdf, rightSide)
         val workJdfView = workJdf.collect()
         val joinedDf = workDf.join(workJdf, joinOn, getKeyword("type").getOrElse("left"))
         val joinedView = joinedDf.collect()
         val resultDf = notJoinBothCols.foldLeft(joinedDf) { case (accum, item) =>
-          accum.withColumn(item, when(accum(item + "rightSide").isNull, col(item + leftSide)).otherwise(col(item + rightSide)))
+          accum.withColumn(item, when(accum(item + rightSide).isNull, col(item + leftSide)).otherwise(col(item + rightSide)))
             .drop(item + leftSide).drop(item + rightSide)
         }
         if (getKeyword("max").getOrElse("0") == "1") {
@@ -52,8 +53,8 @@ class OTLJoin(sq: SimpleQuery) extends OTLBaseCommand(sq) {
 
   private def createStructChangedDf(df: DataFrame, side: String): DataFrame = {
     notJoinBothCols.foldLeft(df) { case (accum, item) =>
-      val isNotAllNull = accum.select(col(item)).limit(1).withColumn("fct", when(accum(item) === "__NULL__", 1).otherwise(0))
-      !isNotAllNull.filter(r => r.get(0) == 1).isEmpty
+      /*val isNotAllNull = accum.select(col(item)).limit(1).withColumn("fct", when(accum(item) === "__NULL__", 1).otherwise(0))
+      !isNotAllNull.filter(r => r.get(0) == 1).isEmpty*/
       accum.withColumn(item + side, col(item)).drop(item)
     }
   }
