@@ -101,10 +101,10 @@ class Converter(otlQuery: OTLQuery, cache: Map[String, DataFrame]) extends OTLSp
         tr.safeTransform(accum)
       }
     }
-    val lastTransformer = transformers.last
-    if (lastTransformer.getClass.getName.contains("OTLField") && !lastTransformer.fieldsUsed.contains("_raw"))
+    /*val lastTransformer = transformers.last
+    if (transformers.exists(_.getClass.getName.contains("OTLField")) && !lastTransformer.fieldsUsed.contains("_raw"))
       resultDf.drop("_raw")
-    else
+    else*/
       resultDf
   }
 

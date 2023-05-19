@@ -46,6 +46,34 @@ class OTLJoinTest extends CommandTest {
     assert(jsonCompare(actual, expected), f"Result : $actual\n---\nExpected : $expected")
   }
 
+  test("Test 00. Command: | join with out null columns") {
+
+    val ssQuery = createQuery("eval random_Field=serialField*10 | table serialField, random_Field")
+    val cacheDF = new Converter(ssQuery).run
+    val cacheMap = Map("id1" -> cacheDF)
+
+    val otlQuery = createQuery("table serialField, random_Field | join serialField subsearch=id1")
+    val resultDF = new Converter(otlQuery, cacheMap).run
+
+
+    val actual = resultDF.toJSON.collect().mkString("[\n", ",\n", "\n]")
+    val expected =
+      """[
+        |{"serialField":"7","random_Field":"70.0"},
+        |{"serialField":"3","random_Field":"30.0"},
+        |{"serialField":"8","random_Field":"80.0"},
+        |{"serialField":"0","random_Field":"0.0"},
+        |{"serialField":"5","random_Field":"50.0"},
+        |{"serialField":"6","random_Field":"60.0"},
+        |{"serialField":"9","random_Field":"90.0"},
+        |{"serialField":"1","random_Field":"10.0"},
+        |{"serialField":"4","random_Field":"40.0"},
+        |{"serialField":"2","random_Field":"20.0"}
+        |]
+        |""".stripMargin
+    assert(jsonCompare(actual, expected), f"Result : $actual\n---\nExpected : $expected")
+  }
+
   test("Test 1. Command: | join with null columns") {
 
     val ssQuery = createQuery("eval SF=serialField*10 | table serialField, SF, NCol")

@@ -63,7 +63,8 @@ class OTLFields(sq: SimpleQuery) extends OTLBaseCommand(sq) with WildcardParser 
     // field-list from the query
     val retCols = (returns.flatFields
       .filter(x => !x.equals(act))
-      .map(_.replace("\"", ""))).union(List("_raw".addSurroundedBackticks))
+      .map(_.replace("\"", "")))
+      //.union(List("_raw".addSurroundedBackticks))
     // list of fields from the df matching regular expressions in the field-list from the query
     val retColsWc = returnsWithWc(initCols, returns).flatFields
       .filter(x => !x.equals(act))
