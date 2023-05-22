@@ -193,7 +193,7 @@ class RawRead(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLIndexes with E
   private def makeFieldExtraction(df: DataFrame, extractedFields: Seq[String], udf: UserDefinedFunction): DataFrame = {
 
     import org.apache.spark.sql.functions.{col, expr}
-
+    val dfView = df.collect()
     val stfeFieldsStr = extractedFields.map(x => s""""${x.replaceAll("\\{(\\d+)}", "{}")}"""").mkString(", ")
     val mdf = df.withColumn("__fields__", expr(s"""array($stfeFieldsStr)"""))
       .withColumn("stfe", udf(col("_raw"), col("__fields__")))
