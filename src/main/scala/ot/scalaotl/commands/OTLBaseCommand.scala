@@ -27,7 +27,9 @@ abstract class OTLBaseCommand(sq: SimpleQuery, _seps: Set[String] = Set.empty) e
   val requiredKeywords: Set[String]
   val optionalKeywords: Set[String]
 
-  def fieldsUsed: List[String] = getFieldsUsed(returns)
+  val vls = positionalsMap.values
+  vls.map(frmb => frmb)
+  def fieldsUsed: List[String] = getFieldsUsed(returns) ++ (positionalsMap.values.toList.flatMap(f => f.asInstanceOf[Positional].values))
 
   def fieldsGenerated: List[String] = getFieldsGenerated(returns)
 
