@@ -265,6 +265,8 @@ abstract class CommandTest extends FunSuite with BeforeAndAfterAll {
   }
 
   def compareDataFrames(df_actual: DataFrame, df_expected: DataFrame): Assertion={
+    val actualView = df_actual.collect()
+    val expView = df_expected.collect()
     assert(
       df_actual.schema == df_expected.schema,
       "DataFrames schemas should be equal"

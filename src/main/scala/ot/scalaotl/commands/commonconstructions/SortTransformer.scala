@@ -40,10 +40,12 @@ class SortTransformer(sq: SimpleQuery, context: Option[SortContext] = None) exte
       .map { x => if (sortCols(x) == "+") asc(x) else desc(x) }
       .toList
 
-    keywordsMap.get("count") match {
+    val rs = keywordsMap.get("count") match {
       case Some(Keyword("count", value)) => _df.sort(sortList: _*).limit(value.toInt)
       case _ => _df.sort(sortList: _*)
     }
+    val resView =rs.collect()
+    rs
   }
 }
 
