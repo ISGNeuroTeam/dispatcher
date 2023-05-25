@@ -3,7 +3,7 @@ package commands
 
 import org.apache.spark.sql.expressions.UserDefinedFunction
 import org.apache.spark.sql.functions._
-import org.apache.spark.sql.{Column, DataFrame, functions => F}
+import org.apache.spark.sql.{AnalysisException, Column, DataFrame, functions => F}
 import org.json4s._
 import org.json4s.native.JsonMethods._
 import ot.scalaotl.config.OTLIndexes
@@ -44,6 +44,7 @@ import scala.collection.mutable.ListBuffer
 class RawRead(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLIndexes with ExpressionParser with WildcardParser {
   val requiredKeywords = Set.empty[String]
   val optionalKeywords: Set[String] = Set("limit", "subsearch")
+  var ifdfe: DataFrame = spark.emptyDataFrame
   val SimpleQuery(_args, searchId, cache, subsearches, tws, twf, stfe, preview) = sq
   // Command has no optional keywords, nothing to validate
   override def validateOptionalKeywords(): Unit = ()
@@ -128,12 +129,17 @@ class RawRead(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLIndexes with E
           val fdfeView = fdfe.collect()
           // If the index for some reason already contained an index field, it will be removed
           // because the value of the index field may differ from the name of the index directory
-          val ifdfe = if (fieldsUsedInFullQuery.contains("index"))
+          ifdfe = if (fieldsUsedInFullQuery.contains("index"))
             fdfe.drop("index").withColumn("index", lit(item._1))
           else
             fdfe
           // Dataframe filtering by _raw field
-          val fdf: DataFrame = if (modifiedQuery == "") ifdfe else ifdfe.filter(modifiedQuery)
+          val fdf: DataFrame = if (modifiedQuery == "")
+            ifdfe
+          /*else if (modifiedQuery.split(" ").intersect(dfColumns).size == 0)
+            ifdfe.filter("_time = 0")*/
+          else
+            ifdfe.filter(modifiedQuery)
           val fdfView = fdf.collect
           val cols1 = fdf.columns.map(_.stripBackticks().addSurroundedBackticks).toSet
           val cols2 = accum._1.columns.map(_.stripBackticks().addSurroundedBackticks).toSet
@@ -145,6 +151,7 @@ class RawRead(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLIndexes with E
           if (totalCols.nonEmpty) (fdf.select(expr(cols1, totalCols.toSet): _*).union(accum._1.select(expr(cols2, totalCols.toSet): _*)), accum._2)
           else accum
         } catch {
+          case aex: AnalysisException => if (aex.message.contains("cannot resolve")) (ifdfe.filter("_time = 0"), accum._2) else (accum._1, aex +: accum._2)
           case ex: Exception => (accum._1, ex +: accum._2)
         }
     }
@@ -232,7 +239,7 @@ class RawRead(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLIndexes with E
   override def transform(_df: DataFrame): DataFrame = {
     val dfView = _df.collect()
     log.debug(s"searchId = $searchId queryMap: $indexQueriesMap")
-    val dfInit = searchMap(indexQueriesMap)
+    val dfInit = searchMap(indexQueriesMap, _df.columns.toList)
     val dfLimit = getKeyword("limit") match {
       case Some(lim) => log.debug(s"[SearchID:$searchId] Dataframe is limited to $lim"); dfInit.limit(100000)
       case _ => dfInit
