@@ -113,7 +113,7 @@ class RawRead(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLIndexes with E
    * @param query [[Map[String, Map[String, String]]] - source query
    * @return [[DataFrame]] - dataframe with index time fields
    */
-  private def searchMap(query: Map[String, Map[String, String]]): DataFrame = {
+  private def searchMap(query: Map[String, Map[String, String]], dfColumns: List[String]): DataFrame = {
     val (df, allExceptions) = query.foldLeft((spark.emptyDataFrame, List[Exception]())) {
       case (accum, item) =>
         log.debug(s"[SearchID:$searchId]Query is " + item)
@@ -133,7 +133,8 @@ class RawRead(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLIndexes with E
           else
             fdfe
           // Dataframe filtering by _raw field
-          val fdf :DataFrame = if (modifiedQuery == "") ifdfe else ifdfe.filter(modifiedQuery)
+          val fdf: DataFrame = if (modifiedQuery == "") ifdfe else ifdfe.filter(modifiedQuery)
+          val fdfView = fdf.collect
           val cols1 = fdf.columns.map(_.stripBackticks().addSurroundedBackticks).toSet
           val cols2 = accum._1.columns.map(_.stripBackticks().addSurroundedBackticks).toSet
           val totalCols = (cols1 ++ cols2).toList

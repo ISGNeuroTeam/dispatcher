@@ -134,6 +134,7 @@ abstract class OTLBaseCommand(sq: SimpleQuery, _seps: Set[String] = Set.empty) e
     val fUsed = fieldsUsed.map(_.stripBackticks).diff(ndf.columns)
     val workDf = if (ndf.columns.contains("_raw")) makeFieldExtraction(ndf, fieldsUsed.map(_.stripBackticks).diff(ndf.columns), FieldExtractor.extractUDF) else ndf
     val workDfView = workDf.collect()
+    val workCols = workDf.columns
     Try(loggedTransform(workDf)) match {
       case Success(df) => df
       case Failure(ex) if ex.getClass.getSimpleName.contains("CustomException") =>
