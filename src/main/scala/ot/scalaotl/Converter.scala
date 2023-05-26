@@ -98,6 +98,7 @@ class Converter(otlQuery: OTLQuery, cache: Map[String, DataFrame]) extends OTLSp
       {
         val accumView = accum.collect()
         //if (tr.getClass.getName.contains("OTLRead") || tr.getClass.getName.contains("OTLInputlookup") || tr.getClass.getName.contains("OTLLookup") || tr.getClass.getName.contains("RawRead") || tr.getClass.getName.contains("FullRead")) tr.setFieldsUsedInFullQuery(fieldsUsed)
+        if (tr.getClass.getName.contains("OTLFilldown")) tr.setFieldsUsedInFullQuery(fieldsUsed)
         tr.safeTransform(accum)
       }
     }
