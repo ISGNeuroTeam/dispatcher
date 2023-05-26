@@ -131,8 +131,8 @@ abstract class OTLBaseCommand(sq: SimpleQuery, _seps: Set[String] = Set.empty) e
       //nullFields.foldLeft(_df) { (acc, col) => acc.withColumn(col, lit(null)) }
     val ndfView = ndf.collect()
     val preFUsed = fieldsUsed.map(_.stripBackticks)
-    val fUsed = fieldsUsed.map(_.stripBackticks).diff(ndf.columns)
-    val workDf = if (fUsed.nonEmpty) makeFieldExtraction(ndf, fUsed, FieldExtractor.extractUDF) else ndf
+    val fUsed = fieldsUsed.map(_.stripBackticks).diff(ndf.columns).filterNot(_ == "+")
+    val workDf = if (fUsed.nonEmpty && ndf.columns.contains("_raw")) makeFieldExtraction(ndf, fUsed, FieldExtractor.extractUDF) else ndf
     val workDfView = workDf.collect()
     val workCols = workDf.columns
     Try(loggedTransform(workDf)) match {
