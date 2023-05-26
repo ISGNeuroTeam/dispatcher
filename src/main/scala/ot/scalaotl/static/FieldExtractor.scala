@@ -2,8 +2,6 @@ package ot.scalaotl
 package static
 
 import org.apache.spark.sql.expressions.UserDefinedFunction
-
-import java.util.regex.Pattern
 import org.apache.spark.sql.functions.udf
 import org.json4s._
 
@@ -21,8 +19,8 @@ class FieldExtractor extends Serializable {
    * @param fields [[ Set[String] ]] - set of fields for extraction
    * @return [[ Map[String, Any] ]] - map with extracted fields
    */
-  def parseJson(line: String, fields: Set[String]): Map[String, Any] = {
-    Try(OtJsonParser.jp.parseSpaths(line, fields)) match {
+  def parseJson(line: String, fields: Set[String], withNotRawFields:Boolean = false): Map[String, Any] = {
+    Try(OtJsonParser.jp.parseSpaths(line, fields, withNotRawFields)) match {
       case Success(v)  => v
       case Failure(ex) => Map.empty
     }
@@ -66,9 +64,9 @@ class FieldExtractor extends Serializable {
    * @param regexes [[ Map[String, String]) ]] - map with regexes (not used at the moment)
    * @return [[ Map[String, String] ]] - map with extracted fields
    */
-  def parseMVAny(line: String, fields: Set[String], regexes: Map[String, String]): Map[String, List[String]] = {
+  def parseMVAny(line: String, fields: Set[String], withNotRawFields:Boolean = false): Map[String, List[String]] = {
     val modifLine = line.replace("\\\"", quotesSub)
-    var parsed = parseJson(modifLine, fields) match {
+    var parsed = parseJson(modifLine, fields, withNotRawFields) match {
       case l: Map[String, Any] =>
         l.map(
           e => (e._1, e._2 match {
@@ -159,6 +157,6 @@ object FieldExtractor {
    *   .withColumn("parse", FieldExtractor.extractUDF(F.col("raw"), F.col("fields")))
    *   .show
    */
-  def extractUDF: UserDefinedFunction = udf((str: String, fields: Seq[String]) => fe.parseMVAny(str, fields.toSet, Map()))
+  def extractUDF: UserDefinedFunction = udf((str: String, fields: Seq[String], withNotRaw: Boolean) => fe.parseMVAny(str, fields.toSet, withNotRaw))
 
 }

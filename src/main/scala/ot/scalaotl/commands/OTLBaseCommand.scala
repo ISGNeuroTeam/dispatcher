@@ -4,7 +4,7 @@ package commands
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.expressions.UserDefinedFunction
-import org.apache.spark.sql.functions.{collect_set, flatten, map_keys}
+import org.apache.spark.sql.functions.{collect_set, flatten, lit, map_keys}
 import ot.AppConfig.{config, getLogLevel}
 import ot.dispatcher.sdk.core.CustomException.{E00012, E00013, E00014}
 import ot.scalaotl.extensions.DataFrameExt._
@@ -128,11 +128,11 @@ abstract class OTLBaseCommand(sq: SimpleQuery, _seps: Set[String] = Set.empty) e
     val nullFields = fieldsUsed.distinct.map(_.stripBackticks()).diff(_df.columns.map(_.stripBackticks())).filter(!_.contains("*"))
     val _dfView = _df.collect()
     val ndf = _df
-      //nullFields.foldLeft(_df) { (acc17:00, col) => acc.withColumn(col, lit(null)) }
+      //nullFields.foldLeft(_df) { (acc, col) => acc.withColumn(col, lit(null)) }
     val ndfView = ndf.collect()
     val preFUsed = fieldsUsed.map(_.stripBackticks)
     val fUsed = fieldsUsed.map(_.stripBackticks).diff(ndf.columns)
-    val workDf = if (ndf.columns.contains("_raw")) makeFieldExtraction(ndf, fieldsUsed.map(_.stripBackticks).diff(ndf.columns), FieldExtractor.extractUDF) else ndf
+    val workDf = if (fUsed.nonEmpty) makeFieldExtraction(ndf, fUsed, FieldExtractor.extractUDF) else ndf
     val workDfView = workDf.collect()
     val workCols = workDf.columns
     Try(loggedTransform(workDf)) match {
@@ -162,8 +162,8 @@ abstract class OTLBaseCommand(sq: SimpleQuery, _seps: Set[String] = Set.empty) e
     import org.apache.spark.sql.functions.{col, expr}
 
     val stfeFieldsStr = extractedFields.map(x => s""""${x.replaceAll("\\{(\\d+)}", "{}")}"""").mkString(", ")
-    val mdf = df.withColumn("__fields__", expr(s"""array($stfeFieldsStr)"""))
-      .withColumn("stfe", udf(col("_raw"), col("__fields__")))
+    val mdf = df.withColumn("__fields__", expr(s"""array($stfeFieldsStr)""")).withColumn("boolCol", lit(true))
+      .withColumn("stfe", udf(col("_raw"), col("__fields__"), col("boolCol")))
     val mdfView = mdf.collect()
     val fields: Seq[String] = if (extractedFields.exists(_.contains("*"))) {
       val sdf = mdf.agg(flatten(collect_set(map_keys(col("stfe")))).as("__schema__"))
@@ -171,7 +171,7 @@ abstract class OTLBaseCommand(sq: SimpleQuery, _seps: Set[String] = Set.empty) e
       sdf.first.getAs[Seq[String]](0)
     } else extractedFields
     val existedFields = mdf.notNullColumns
-    fields.foldLeft(mdf) { (acc, f) => {
+    val realRes = fields.foldLeft(mdf) { (acc, f) => {
       val res = if (!existedFields.contains(f)) {
         if (f.contains("{}"))
           acc.withColumn(f, col("stfe")(f))
@@ -186,6 +186,8 @@ abstract class OTLBaseCommand(sq: SimpleQuery, _seps: Set[String] = Set.empty) e
       val a = 0
       res
     }
-    }.drop("__fields__", "stfe")
+    }.drop("__fields__", "stfe", "boolCol")
+    val realResView = realRes.collect()
+    realRes
   }
 }

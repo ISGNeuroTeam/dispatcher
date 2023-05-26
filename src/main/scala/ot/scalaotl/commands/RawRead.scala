@@ -203,8 +203,8 @@ class RawRead(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLIndexes with E
     import org.apache.spark.sql.functions.{col, expr}
     val dfView = df.collect()
     val stfeFieldsStr = extractedFields.map(x => s""""${x.replaceAll("\\{(\\d+)}", "{}")}"""").mkString(", ")
-    val mdf = df.withColumn("__fields__", expr(s"""array($stfeFieldsStr)"""))
-      .withColumn("stfe", udf(col("_raw"), col("__fields__")))
+    val mdf = df.withColumn("__fields__", expr(s"""array($stfeFieldsStr)""")).withColumn("boolCol", lit(false))
+      .withColumn("stfe", udf(col("_raw"), col("__fields__"), col("boolCol")))
     val mdfView = mdf.collect()
     val fields: Seq[String] = if (extractedFields.exists(_.contains("*"))) {
       val sdf = mdf.agg(flatten(collect_set(map_keys(col("stfe")))).as("__schema__"))
@@ -227,7 +227,7 @@ class RawRead(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLIndexes with E
       val a = 0
       res
     }
-    }.drop("__fields__", "stfe")
+    }.drop("__fields__", "stfe", "boolCol")
   }
 
   /**

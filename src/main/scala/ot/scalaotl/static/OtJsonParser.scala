@@ -58,12 +58,18 @@ class OtJsonParser extends Serializable {
     fieldMap.filter{case (k,v) => regexes.exists(_.pattern.matcher(k).matches())}
   }
 
-  def parseSpaths(jsonStr: String, spaths: Set[String]): Map[String, String] = {
+  def parseSpaths(jsonStr: String, spaths: Set[String], withNotRawFields:Boolean = false): Map[String, String] = {
   val json = parse(jsonStr)
     val extracted = json.extract[Map[String,Any]]
-    val fictFields = spaths.diff(extracted.keys.toSet)
+    val extractedKeys = extracted.keys.toSet
+    var paths: List[String] = (if(!withNotRawFields)
+      (spaths.intersect(extractedKeys).union(spaths.intersect(extractedKeys.map(_ + "{}")))).toList.distinct
+    else
+      spaths).toList
+    paths ++= extractedKeys.filter(_.contains("."))
     //val flattened =
-      flattenWithFilter(extracted,"", spaths.map(_.replace("{}","\\{\\d+\\}").replace("*",".*").r).toList );
+      flattenWithFilter(extracted,"", paths.map(_.replace("{}","\\{\\d+\\}").replace("*",".*").r)
+        .toList );
 //    flattened.toList.groupBy(_._1.replaceAll("\\{\\d+\\}","{}")).map{case (k,v) => (k, v.sortBy(_._1).map(_._2))}
 //      .filter(x => x._1.contains("{}") || !(x._2.length > 1))
   }
