@@ -1,12 +1,12 @@
 package ot.scalaotl
 package commands
 
-import ot.scalaotl.parsers.ReplaceParser
-import ot.scalaotl.config.OTLLookups
-import ot.scalaotl.extensions.StringExt._
-import ot.scalaotl.extensions.DataFrameExt._
-import org.apache.spark.sql.functions.collect_set
 import org.apache.spark.sql.DataFrame
+import org.apache.spark.sql.functions.collect_set
+import ot.scalaotl.config.OTLLookups
+import ot.scalaotl.extensions.DataFrameExt._
+import ot.scalaotl.extensions.StringExt._
+import ot.scalaotl.parsers.ReplaceParser
 
 class OTLLookup(sq: SimpleQuery) extends OTLBaseCommand(sq, _seps = Set("output", "outputnew")) with OTLLookups with ReplaceParser with OTLSparkSession {
   val requiredKeywords = Set.empty[String]
@@ -26,11 +26,12 @@ class OTLLookup(sq: SimpleQuery) extends OTLBaseCommand(sq, _seps = Set("output"
   override def fieldsUsed: List[String] = inputs.flatNewFields
 
   override def transform(_df: DataFrame): DataFrame = {
+    val dfView = _df.collect()
     val dfLookup = lookupFile match {
       case Some(path) => spark.read.option("header", "true").option("inferSchema", "true").csv(path)
       case _ => spark.emptyDataFrame
     }
-
+    val dfLookupView = dfLookup.collect()
     val _dfCols = _df.columns.toList
     val initInputCols = inputs.fields.map(_.newfield)
     val lookupInputCols = inputs.fields.map(_.field)
@@ -59,7 +60,7 @@ class OTLLookup(sq: SimpleQuery) extends OTLBaseCommand(sq, _seps = Set("output"
         val nullfields = fieldsUsedInFullQuery.intersect(_dfCols).diff(initInputCols)
 
         val dfJoined = _df.drop(nullfields: _*).join(jdfSelect, initInputCols, "left")
-
+        val dfJoinedView = dfJoined.collect()
         _dfCols.map(_.addSurroundedBackticks) match {
           case h :: t =>
 

@@ -158,7 +158,7 @@ class RawRead(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLIndexes with E
     // Throw exception if for all index get errors
     if (query.size == allExceptions.size) throw allExceptions.head
     // Add columns which are used in query but does not exist in dataframe after read (as null values)
-    val emptyCols = fieldsUsedInFullQuery
+    /*val emptyCols = fieldsUsedInFullQuery
       .map(_.stripBackticks())
       .distinct
       .filterNot(_.contains("*"))
@@ -166,7 +166,7 @@ class RawRead(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLIndexes with E
     log.debug(s"""[SearchID:$searchId] Add null cols to dataframe: [${emptyCols.mkString(", ")}]""")
     emptyCols.foldLeft(df) {
       (acc, col) => acc.withColumn(col, F.lit(null))
-    }
+    }*/
     df
   }
 
@@ -206,28 +206,35 @@ class RawRead(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLIndexes with E
     val mdf = df.withColumn("__fields__", expr(s"""array($stfeFieldsStr)""")).withColumn("boolCol", lit(false))
       .withColumn("stfe", udf(col("_raw"), col("__fields__"), col("boolCol")))
     val mdfView = mdf.collect()
-    val fields: Seq[String] = if (extractedFields.exists(_.contains("*"))) {
-      val sdf = mdf.agg(flatten(collect_set(map_keys(col("stfe")))).as("__schema__"))
-      val sdfView = sdf.collect()
-      sdf.first.getAs[Seq[String]](0)
-    } else extractedFields
-    val existedFields = mdf.notNullColumns
-    fields.foldLeft(mdf) { (acc, f) => {
-      val res = if (!existedFields.contains(f)) {
-        if (f.contains("{}"))
-          acc.withColumn(f, col("stfe")(f))
-        else {
-          val m = "\\{(\\d+)}".r.pattern.matcher(f)
-          var index = if (m.find()) m.group(1).toInt - 1 else 0
-          index = if (index < 0) 0 else index
-          acc.withColumn(f, col("stfe")(f.replaceFirst("\\{\\d+}", "{}"))(index))
-        }
-      } else acc
-      val resView = res.collect()
-      val a = 0
-      res
-    }
-    }.drop("__fields__", "stfe", "boolCol")
+    if (!mdf.isEmpty) {
+      val fields: Seq[String] = if (extractedFields.exists(_.contains("*"))) {
+        val sdf = mdf.agg(flatten(collect_set(map_keys(col("stfe")))).as("__schema__"))
+        val sdfView = sdf.collect()
+        sdf.first.getAs[Seq[String]](0)
+      } else extractedFields
+      val existedFields = mdf.notNullColumns
+      fields.foldLeft(mdf) { (acc, f) => {
+        val res = if (!existedFields.contains(f)) {
+          if (f.contains("{}"))
+            acc.withColumn(f, col("stfe")(f))
+          else {
+            val m = "\\{(\\d+)}".r.pattern.matcher(f)
+            var index = if (m.find()) m.group(1).toInt - 1 else 0
+            index = if (index < 0) 0 else index
+            val fieldExists = !acc.limit(1).select(array_contains(map_keys(col("stfe")), f.replaceFirst("\\{\\d+}", "{}"))).filter(r => r.getBoolean(0)).isEmpty
+            if (fieldExists)
+              acc.withColumn(f, col("stfe")(f.replaceFirst("\\{\\d+}", "{}"))(index))
+            else
+              acc
+          }
+        } else acc
+        val resView = res.collect()
+        val a = 0
+        res
+      }
+      }.drop("__fields__", "stfe", "boolCol")
+    } else
+      df
   }
 
   /**

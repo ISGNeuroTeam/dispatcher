@@ -62,11 +62,15 @@ class OtJsonParser extends Serializable {
   val json = parse(jsonStr)
     val extracted = json.extract[Map[String,Any]]
     val extractedKeys = extracted.keys.toSet
-    var paths: List[String] = (if(!withNotRawFields)
-      (spaths.intersect(extractedKeys).union(spaths.intersect(extractedKeys.map(_ + "{}")))).toList.distinct
+    val spf = spaths.filter(s => s.contains("{") && s.contains(".") && extractedKeys.contains(s.substring(0, s.indexOf(".") - 1))).toList
+    val substrs = spaths.filter(_.contains(".")).map(s => s.substring(0, s.indexOf(".")))
+    val bracketedExtractedKeys = extractedKeys.map(_ + "{}")
+    val paths: List[String] = (if(!withNotRawFields)
+      (spaths.intersect(extractedKeys).union(spaths.intersect(bracketedExtractedKeys))
+        .union(spaths.filter(s => s.contains("{") && s.contains(".") && (extractedKeys.union(bracketedExtractedKeys)).contains(s.substring(0, s.indexOf(".")))))).toList.distinct
     else
       spaths).toList
-    paths ++= extractedKeys.filter(_.contains("."))
+    //paths ++= extractedKeys.filter(ek => ek.contains(".") && spaths.contains(ek.substring(0, ek.indexOf(".") - 1)))
     //val flattened =
       flattenWithFilter(extracted,"", paths.map(_.replace("{}","\\{\\d+\\}").replace("*",".*").r)
         .toList );
