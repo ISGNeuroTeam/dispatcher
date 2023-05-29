@@ -1,5 +1,6 @@
 package ot.scalaotl.commands
 
+import org.apache.spark.sql.types.StringType
 import org.apache.spark.sql.{functions => F}
 import ot.scalaotl.Converter
 
@@ -29,8 +30,8 @@ class OTLFieldsTest extends CommandTest {
       "otstats", s"$test_index")
     var actual = new Converter(query).run
     var expected = readIndexDF(test_index).select(F.col("_time"), F.col("host"))
-      .withColumn("meta", F.lit(null))
-      .withColumn("junk_Field", F.lit(null))
+      .withColumn("meta", F.lit(null).cast(StringType))
+      .withColumn("junk_Field", F.lit(null).cast(StringType))
     actual = actual.select(actual.columns.sorted.toSeq.map(c => F.col(c)):_*)
     expected = expected.select(expected.columns.sorted.toSeq.map(c => F.col(c)):_*)
     compareDataFrames(actual, expected)

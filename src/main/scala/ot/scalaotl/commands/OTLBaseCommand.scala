@@ -29,7 +29,7 @@ abstract class OTLBaseCommand(sq: SimpleQuery, _seps: Set[String] = Set.empty) e
 
   val vls = positionalsMap.values
   vls.map(frmb => frmb)
-  def fieldsUsed: List[String] = getFieldsUsed(returns) ++ (positionalsMap.values.toList.flatMap(f => f.asInstanceOf[Positional].values))
+  def fieldsUsed: List[String] = (getFieldsUsed(returns) ++ (positionalsMap.values.toList.flatMap(f => f.asInstanceOf[Positional].values))).distinct
 
   def fieldsGenerated: List[String] = getFieldsGenerated(returns)
 
