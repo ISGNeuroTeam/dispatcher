@@ -125,7 +125,6 @@ abstract class OTLBaseCommand(sq: SimpleQuery, _seps: Set[String] = Set.empty) e
   def safeTransform(_df: DataFrame): DataFrame = {
     import java.lang.reflect.InvocationTargetException
     validateArgs()
-    val nullFields = fieldsUsed.distinct.map(_.stripBackticks()).diff(_df.columns.map(_.stripBackticks())).filter(!_.contains("*"))
     val _dfView = _df.collect()
     /*val ndf = nullFields.foldLeft(_df) { (acc, col) => acc.withColumn(col, lit(null)) }
       //nullFields.foldLeft(_df) { (acc, col) => acc.withColumn(col, lit(null)) }
@@ -133,6 +132,7 @@ abstract class OTLBaseCommand(sq: SimpleQuery, _seps: Set[String] = Set.empty) e
     val preFUsed = fieldsUsed.map(_.stripBackticks)
     val fUsed = fieldsUsed.map(_.stripBackticks).diff(_df.columns.map(_.stripBackticks())).filterNot(cln => cln == "+" || cln.contains("*"))
     val workDf = if (fUsed.nonEmpty && _df.columns.contains("_raw")) makeFieldExtraction(_df, fUsed, FieldExtractor.extractUDF) else _df
+    val nullFields = fieldsUsed.distinct.map(_.stripBackticks()).diff(_df.columns.map(_.stripBackticks())).filter(!_.contains("*"))
     val workDfView = workDf.collect()
     val workCols = workDf.columns
     Try(loggedTransform(workDf)) match {
