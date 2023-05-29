@@ -53,7 +53,7 @@ class OTLLookup(sq: SimpleQuery) extends OTLBaseCommand(sq, _seps = Set("output"
         case h :: t => jdf.select(h, t: _*)
         case _ => jdf
       }
-      val isIntersects = !_df.schema.toList.exists(x => initInputCols.contains(x.name) && x.dataType.typeName == "null")
+      val isIntersects = _df.schema.toList.exists(x => initInputCols.contains(x.name))
       if (isIntersects) {
         val funcs = outputCols.map(x => collect_set(x).alias(x))
 

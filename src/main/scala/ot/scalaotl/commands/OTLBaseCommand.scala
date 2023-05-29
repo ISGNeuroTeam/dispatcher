@@ -127,12 +127,12 @@ abstract class OTLBaseCommand(sq: SimpleQuery, _seps: Set[String] = Set.empty) e
     validateArgs()
     val nullFields = fieldsUsed.distinct.map(_.stripBackticks()).diff(_df.columns.map(_.stripBackticks())).filter(!_.contains("*"))
     val _dfView = _df.collect()
-    val ndf = nullFields.foldLeft(_df) { (acc, col) => acc.withColumn(col, lit(null)) }
+    /*val ndf = nullFields.foldLeft(_df) { (acc, col) => acc.withColumn(col, lit(null)) }
       //nullFields.foldLeft(_df) { (acc, col) => acc.withColumn(col, lit(null)) }
-    val ndfView = ndf.collect()
+    val ndfView = ndf.collect()*/
     val preFUsed = fieldsUsed.map(_.stripBackticks)
-    val fUsed = fieldsUsed.map(_.stripBackticks).diff(ndf.columns).filterNot(_ == "+")
-    val workDf = if (fUsed.nonEmpty && ndf.columns.contains("_raw")) makeFieldExtraction(ndf, fUsed, FieldExtractor.extractUDF) else ndf
+    val fUsed = fieldsUsed.map(_.stripBackticks).diff(_df.columns.map(_.stripBackticks())).filterNot(cln => cln == "+" || cln.contains("*"))
+    val workDf = if (fUsed.nonEmpty && _df.columns.contains("_raw")) makeFieldExtraction(_df, fUsed, FieldExtractor.extractUDF) else _df
     val workDfView = workDf.collect()
     val workCols = workDf.columns
     Try(loggedTransform(workDf)) match {
