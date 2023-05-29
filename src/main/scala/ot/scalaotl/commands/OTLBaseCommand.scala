@@ -131,7 +131,13 @@ abstract class OTLBaseCommand(sq: SimpleQuery, _seps: Set[String] = Set.empty) e
     val ndfView = ndf.collect()*/
     val preFUsed = fieldsUsed.map(_.stripBackticks)
     val fUsed = fieldsUsed.map(_.stripBackticks).diff(_df.columns.map(_.stripBackticks())).filterNot(cln => cln == "+" || cln.contains("*"))
-    val workDf = if (fUsed.nonEmpty && _df.columns.contains("_raw")) makeFieldExtraction(_df, fUsed, FieldExtractor.extractUDF) else _df
+    val workDf = if (fUsed.nonEmpty) {
+      if (_df.columns.contains("_raw"))
+        makeFieldExtraction(_df, fUsed, FieldExtractor.extractUDF)
+      else
+        fUsed.foldLeft(_df) { (acc, col) => acc.withColumn(col, lit(null)) }
+    }
+    else _df
     val nullFields = fieldsUsed.distinct.map(_.stripBackticks()).diff(_df.columns.map(_.stripBackticks())).filter(!_.contains("*"))
     val workDfView = workDf.collect()
     val workCols = workDf.columns
