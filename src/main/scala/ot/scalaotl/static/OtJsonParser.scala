@@ -58,13 +58,21 @@ class OtJsonParser extends Serializable {
     fieldMap.filter{case (k,v) => regexes.exists(_.pattern.matcher(k).matches())}
   }
 
-  def parseSpaths(jsonStr: String, spaths: Set[String], withNotRawFields:Boolean = false): Map[String, String] = {
+  /**
+   * Parse input 1-dimension json key-value set and find value confirmations for set of field names
+   * @param jsonStr input json
+   * @param spaths set of fields
+   * @param withNotExistingFields do synthetic confirmation for fields from set which haven't confirms in parsed json (with nulls)
+   * @return
+   */
+  def parseSpaths(jsonStr: String, spaths: Set[String], withNotExistingFields:Boolean): Map[String, String] = {
   val json = parse(jsonStr)
     val extracted = json.extract[Map[String,Any]]
-    val extractedKeys = extracted.keys.toSet
-    val bracketedExtractedKeys = extractedKeys.map(_ + "{}")
-    val allKeys = extractedKeys.union(bracketedExtractedKeys)
-    val paths: List[String] = (if(!withNotRawFields) {
+    val paths: List[String] = (if(!withNotExistingFields) {
+      //in this case spaths filtering by confirming to json extracted keys, including multi-value cases
+      val extractedKeys = extracted.keys.toSet
+      val bracketedExtractedKeys = extractedKeys.map(_ + "{}")
+      val allKeys = extractedKeys.union(bracketedExtractedKeys)
       var accumPaths = spaths.intersect(allKeys)
       val dottedSpaths = spaths.filter(_.contains("."))
       accumPaths ++= dottedSpaths.filter(dsp => dsp.zipWithIndex.filter(_._1 == '.').map(_._2).map(dsp.substring(0, _)).exists(allKeys.contains))

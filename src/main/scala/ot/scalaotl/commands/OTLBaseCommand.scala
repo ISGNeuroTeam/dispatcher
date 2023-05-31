@@ -38,6 +38,10 @@ abstract class OTLBaseCommand(sq: SimpleQuery, _seps: Set[String] = Set.empty) e
 
   val classname: String = this.getClass.getSimpleName
 
+  val readingCommandsNames: List[String] = List("OTLInputlookup", "OTLLookup", "RawRead", "FullRead")
+
+  def commandNotReading = !readingCommandsNames.contains(classname)
+
   def commandname: String = this.getClass.getSimpleName.toLowerCase.replace("otl", "")
 
   def loggerName: String = this.getClass.getName
@@ -119,17 +123,8 @@ abstract class OTLBaseCommand(sq: SimpleQuery, _seps: Set[String] = Set.empty) e
 
   def safeTransform(_df: DataFrame): DataFrame = {
     import java.lang.reflect.InvocationTargetException
-    val dfView = _df.collect()
     validateArgs()
-    val fUsed = fieldsUsed.map(_.stripBackticks).diff(_df.columns.map(_.stripBackticks())).filterNot(cln => cln == "+" || cln.contains("*"))
-    val workDf = if (fUsed.nonEmpty && !List("OTLInputlookup", "OTLLookup", "RawRead", "FullRead").contains(classname)) {
-      if (_df.columns.contains("_raw")) {
-        val extractor = new FieldExtractor
-        extractor.makeFieldExtraction(_df, fUsed, FieldExtractor.extractUDF)
-      } else
-        fUsed.foldLeft(_df) { (acc, col) => acc.withColumn(col, lit(null)) }
-    }
-    else _df
+    val workDf = buildWorkDf(_df)
     Try(loggedTransform(workDf)) match {
       case Success(df) => df
       case Failure(ex) if ex.getClass.getSimpleName.contains("CustomException") =>
@@ -152,4 +147,27 @@ abstract class OTLBaseCommand(sq: SimpleQuery, _seps: Set[String] = Set.empty) e
     }
   }
 
+  /**
+   * Create dataframe with all columns used in current command
+   * @param df dataframe from result of previous item of pipe
+   * @return dataframe with all required columns
+   */
+  private def buildWorkDf(df: DataFrame): DataFrame = {
+    //If it's not reading command, than defining fields, which not exists in dataframe as columns but exists in command.
+    //After, check than datafrane contains raw and call field extraction from dataframe function with not-exists-in-raw fields extraction.
+    //Otherwise (dataframe without raw) create not-maked columns as null columns
+    if (commandNotReading) {
+      val notMakedFields: List[String] = fieldsUsed.map(_.stripBackticks).diff(df.columns.map(_.stripBackticks()))
+        .filterNot(cln => cln == "+" || cln.contains("*"))
+      if (notMakedFields.nonEmpty) {
+        if (df.columns.contains("_raw")) {
+          val extractor = new FieldExtractor
+          extractor.makeFieldExtraction(df, notMakedFields, FieldExtractor.extractUDF)
+        } else
+          notMakedFields.foldLeft(df) { (acc, col) => acc.withColumn(col, lit(null)) }
+      }
+      else df
+    }
+    else df
+  }
 }

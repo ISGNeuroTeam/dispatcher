@@ -62,7 +62,7 @@ class OTLJoinTest extends CommandTest {
 
   test("Test 2. Command: | join with out null columns") {
 
-    val ssQuery = createQuery("eval SF=serialField*10 | table serialField, random_Field")
+    val ssQuery = createQuery("eval SF=serialField*10 | table serialField, SF")
     val cacheDF = new Converter(ssQuery).run
     val cacheMap = Map("id1" -> cacheDF)
 
@@ -73,7 +73,7 @@ class OTLJoinTest extends CommandTest {
     val actual = resultDF.toJSON.collect().mkString("[\n", ",\n", "\n]")
     val expected =
       """[
-        |[{"_raw":"{\"serialField\": \"0\", \"random_Field\": \"100\", \"WordField\": \"qwe\", \"junkField\": \"q2W\"}","_time":1568026476854,"serialField":"0","SF":0.0},
+        |{"_raw":"{\"serialField\": \"0\", \"random_Field\": \"100\", \"WordField\": \"qwe\", \"junkField\": \"q2W\"}","_time":1568026476854,"serialField":"0","SF":0.0},
         |{"_raw":"{\"serialField\": \"1\", \"random_Field\": \"-90\", \"WordField\": \"rty\", \"junkField\": \"132_.\"}","_time":1568026476854,"serialField":"1","SF":10.0},
         |{"_raw":"{\"serialField\": \"2\", \"random_Field\": \"50\", \"WordField\": \"uio\", \"junkField\": \"asd.cx\"}","_time":1568026476854,"serialField":"2","SF":20.0},
         |{"_raw":"{\"serialField\": \"3\", \"random_Field\": \"20\", \"WordField\": \"GreenPeace\", \"junkField\": \"XYZ\"}","_time":1568026476854,"serialField":"3","SF":30.0},

@@ -155,7 +155,7 @@ class RawRead(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLIndexes with E
 
   /**
    * Finds fields from the query that are not among the non-empty fields of the dataframe
-   * Makes field extraction for these search-time-field-extraction Fields (by calling makeFieldExtraction)
+   * Makes field extraction for these search-time-field-extraction Fields with only existing in raw fields (by calling makeFieldExtraction, withNotExists = false)
    * Adds extracted columns to dataframe
    * Extracting algorithms are described in the FieldExtractor class
    *
@@ -181,7 +181,6 @@ class RawRead(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLIndexes with E
   override def transform(_df: DataFrame): DataFrame = {
     log.debug(s"searchId = $searchId queryMap: $indexQueriesMap")
     val dfInit = searchMap(indexQueriesMap)
-    val dfInitView = dfInit.collect()
     val dfLimit = getKeyword("limit") match {
       case Some(lim) => log.debug(s"[SearchID:$searchId] Dataframe is limited to $lim"); dfInit.limit(100000)
       case _ => dfInit

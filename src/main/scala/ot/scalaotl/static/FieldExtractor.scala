@@ -21,17 +21,16 @@ class FieldExtractor extends Serializable {
    * @param df              [[DataFrame]] - source dataframe
    * @param extractedFields [[ Seq[String] ]] - list of fields for search-time-field-extraction
    * @param udf             [[ UserDefinedFunction ]] - UDF-function for fields extraction
+   * @param withNotExists   [[Boolean]] - is need to include in extracting procedure fields, not existing in raw
    * @return [[DataFrame]] - dataframe with search time fields
    */
   def makeFieldExtraction(df: DataFrame, extractedFields: Seq[String], udf: UserDefinedFunction, withNotExists:Boolean = true): DataFrame = {
 
     import org.apache.spark.sql.functions.{col, expr}
-    val dfView = df.collect()
     val stfeFieldsStr = extractedFields.map(x => s""""${x.replaceAll("\\{(\\d+)}", "{}")}"""").mkString(", ")
     val mdf = df.withColumn("__fields__", expr(s"""array($stfeFieldsStr)""")).withColumn("boolCol", lit(withNotExists))
       .withColumn("stfe", udf(col("_raw"), col("__fields__"), col("boolCol")))
-    val mdfView = mdf.collect()
-    val res = if (!mdf.isEmpty) {
+    if (!mdf.isEmpty || withNotExists) {
       val fields: Seq[String] = if (extractedFields.exists(_.contains("*"))) {
         val sdf = mdf.agg(flatten(collect_set(map_keys(col("stfe")))).as("__schema__"))
         sdf.first.getAs[Seq[String]](0)
@@ -61,8 +60,6 @@ class FieldExtractor extends Serializable {
     } else {
       df
     }
-      val resView = res.collect
-      res
   }
 
   /**
@@ -72,7 +69,7 @@ class FieldExtractor extends Serializable {
    * @param fields [[ Set[String] ]] - set of fields for extraction
    * @return [[ Map[String, Any] ]] - map with extracted fields
    */
-  def parseJson(line: String, fields: Set[String], withNotRawFields:Boolean = false): Map[String, Any] = {
+  def parseJson(line: String, fields: Set[String], withNotRawFields:Boolean): Map[String, Any] = {
     Try(OtJsonParser.jp.parseSpaths(line, fields, withNotRawFields)) match {
       case Success(v)  => v
       case Failure(ex) => Map.empty
@@ -117,7 +114,7 @@ class FieldExtractor extends Serializable {
    * @param regexes [[ Map[String, String]) ]] - map with regexes (not used at the moment)
    * @return [[ Map[String, String] ]] - map with extracted fields
    */
-  def parseMVAny(line: String, fields: Set[String], withNotRawFields:Boolean = false): Map[String, List[String]] = {
+  def parseMVAny(line: String, fields: Set[String], withNotRawFields:Boolean): Map[String, List[String]] = {
     val modifLine = line.replace("\\\"", quotesSub)
     var parsed = parseJson(modifLine, fields, withNotRawFields) match {
       case l: Map[String, Any] =>
