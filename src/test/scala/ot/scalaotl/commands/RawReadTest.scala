@@ -128,8 +128,6 @@ class RawReadTest extends CommandTest {
     expected = setNullableStateOfColumn(expected, "index", nullable = true)
     actual = actual.select(actual.columns.sorted.toSeq.map(c => F.col(c)):_*)
     expected = expected.select(expected.columns.sorted.toSeq.map(c => F.col(c)):_*)
-    val actualView = actual.collect()
-    val expectedView = expected.collect()
     compareDataFrames(actual, expected)
   }
 

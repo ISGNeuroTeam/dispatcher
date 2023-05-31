@@ -26,12 +26,10 @@ class OTLLookup(sq: SimpleQuery) extends OTLBaseCommand(sq, _seps = Set("output"
   override def fieldsUsed: List[String] = inputs.flatNewFields
 
   override def transform(_df: DataFrame): DataFrame = {
-    val dfView = _df.collect()
     val dfLookup = lookupFile match {
       case Some(path) => spark.read.option("header", "true").option("inferSchema", "true").csv(path)
       case _ => spark.emptyDataFrame
     }
-    val dfLookupView = dfLookup.collect()
     val _dfCols = _df.columns.toList
     val initInputCols = inputs.fields.map(_.newfield)
     val lookupInputCols = inputs.fields.map(_.field)
@@ -60,7 +58,6 @@ class OTLLookup(sq: SimpleQuery) extends OTLBaseCommand(sq, _seps = Set("output"
         val nullfields = fieldsUsedInFullQuery.intersect(_dfCols).diff(initInputCols)
 
         val dfJoined = _df.drop(nullfields: _*).join(jdfSelect, initInputCols, "left")
-        val dfJoinedView = dfJoined.collect()
         _dfCols.map(_.addSurroundedBackticks) match {
           case h :: t =>
 

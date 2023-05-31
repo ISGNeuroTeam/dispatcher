@@ -20,18 +20,5 @@ class OTLEventstats(sq: SimpleQuery) extends OTLBaseCommand(sq, _seps = Set("by"
       case _ => _df_out
     }
     res
-    /*positionalsMap.get("by") match {
-      case Some(Positional("by", anyList)) if anyList.intersect(_df.columns).isEmpty => spark.emptyDataFrame
-      case pos =>
-        val _df_out = transformer.transform(_df)
-        pos match {
-          case Some(Positional("by", byList)) =>
-            byList match {
-              case List() => _df.drop(fieldsGenerated: _*).crossJoin(_df_out)
-              case _ => _df.drop(fieldsGenerated: _*).join(_df_out, byList.map(_.stripBackticks()))
-            }
-          case _ => _df_out
-        }
-    }*/
   }
 }

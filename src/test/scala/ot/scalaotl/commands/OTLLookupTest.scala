@@ -43,16 +43,16 @@ class OTLLookupTest extends CommandTest {
 
     val actual = execute("""lookup testlookup1.csv col1""")
     val expected = """[
-                     |{"_time":1568026476854,"_raw":"{\"serialField.1\": \"5\", \"random_Field\": \"50\", \"WordField\": \"jkl\", \"junkField\": \"casd(@#)asd\"}","col2":[]},
-                     |{"_time":1568026476854,"_raw":"{\"serialField.1\": \"4\", \"random_Field\": \"30\", \"WordField\": \"fgh\", \"junkField\": \"123_ASD\"}","col2":[]},
-                     |{"_time":1568026476854,"_raw":"{\"serialField.1\": \"2\", \"random_Field\": \"50\", \"WordField\": \"uio\", \"junkField\": \"asd.cx\"}","col2":[]},
-                     |{"_time":1568026476854,"_raw":"{\"serialField.1\": \"0\", \"random_Field\": \"100\", \"WordField\": \"qwe\", \"junkField\": \"q2W\"}","col2":[]},
-                     |{"_time":1568026476854,"_raw":"{\"serialField.1\": \"7\", \"random_Field\": \"-100\", \"WordField\": \"RUS\", \"junkField\": \"00_3\"}","col2":[]},
-                     |{"_time":1568026476854,"_raw":"{\"serialField.1\": \"3\", \"random_Field\": \"20\", \"WordField\": \"GreenPeace\", \"junkField\": \"XYZ\"}","col2":[]},
-                     |{"_time":1568026476854,"_raw":"{\"serialField.1\": \"9\", \"random_Field\": \"10\", \"WordField\": \"USA\", \"junkField\": \"word\"}","col2":[]},
-                     |{"_time":1568026476854,"_raw":"{\"serialField.1\": \"6\", \"random_Field\": \"60\", \"WordField\": \"zxc\", \"junkField\": \"QQQ.2\"}","col2":[]},
-                     |{"_time":1568026476854,"_raw":"{\"serialField.1\": \"1\", \"random_Field\": \"-90\", \"WordField\": \"rty\", \"junkField\": \"132_.\"}","col2":[]},
-                     |{"_time":1568026476854,"_raw":"{\"serialField.1\": \"8\", \"random_Field\": \"0\", \"WordField\": \"MMM\", \"junkField\": \"112\"}","col2":[]}
+                     |{"_time":1568026476854,"_raw":"{\"serialField.1\": \"0\", \"random_Field\": \"100\", \"WordField\": \"qwe\", \"junkField\": \"q2W\"}"},
+                     |{"_time":1568026476854,"_raw":"{\"serialField.1\": \"1\", \"random_Field\": \"-90\", \"WordField\": \"rty\", \"junkField\": \"132_.\"}"},
+                     |{"_time":1568026476854,"_raw":"{\"serialField.1\": \"2\", \"random_Field\": \"50\", \"WordField\": \"uio\", \"junkField\": \"asd.cx\"}"},
+                     |{"_time":1568026476854,"_raw":"{\"serialField.1\": \"3\", \"random_Field\": \"20\", \"WordField\": \"GreenPeace\", \"junkField\": \"XYZ\"}"},
+                     |{"_time":1568026476854,"_raw":"{\"serialField.1\": \"4\", \"random_Field\": \"30\", \"WordField\": \"fgh\", \"junkField\": \"123_ASD\"}"},
+                     |{"_time":1568026476854,"_raw":"{\"serialField.1\": \"5\", \"random_Field\": \"50\", \"WordField\": \"jkl\", \"junkField\": \"casd(@#)asd\"}"},
+                     |{"_time":1568026476854,"_raw":"{\"serialField.1\": \"6\", \"random_Field\": \"60\", \"WordField\": \"zxc\", \"junkField\": \"QQQ.2\"}"},
+                     |{"_time":1568026476854,"_raw":"{\"serialField.1\": \"7\", \"random_Field\": \"-100\", \"WordField\": \"RUS\", \"junkField\": \"00_3\"}"},
+                     |{"_time":1568026476854,"_raw":"{\"serialField.1\": \"8\", \"random_Field\": \"0\", \"WordField\": \"MMM\", \"junkField\": \"112\"}"},
+                     |{"_time":1568026476854,"_raw":"{\"serialField.1\": \"9\", \"random_Field\": \"10\", \"WordField\": \"USA\", \"junkField\": \"word\"}"}
                      |]""".stripMargin
     assert(jsonCompare(actual, expected),f"Result : $actual\n---\nExpected : $expected")
   }

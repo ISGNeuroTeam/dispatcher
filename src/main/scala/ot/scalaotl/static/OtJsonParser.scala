@@ -62,14 +62,16 @@ class OtJsonParser extends Serializable {
   val json = parse(jsonStr)
     val extracted = json.extract[Map[String,Any]]
     val extractedKeys = extracted.keys.toSet
-    val spf = spaths.filter(s => s.contains("{") && s.contains(".") && extractedKeys.contains(s.substring(0, s.indexOf(".") - 1))).toList
-    val substrs = spaths.filter(_.contains(".")).map(s => s.substring(0, s.indexOf(".")))
     val bracketedExtractedKeys = extractedKeys.map(_ + "{}")
-    val paths: List[String] = (if(!withNotRawFields)
-      (spaths.intersect(extractedKeys).union(spaths.intersect(bracketedExtractedKeys))
-        .union(spaths.filter(s => s.contains("{") && s.contains(".") && (extractedKeys.union(bracketedExtractedKeys)).contains(s.substring(0, s.indexOf(".")))))).toList.distinct
+    val allKeys = extractedKeys.union(bracketedExtractedKeys)
+    val paths: List[String] = (if(!withNotRawFields) {
+      var accumPaths = spaths.intersect(allKeys)
+      val dottedSpaths = spaths.filter(_.contains("."))
+      accumPaths ++= dottedSpaths.filter(dsp => dsp.zipWithIndex.filter(_._1 == '.').map(_._2).map(dsp.substring(0, _)).exists(allKeys.contains))
+      accumPaths
+    }
     else
-      spaths).toList
+      spaths).toList.distinct
     //paths ++= extractedKeys.filter(ek => ek.contains(".") && spaths.contains(ek.substring(0, ek.indexOf(".") - 1)))
     //val flattened =
       flattenWithFilter(extracted,"", paths.map(_.replace("{}","\\{\\d+\\}").replace("*",".*").r)

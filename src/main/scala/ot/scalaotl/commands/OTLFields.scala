@@ -58,13 +58,11 @@ class OTLFields(sq: SimpleQuery) extends OTLBaseCommand(sq) with WildcardParser 
    * @return [[DataFrame]]  - outgoing dataframe with OTL-command results
    */
   override def transform(_df: DataFrame): DataFrame = {
-    val _dfView = _df.collect()
     val initCols = _df.columns.map(_.addSurroundedBackticks)
     // field-list from the query
-    val retCols = (returns.flatFields
+    val retCols = returns.flatFields
       .filter(x => !x.equals(act))
-      .map(_.replace("\"", "")))
-      //.union(List("_raw".addSurroundedBackticks))
+      .map(_.replace("\"", ""))
     // list of fields from the df matching regular expressions in the field-list from the query
     val retColsWc = returnsWithWc(initCols, returns).flatFields
       .filter(x => !x.equals(act))
@@ -78,11 +76,9 @@ class OTLFields(sq: SimpleQuery) extends OTLBaseCommand(sq) with WildcardParser 
       retColsWc.intersect(initColsList)
     }
     // if newCols is empty return original df, otherwise return the selected columns from it
-    val res = newCols match {
+    newCols match {
       case head :: tail => _df.select(head, tail: _*)
       case _ => spark.emptyDataFrame
     }
-    val resView = res.collect()
-    res
   }
 }

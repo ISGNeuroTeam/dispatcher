@@ -122,7 +122,6 @@ class OTLFilldown(sq: SimpleQuery) extends OTLBaseCommand(sq, _seps = Set("by"))
    * @return _df with events combined by specified field
    */
   override def transform(_df: DataFrame): DataFrame = {
-    val _dfView = _df.collect()
     val by = if (groups.isEmpty) {
       "__internal__"
     } else {
@@ -145,14 +144,12 @@ class OTLFilldown(sq: SimpleQuery) extends OTLBaseCommand(sq, _seps = Set("by"))
     //Window with ordering for grouping by by-param
     val ws = Window.partitionBy(by).orderBy("__idx__").rowsBetween(Window.unboundedPreceding, Window.currentRow)
     //Replace null values in filldown columns
-    val res = filldownedColumns.foldLeft(df_grouped.withColumn("__idx__", monotonically_increasing_id)) {
+    filldownedColumns.foldLeft(df_grouped.withColumn("__idx__", monotonically_increasing_id)) {
       case (accum, item) => {
         val column = last(col(item), ignoreNulls = true).over(ws)
         accum.withColumn(item, column)
       }
     }
       .drop("__idx__", "__internal__")
-    val resView = res.collect()
-    res
   }
 }

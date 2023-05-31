@@ -201,11 +201,9 @@ class OTLTop(sq: SimpleQuery) extends OTLBaseCommand(sq, _seps = Set("by")) {
         dfJoined.withColumn(percentfield, lit(100) * col(countfield) / col("total"))
           .drop("total")
     }
-    val res = keywordsMap.get("showcount") match {
+    keywordsMap.get("showcount") match {
       case Some(Keyword("showcount", "false")) => dfResult.drop(countfield)
       case Some(Keyword("showcount", "true")) | None => dfResult
     }
-    val resView = res.collect()
-    res
   }
 }

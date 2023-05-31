@@ -3,11 +3,9 @@ package commands
 
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.DataFrame
-import org.apache.spark.sql.expressions.UserDefinedFunction
-import org.apache.spark.sql.functions.{collect_set, flatten, lit, map_keys}
+import org.apache.spark.sql.functions.lit
 import ot.AppConfig.{config, getLogLevel}
 import ot.dispatcher.sdk.core.CustomException.{E00012, E00013, E00014}
-import ot.scalaotl.extensions.DataFrameExt._
 import ot.scalaotl.extensions.StringExt._
 import ot.scalaotl.parsers._
 import ot.scalaotl.static.FieldExtractor
@@ -27,8 +25,6 @@ abstract class OTLBaseCommand(sq: SimpleQuery, _seps: Set[String] = Set.empty) e
   val requiredKeywords: Set[String]
   val optionalKeywords: Set[String]
 
-  val vls = positionalsMap.values
-  vls.map(frmb => frmb)
   def fieldsUsed: List[String] = (getFieldsUsed(returns) ++ (positionalsMap.values.toList.flatMap(f => f.asInstanceOf[Positional].values))).distinct
 
   def fieldsGenerated: List[String] = getFieldsGenerated(returns)
@@ -86,7 +82,6 @@ abstract class OTLBaseCommand(sq: SimpleQuery, _seps: Set[String] = Set.empty) e
   }
 
   def loggedTransform(_df: DataFrame): DataFrame = {
-    val dfView = _df.collect()
     log.debug(f"[SearchId:${sq.searchId}] ======= Starting command $commandname ========")
     log.debug(f"[SearchId:${sq.searchId}]Starting query with args : ${sq.args}," +
       f" id: ${sq.searchId}, " +
@@ -124,23 +119,17 @@ abstract class OTLBaseCommand(sq: SimpleQuery, _seps: Set[String] = Set.empty) e
 
   def safeTransform(_df: DataFrame): DataFrame = {
     import java.lang.reflect.InvocationTargetException
+    val dfView = _df.collect()
     validateArgs()
-    val _dfView = _df.collect()
-    /*val ndf = nullFields.foldLeft(_df) { (acc, col) => acc.withColumn(col, lit(null)) }
-      //nullFields.foldLeft(_df) { (acc, col) => acc.withColumn(col, lit(null)) }
-    val ndfView = ndf.collect()*/
-    val preFUsed = fieldsUsed.map(_.stripBackticks)
     val fUsed = fieldsUsed.map(_.stripBackticks).diff(_df.columns.map(_.stripBackticks())).filterNot(cln => cln == "+" || cln.contains("*"))
-    val workDf = if (fUsed.nonEmpty) {
-      if (_df.columns.contains("_raw"))
-        makeFieldExtraction(_df, fUsed, FieldExtractor.extractUDF)
-      else
+    val workDf = if (fUsed.nonEmpty && !List("OTLInputlookup", "OTLLookup", "RawRead", "FullRead").contains(classname)) {
+      if (_df.columns.contains("_raw")) {
+        val extractor = new FieldExtractor
+        extractor.makeFieldExtraction(_df, fUsed, FieldExtractor.extractUDF)
+      } else
         fUsed.foldLeft(_df) { (acc, col) => acc.withColumn(col, lit(null)) }
     }
     else _df
-    val nullFields = fieldsUsed.distinct.map(_.stripBackticks()).diff(_df.columns.map(_.stripBackticks())).filter(!_.contains("*"))
-    val workDfView = workDf.collect()
-    val workCols = workDf.columns
     Try(loggedTransform(workDf)) match {
       case Success(df) => df
       case Failure(ex) if ex.getClass.getSimpleName.contains("CustomException") =>
@@ -163,37 +152,4 @@ abstract class OTLBaseCommand(sq: SimpleQuery, _seps: Set[String] = Set.empty) e
     }
   }
 
-  private def makeFieldExtraction(df: DataFrame, extractedFields: Seq[String], udf: UserDefinedFunction): DataFrame = {
-
-    import org.apache.spark.sql.functions.{col, expr}
-
-    val stfeFieldsStr = extractedFields.map(x => s""""${x.replaceAll("\\{(\\d+)}", "{}")}"""").mkString(", ")
-    val mdf = df.withColumn("__fields__", expr(s"""array($stfeFieldsStr)""")).withColumn("boolCol", lit(true))
-      .withColumn("stfe", udf(col("_raw"), col("__fields__"), col("boolCol")))
-    val mdfView = mdf.collect()
-    val fields: Seq[String] = if (extractedFields.exists(_.contains("*"))) {
-      val sdf = mdf.agg(flatten(collect_set(map_keys(col("stfe")))).as("__schema__"))
-      val sdfView = sdf.collect()
-      sdf.first.getAs[Seq[String]](0)
-    } else extractedFields
-    val existedFields = mdf.notNullColumns
-    val realRes = fields.foldLeft(mdf) { (acc, f) => {
-      val res = if (!existedFields.contains(f)) {
-        if (f.contains("{}"))
-          acc.withColumn(f, col("stfe")(f))
-        else {
-          val m = "\\{(\\d+)}".r.pattern.matcher(f)
-          var index = if (m.find()) m.group(1).toInt - 1 else 0
-          index = if (index < 0) 0 else index
-          acc.withColumn(f, col("stfe")(f.replaceFirst("\\{\\d+}", "{}"))(index))
-        }
-      } else acc
-      val resView = res.collect()
-      val a = 0
-      res
-    }
-    }.drop("__fields__", "stfe", "boolCol")
-    val realResView = realRes.collect()
-    realRes
-  }
 }

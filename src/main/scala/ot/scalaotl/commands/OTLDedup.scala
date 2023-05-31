@@ -87,16 +87,13 @@ class OTLDedup(sq: SimpleQuery) extends OTLBaseCommand(sq, _seps = Set("sortby")
       case _ => _df.dropDuplicates(returns.flatFields.map(_.stripBackticks()))
     }
     //Sorting if sortby param exists
-    val result = positionalsMap.get("sortby") match {
+    positionalsMap.get("sortby") match {
       case Some(Positional("sortby", sf)) => {
         val sq = SimpleQuery(sf.map(_.stripBackticks()).mkString(" "))
         val sortTransformer = new SortTransformer(sq)
-        val dfDedupView = dfDedup.collect()
         sortTransformer.transform(dfDedup)
       }
       case _ => dfDedup
     }
-    val rsView = result.collect()
-    result
   }
 }
