@@ -8,7 +8,6 @@ import ot.AppConfig.{config, getLogLevel}
 import ot.dispatcher.sdk.core.CustomException.{E00012, E00013, E00014}
 import ot.scalaotl.extensions.StringExt._
 import ot.scalaotl.parsers._
-import ot.scalaotl.static.FieldExtractor
 import ot.scalaotl.utils.logging.StatViewer
 
 import scala.util.{Failure, Success, Try}
@@ -38,9 +37,9 @@ abstract class OTLBaseCommand(sq: SimpleQuery, _seps: Set[String] = Set.empty) e
 
   val classname: String = this.getClass.getSimpleName
 
-  val readingCommandsNames: List[String] = List("OTLInputlookup", "OTLLookup", "RawRead", "FullRead")
+  val readingCommandsNames: List[String] = List("OTLInputlookup", "OTLLookup", "RawRead", "FullRead", "OTLRead")
 
-  def commandNotReading = !readingCommandsNames.contains(classname)
+  def commandNotReading: Boolean = !readingCommandsNames.contains(classname)
 
   def commandname: String = this.getClass.getSimpleName.toLowerCase.replace("otl", "")
 
@@ -124,13 +123,16 @@ abstract class OTLBaseCommand(sq: SimpleQuery, _seps: Set[String] = Set.empty) e
   def safeTransform(_df: DataFrame): DataFrame = {
     import java.lang.reflect.InvocationTargetException
     validateArgs()
-    val workDf = buildWorkDf(_df)
+    val workDf = if (commandNotReading)
+      buildWorkDf(_df)
+    else
+      _df
     Try(loggedTransform(workDf)) match {
       case Success(df) => df
       case Failure(ex) if ex.getClass.getSimpleName.contains("CustomException") =>
         log.error(ex.getMessage)
         throw ex
-      //Working with udf exceptions when call df.show+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+      //Working with udf exceptions when call df.show
       case Failure(ex: InvocationTargetException) =>
         val exception = ex.getTargetException match {
           case e1 if !e1.getMessage.startsWith("Job aborted due to stage failure") => e1
@@ -153,21 +155,20 @@ abstract class OTLBaseCommand(sq: SimpleQuery, _seps: Set[String] = Set.empty) e
    * @return dataframe with all required columns
    */
   private def buildWorkDf(df: DataFrame): DataFrame = {
-    //If it's not reading command, than defining fields, which not exists in dataframe as columns but exists in command.
-    //After, check than datafrane contains raw and call field extraction from dataframe function with not-exists-in-raw fields extraction.
-    //Otherwise (dataframe without raw) create not-maked columns as null columns
-    if (commandNotReading) {
-      val notMakedFields: List[String] = fieldsUsed.map(_.stripBackticks).diff(df.columns.map(_.stripBackticks()))
-        .filterNot(cln => cln == "+" || cln.contains("*"))
-      if (notMakedFields.nonEmpty) {
+    //Defining fields, which not exists in dataframe as columns but exists in command.
+    val notMakedFields: List[String] = fieldsUsed.map(_.stripBackticks).diff(df.columns.map(_.stripBackticks()))
+      .filterNot(cln => cln == "+" || cln.contains("*"))
+    notMakedFields match {
+      case head :: _ =>
         if (df.columns.contains("_raw")) {
+          import ot.scalaotl.static.FieldExtractor
+
           val extractor = new FieldExtractor
           extractor.makeFieldExtraction(df, notMakedFields, FieldExtractor.extractUDF)
         } else
+        //Otherwise (dataframe without raw) create not-maked columns as null columns
           notMakedFields.foldLeft(df) { (acc, col) => acc.withColumn(col, lit(null)) }
-      }
-      else df
+      case _ => df
     }
-    else df
   }
 }

@@ -4,7 +4,7 @@ import ot.scalaotl.Converter
 
 class OTLJoinTest extends CommandTest {
 
-  test("Test 0. Command: | join with repeating column which outside of join columns list") {
+  test("Test 0. Command: | datasets contain repeating column which outside of join columns list") {
 
     val ssQuery = createQuery("eval random_Field=serialField*10 | table serialField, random_Field")
     val cacheDF = new Converter(ssQuery).run
@@ -32,7 +32,7 @@ class OTLJoinTest extends CommandTest {
     assert(jsonCompare(actual, expected), f"Result : $actual\n---\nExpected : $expected")
   }
 
-  test("Test 1. Command: | join with out null columns join with repeating column which outside of join columns list and fields choosing") {
+  test("Test 1. Command: | datasets contain repeating column which outside of join columns list and query has fields choosing") {
 
     val ssQuery = createQuery("eval random_Field=serialField*10 | table serialField, random_Field")
     val cacheDF = new Converter(ssQuery).run

@@ -47,8 +47,6 @@ class OTLJoin(sq: SimpleQuery) extends OTLBaseCommand(sq) {
 
   private def createStructChangedDf(df: DataFrame, side: String): DataFrame = {
     notJoinBothCols.foldLeft(df) { case (accum, item) =>
-      /*val isNotAllNull = accum.select(col(item)).limit(1).withColumn("fct", when(accum(item) === "__NULL__", 1).otherwise(0))
-      !isNotAllNull.filter(r => r.get(0) == 1).isEmpty*/
       accum.withColumn(item + side, col(item)).drop(item)
     }
   }
