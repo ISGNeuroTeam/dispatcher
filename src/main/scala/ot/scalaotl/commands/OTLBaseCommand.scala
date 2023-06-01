@@ -6,6 +6,7 @@ import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.functions.lit
 import ot.AppConfig.{config, getLogLevel}
 import ot.dispatcher.sdk.core.CustomException.{E00012, E00013, E00014}
+import ot.dispatcher.sdk.proxy.PluginProxyCommand
 import ot.scalaotl.extensions.StringExt._
 import ot.scalaotl.parsers._
 import ot.scalaotl.utils.logging.StatViewer
@@ -37,9 +38,13 @@ abstract class OTLBaseCommand(sq: SimpleQuery, _seps: Set[String] = Set.empty) e
 
   val classname: String = this.getClass.getSimpleName
 
-  val readingCommandsNames: List[String] = List("OTLInputlookup", "OTLLookup", "RawRead", "FullRead", "OTLRead")
+  val readingCommandsNames: List[String] = List("OTLInputlookup", "RawRead", "FullRead", "OTLRead")
 
   def commandNotReading: Boolean = !readingCommandsNames.contains(classname)
+
+  val pluginReadingCommandNames: List[String] = List("ReadFile", "SQLRead", "FSGet")
+
+  def commandNotPluginReading: Boolean = !(classname == "PluginProxyCommand" && pluginReadingCommandNames.contains(this.asInstanceOf[PluginProxyCommand].commandname))
 
   def commandname: String = this.getClass.getSimpleName.toLowerCase.replace("otl", "")
 
@@ -123,7 +128,7 @@ abstract class OTLBaseCommand(sq: SimpleQuery, _seps: Set[String] = Set.empty) e
   def safeTransform(_df: DataFrame): DataFrame = {
     import java.lang.reflect.InvocationTargetException
     validateArgs()
-    val workDf = if (commandNotReading)
+    val workDf = if (commandNotReading && commandNotPluginReading)
       buildWorkDf(_df)
     else
       _df

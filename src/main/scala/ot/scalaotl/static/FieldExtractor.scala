@@ -25,10 +25,11 @@ class FieldExtractor extends Serializable {
    * @return [[DataFrame]] - dataframe with search time fields
    */
   def makeFieldExtraction(df: DataFrame, extractedFields: Seq[String], udf: UserDefinedFunction, withNotExists:Boolean = true): DataFrame = {
+    val dfView = df.collect()
     val stfeFieldsStr = extractedFields.map(x => s""""${x.replaceAll("\\{(\\d+)}", "{}")}"""").mkString(", ")
     val mdf = df.withColumn("__fields__", expr(s"""array($stfeFieldsStr)""")).withColumn("boolCol", lit(withNotExists))
       .withColumn("stfe", udf(col("_raw"), col("__fields__"), col("boolCol")))
-    if (!mdf.isEmpty || withNotExists) {
+    val res = if (!mdf.isEmpty || withNotExists) {
       val fields: Seq[String] = if (extractedFields.exists(_.contains("*"))) {
         val sdf = mdf.agg(flatten(collect_set(map_keys(col("stfe")))).as("__schema__"))
         sdf.first.getAs[Seq[String]](0)
@@ -59,6 +60,8 @@ class FieldExtractor extends Serializable {
     } else {
       df
     }
+    val resView = res.collect()
+    res
   }
 
   /**

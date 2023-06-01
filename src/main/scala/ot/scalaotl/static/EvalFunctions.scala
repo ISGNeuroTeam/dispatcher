@@ -1,10 +1,9 @@
 package ot.scalaotl
 package static
 
-import ot.scalaotl.extensions.StringExt._
 import org.apache.spark.sql.functions.udf
+import ot.scalaotl.extensions.StringExt._
 
-import scala.collection.immutable.NumericRange
 import scala.util.{Success, Try}
 
 object EvalFunctions extends OTLSparkSession {
@@ -86,12 +85,12 @@ object EvalFunctions extends OTLSparkSession {
   def mvrange = udf {
     (first: Any, other: Seq[Any]) =>
       val vals = (first +: other.toList).map{
-              case a : Double => a
-              case a : Float => a.toDouble
-              case a : Long => a.toDouble
-              case a : Int => a.toDouble
-              case _ => null
-            }.asInstanceOf[List[Double]]
+        case a : Double => a
+        case a : Float => a.toDouble
+        case a : Long => a.toDouble
+        case a : Int => a.toDouble
+        case _ => null
+      }.asInstanceOf[List[Double]]
       vals match {
         case List(a,b,c)=> (a to b by c).toSeq
         case List(a,b)=>(a to b by 1).toSeq
@@ -101,18 +100,18 @@ object EvalFunctions extends OTLSparkSession {
 
   def mvzip = udf {
     (column1: Any, column2: Any, delim: Seq[String]) =>
-      {
-        val (col1,col2)  = (column1, column2) match {
+    {
+      val (col1,col2)  = (column1, column2) match {
         case (c1 : Seq[_], c2 : Seq[_]) => (c1,c2)
         case _ => (null, null)
       }
-        val sep = delim.toList match {
-          case d :: tail => d
-          case _         => " "
-        }
-        if (col1 == null) Seq()
-        else col1.zip(col2).map { case (i, j) => s"$i$sep$j"}
+      val sep = delim.toList match {
+        case d :: tail => d
+        case _         => " "
       }
+      if (col1 == null) Seq()
+      else col1.zip(col2).map { case (i, j) => s"$i$sep$j"}
+    }
   }
 
   def mvfind = udf { (column: Any, rex: String) => {
@@ -126,7 +125,7 @@ object EvalFunctions extends OTLSparkSession {
       .map( t => (t._1.toString -> t._2))
       .find(t => rex.r.pattern.matcher( t._1).matches())
       .map(_._2).getOrElse(-1))
-    }
+  }
   }
 
   def mvcount = udf {column: Any => {
@@ -140,12 +139,12 @@ object EvalFunctions extends OTLSparkSession {
   def now = udf { OtDatetime.getCurrentTimeInSeconds }
   def matched = udf {
     (col: String, rex: String) =>
-      {
-        rex.r.findFirstIn(col) match {
-          case Some(str) => true
-          case _         => false
-        }
+    {
+      rex.r.findFirstIn(col) match {
+        case Some(str) => true
+        case _         => false
       }
+    }
   }
   def replace = udf { (s: String, rex: String, replacement: String) =>
 
@@ -230,4 +229,3 @@ object EvalFunctions extends OTLSparkSession {
 
 
 }
-
