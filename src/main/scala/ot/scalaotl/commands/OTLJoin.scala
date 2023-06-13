@@ -19,8 +19,10 @@ class OTLJoin(sq: SimpleQuery) extends OTLBaseCommand(sq) {
   var notJoinBothCols: Array[String] = Array()
 
   override def transform(_df: DataFrame): DataFrame = {
+    val dfView = _df.collect()
     if (cachedDFs.contains(subsearch) && returns.flatFields.nonEmpty) {
       val jdf: DataFrame = cachedDFs(subsearch)
+      val jdfView = jdf.collect()
       val joinOn = returns.flatFields.map(_.stripBackticks())
       val bothCols = _df.columns.intersect(jdf.columns)
       log.debug(f"[SearchId:${sq.searchId}] Columns in right df: ${jdf.columns.mkString(", ")}")
@@ -30,12 +32,16 @@ class OTLJoin(sq: SimpleQuery) extends OTLBaseCommand(sq) {
         notJoinBothCols = bothCols.diff(joinOn.union(List("_raw")))
         val preWorkDf = if (!jdf.isEmpty && jdf.columns.contains("_raw")) _df.drop("_raw") else _df
         val workDf = createStructChangedDf(preWorkDf, leftSide)
+        val workDfView = workDf.collect()
         val workJdf = createStructChangedDf(jdf, rightSide)
+        val workJdfView = workJdf.collect()
         val joinedDf = workDf.join(workJdf, joinOn, getKeyword("type").getOrElse("left"))
+        val joinedDfView = joinedDf.collect()
         val resultDf = notJoinBothCols.foldLeft(joinedDf) { case (accum, item) =>
           accum.withColumn(item, when(accum(item + rightSide).isNull, col(item + leftSide)).otherwise(col(item + rightSide)))
             .drop(item + leftSide).drop(item + rightSide)
         }
+        val resultView = resultDf.collect()
         if (getKeyword("max").getOrElse("0") == "1") {
           resultDf.dropDuplicates(joinOn)
         } else {

@@ -68,18 +68,14 @@ class OtJsonParser extends Serializable {
   def parseSpaths(jsonStr: String, spaths: Set[String], withNotExistingFields:Boolean): Map[String, String] = {
   val json = parse(jsonStr)
     val extracted = json.extract[Map[String,Any]]
-    val paths: List[String] = (if(!withNotExistingFields) {
-      //in this case spaths filtering by confirming to json extracted keys, including multi-value cases
-      val extractedKeys = extracted.keys.toSet
+    val paths: List[String] = {val extractedKeys = extracted.keys.toSet
       val bracketedExtractedKeys = extractedKeys.map(_ + "{}")
       val allKeys = extractedKeys.union(bracketedExtractedKeys)
       var accumPaths = spaths.intersect(allKeys)
       val dottedSpaths = spaths.filter(_.contains("."))
       accumPaths ++= dottedSpaths.filter(dsp => dsp.zipWithIndex.filter(_._1 == '.').map(_._2).map(dsp.substring(0, _)).exists(allKeys.contains))
       accumPaths
-    }
-    else
-      spaths).toList.distinct
+    }.toList.distinct
     //paths ++= extractedKeys.filter(ek => ek.contains(".") && spaths.contains(ek.substring(0, ek.indexOf(".") - 1)))
     //val flattened =
       flattenWithFilter(extracted,"", paths.map(_.replace("{}","\\{\\d+\\}").replace("*",".*").r)

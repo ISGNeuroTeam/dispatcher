@@ -43,16 +43,16 @@ class FieldExtractor extends Serializable {
             val m = "\\{(\\d+)}".r.pattern.matcher(f)
             var index = if (m.find()) m.group(1).toInt - 1 else 0
             index = if (index < 0) 0 else index
-            if (withNotExists)
+            /*if (withNotExists)
               acc.withColumn(f, col("stfe")(f.replaceFirst("\\{\\d+}", "{}"))(index))
-            else {
+            else {*/
               val fieldExists = !acc.limit(1).select(array_contains(map_keys(col("stfe")), f.replaceFirst("\\{\\d+}", "{}"))).filter(r => r.getBoolean(0))
                 .isEmpty
               if (fieldExists)
                 acc.withColumn(f, col("stfe")(f.replaceFirst("\\{\\d+}", "{}"))(index))
               else
                 acc
-            }
+            //}
           }
         } else acc
       }
