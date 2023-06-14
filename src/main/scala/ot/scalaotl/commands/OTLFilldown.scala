@@ -115,7 +115,10 @@ class OTLFilldown(sq: SimpleQuery) extends OTLBaseCommand(sq, _seps = Set("by"))
   /**
    * //Define field for grouping. If by-param not exists, this field is fictive.
    */
-  val groups = getPositional("by").getOrElse(List("__internal__"))
+  val groups = positionalsMap.get("by") match {
+    case Some(Positional("by", groups)) => groups
+    case _ => List("__internal__")
+  }
 
   /**
    * @param _df input __dataframe__, passed by the [[Converter]] when executing an OTL query

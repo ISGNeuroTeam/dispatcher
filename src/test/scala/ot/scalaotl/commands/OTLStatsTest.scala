@@ -16,7 +16,7 @@ class OTLStatsTest extends CommandTest {
   test("Test 1. Command: | stats. Multiple words in 'as' statement") {
     val actual = execute(""" stats min(serialField) as "min sf", max(random_Field) as maxrf """)
     val expected = """[
-      |{"min sf":"0", "maxrf":"60"}
+                     |{"min sf":"0", "maxrf":"60"}
     ]""".stripMargin
     assert(jsonCompare(actual, expected), f"Result : $actual\n---\nExpected : $expected")
   }
@@ -57,9 +57,54 @@ class OTLStatsTest extends CommandTest {
   test("Test 5. Command: | stats ambigous column") {
     val actual = execute("""| eval _time_prev=1 | stats first(*) as *_prev, last(*) as * | eval x=_time_prev""")
     val expected = """[
-                     |{"WordField_prev":"qwe","_raw_prev":"{\"serialField\": \"0\", \"random_Field\": \"100\", \"WordField\": \"qwe\", \"junkField\": \"q2W\"}","_time_prev_prev":1,"_time_prev":1568026476854,"junkField_prev":"q2W","random_Field_prev":"100","serialField_prev":"0","WordField":"USA","_raw":"{\"serialField\": \"9\", \"random_Field\": \"10\", \"WordField\": \"USA\", \"junkField\": \"word\"}","_time":1568026476854,"junkField":"word","random_Field":"10","serialField":"9","x":1568026476854}
+                     |{"WordField_prev":"qwe","_raw_prev":"{\"serialField\": \"0\", \"random_Field\": \"100\", \"WordField\": \"qwe\", \"junkField\": \"q2W\"}","_time_prev_prev":1,"_time_prev":1568026476854,"junkField_prev":"q2W","random_Field_prev":"100","serialField_prev":"0","WordField":"USA","_raw":"{\"serialField\": \"9\", \"random_Field\": \"10\", \"WordField\": \"USA\", \"junkField\": \"word\"}","_time":1568026476863,"junkField":"word","random_Field":"10","serialField":"9","x":1568026476854}
                      |]""".stripMargin
     assert(jsonCompare(actual, expected), f"Result : $actual\n---\nExpected : $expected")
   }
 
+  test("Test 6. Command: | stats latest(column)") {
+    val actual = execute("""stats latest(random_Field)""")
+    val expected =
+      """[
+        |{"latest(random_Field)":"10"}
+        |]""".stripMargin
+    assert(jsonCompare(actual, expected), f"Result : $actual\n---\nExpected : $expected")
+  }
+
+  test("Test 7. Command: | stats <time-and-non-time-functions> (even number of blocks)") {
+    val actual = execute(
+      """stats avg(random_Field) sum(serialField) latest(random_Field) earliest(serialField) min(random_Field) max(serialField) """ +
+        """latest(junkField) earliest(WordField)""")
+    val expected =
+      """[
+         |{"avg(random_Field)":13.0,"sum(serialField)":45.0,"latest(random_Field)":"10","earliest(serialField)":"0","min(random_Field)":"-100","max(serialField)":"9","latest(junkField)":"word","earliest(WordField)":"qwe"}
+      |]""".stripMargin
+    assert(jsonCompare(actual, expected), f"Result : $actual\n---\nExpected : $expected")
+  }
+
+  test("Test 8. Command: | stats <time-and-non-time-functions> (odd number of blocks)") {
+    val actual = execute(
+      """stats latest(random_Field) earliest(serialField) avg(random_Field) sum(serialField) latest(junkField) earliest(WordField)""")
+    val expected =
+      """[
+        |{"latest(random_Field)":"10","earliest(serialField)":"0","avg(random_Field)":13.0,"sum(serialField)":45.0,"latest(junkField)":"word","earliest(WordField)":"qwe"}
+        |]""".stripMargin
+    assert(jsonCompare(actual, expected), f"Result : $actual\n---\nExpected : $expected")
+  }
+
+  test("Test 9. Command: | stats <time-and-non-time-functions> with by") {
+    val actual = execute("""stats sum(serialField) avg(_subsecond) latest(junkField) earliest(serialField) by random_Field""")
+    val expected =
+      """[
+        |{"random_Field":"100","sum(serialField)":"0","avg(_subsecond)":"854","latest(junkField)":"q2W","earliest(serialField)":"0"},
+        |{"random_Field":"-90","sum(serialField)":"1","avg(_subsecond)":"854","latest(junkField)":"132_.","earliest(serialField)":"1"},
+        |{"random_Field":"50","sum(serialField)":"7","avg(_subsecond)":"854","latest(junkField)":"casd(@#)asd","earliest(serialField)":"2"},
+        |{"random_Field":"20","sum(serialField)":"3","avg(_subsecond)":"854","latest(junkField)":"XYZ","earliest(serialField)":"3"},
+        |{"random_Field":"30","sum(serialField)":"4","avg(_subsecond)":"854","latest(junkField)":"123_ASD","earliest(serialField)":"4"},
+        |{"random_Field":"60","sum(serialField)":"6","avg(_subsecond)":"854","latest(junkField)":"QQQ.2","earliest(serialField)":"6"},
+        |{"random_Field":"-100","sum(serialField)":"7","avg(_subsecond)":"854","latest(junkField)":"00_3","earliest(serialField)":"7"},
+        |{"random_Field":"0","sum(serialField)":"8","avg(_subsecond)":"854","latest(junkField)":"112","earliest(serialField)":"8"},
+        |{"random_Field":"10","sum(serialField)":"9","avg(_subsecond)":"854","latest(junkField)":"word","earliest(serialField)":"9"}
+        |]""".stripMargin
+  }
 }

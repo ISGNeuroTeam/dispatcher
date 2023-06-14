@@ -31,7 +31,7 @@ class FullReadTest extends CommandTest {
     val actual = new Converter(otlQuery).run
     val expected = readIndexDF(s"$test_index-0", readingDatasetSchema)
       .select(F.col("_time"), F.col("metric_name"), F.col("value"))
-      .withColumn("new", F.lit(null))
+      .withColumn("new", F.lit(null).cast(StringType))
       .withColumn("a" , F.lit(-1))
     compareDataFrames(actual, expected)
   }

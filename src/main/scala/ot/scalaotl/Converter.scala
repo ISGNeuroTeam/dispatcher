@@ -90,12 +90,12 @@ class Converter(otlQuery: OTLQuery, cache: Map[String, DataFrame]) extends OTLSp
     totalFieldsUsed.distinct
   }
 
-  def run = transformers.foldLeft(df) {
-    (accum, tr) =>
-    {
-      if (tr.getClass.getName.contains("OTLRead") || tr.getClass.getName.contains("OTLInputlookup") || tr.getClass.getName.contains("OTLLookup") || tr.getClass.getName.contains("RawRead") || tr.getClass.getName.contains("FullRead")) tr.setFieldsUsedInFullQuery(fieldsUsed)
-      tr.safeTransform(accum)
-    }
+  def run: DataFrame = transformers.foldLeft(df) {
+      (accum, tr) =>
+      {
+        if (tr.getClass.getName.contains("OTLRead") || tr.getClass.getName.contains("OTLInputlookup") || tr.getClass.getName.contains("OTLLookup") || tr.getClass.getName.contains("RawRead") || tr.getClass.getName.contains("FullRead")) tr.setFieldsUsedInFullQuery(fieldsUsed)
+        tr.safeTransform(accum)
+      }
   }
 
   def findSubsearches(s: String) = {

@@ -1,10 +1,9 @@
 package ot.scalaotl
 package commands
 
+import org.apache.spark.sql.DataFrame
 import ot.scalaotl.extensions.StringExt._
 import ot.scalaotl.parsers.WildcardParser
-
-import org.apache.spark.sql.DataFrame
 
 
 /** =Abstract=

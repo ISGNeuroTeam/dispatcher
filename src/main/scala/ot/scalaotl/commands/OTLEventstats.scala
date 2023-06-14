@@ -1,10 +1,9 @@
 package ot.scalaotl
 package commands
 
-import ot.scalaotl.parsers.StatsParser
-import ot.scalaotl.extensions.StringExt._
-
 import org.apache.spark.sql.DataFrame
+import ot.scalaotl.extensions.StringExt._
+import ot.scalaotl.parsers.StatsParser
 
 class OTLEventstats(sq: SimpleQuery) extends OTLBaseCommand(sq, _seps = Set("by")) with StatsParser {
   val requiredKeywords = Set.empty[String]

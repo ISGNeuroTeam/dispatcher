@@ -7,6 +7,7 @@ import ot.scalaotl.StatsFunc
 import ot.scalaotl.commands.OTLEval
 import ot.scalaotl.extensions.ColumnExt._
 import ot.scalaotl.extensions.DataFrameExt._
+import ot.scalaotl.extensions.StringExt._
 
 import scala.util.matching.Regex
 
@@ -56,12 +57,12 @@ object StatsFunctions {
     }
   }
 
-  def applyFuncs(funcs: List[StatsFunc], df: DataFrame, groups: List[String] = List()) = {
+  def applyFuncs(funcs: List[StatsFunc], df: DataFrame, groups: List[String] = List(), orderBy: String = "__internal__".addSurroundedBackticks): DataFrame = {
     val fs = funcs.filterNot{
       case StatsFunc(_, _, field) => groups.contains(field)
     }.map {
-      case StatsFunc(newfield, func, field) => StatsFunctions.getExpr(func, field, newfield)
-    }
-    df.complexAgg(groups, fs)
+        case StatsFunc(newfield, func, field) => StatsFunctions.getExpr(func, field, newfield)
+      }
+    df.complexAgg(groups, orderBy, fs)
   }
 }

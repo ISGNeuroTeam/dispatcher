@@ -1,11 +1,11 @@
 package ot.scalaotl
 package static
 
+import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.expressions.UserDefinedFunction
-
-import java.util.regex.Pattern
-import org.apache.spark.sql.functions.udf
+import org.apache.spark.sql.functions._
 import org.json4s._
+import ot.scalaotl.extensions.DataFrameExt._
 
 import scala.util.matching.Regex.Match
 import scala.util.{Failure, Success, Try}
@@ -15,14 +15,61 @@ class FieldExtractor extends Serializable {
   val quotesSub = "&QUOTES&"
 
   /**
+   * Makes field extraction for these search-time-field-extraction Fields
+   * And adds them to dataframe
+   *
+   * @param df              [[DataFrame]] - source dataframe
+   * @param extractedFields [[ Seq[String] ]] - list of fields for search-time-field-extraction
+   * @param udf             [[ UserDefinedFunction ]] - UDF-function for fields extraction
+   * @param withNotExists   [[Boolean]] - is need to include in extracting procedure fields, not existing in raw
+   * @return [[DataFrame]] - dataframe with search time fields
+   */
+  def makeFieldExtraction(df: DataFrame, extractedFields: Seq[String], udf: UserDefinedFunction, withNotExists:Boolean = true): DataFrame = {
+    val stfeFieldsStr = extractedFields.map(x => s""""${x.replaceAll("\\{(\\d+)}", "{}")}"""").mkString(", ")
+    val mdf = df.withColumn("__fields__", expr(s"""array($stfeFieldsStr)""")).withColumn("boolCol", lit(withNotExists))
+      .withColumn("stfe", udf(col("_raw"), col("__fields__"), col("boolCol")))
+    if (!mdf.isEmpty || withNotExists) {
+      val fields: Seq[String] = if (extractedFields.exists(_.contains("*"))) {
+        val sdf = mdf.agg(flatten(collect_set(map_keys(col("stfe")))).as("__schema__"))
+        sdf.first.getAs[Seq[String]](0)
+      } else extractedFields
+      val existedFields = mdf.notNullColumns
+      fields.foldLeft(mdf) { (acc, f) => {
+        if (!existedFields.contains(f)) {
+          if (f.contains("{}"))
+            acc.withColumn(f, col("stfe")(f))
+          else {
+            val m = "\\{(\\d+)}".r.pattern.matcher(f)
+            var index = if (m.find()) m.group(1).toInt - 1 else 0
+            index = if (index < 0) 0 else index
+            if (withNotExists)
+              acc.withColumn(f, col("stfe")(f.replaceFirst("\\{\\d+}", "{}"))(index))
+            else {
+              val fieldExists = !acc.limit(1).select(array_contains(map_keys(col("stfe")), f.replaceFirst("\\{\\d+}", "{}"))).filter(r => r.getBoolean(0))
+                .isEmpty
+              if (fieldExists)
+                acc.withColumn(f, col("stfe")(f.replaceFirst("\\{\\d+}", "{}"))(index))
+              else
+                acc
+            }
+          }
+        } else acc
+      }
+      }.drop("__fields__", "stfe", "boolCol")
+    } else {
+      df
+    }
+  }
+
+  /**
    * Attempts to parse line ad JSON and evaluate specified fields
    *
    * @param line [[String]] - string to parse
    * @param fields [[ Set[String] ]] - set of fields for extraction
    * @return [[ Map[String, Any] ]] - map with extracted fields
    */
-  def parseJson(line: String, fields: Set[String]): Map[String, Any] = {
-    Try(OtJsonParser.jp.parseSpaths(line, fields)) match {
+  def parseJson(line: String, fields: Set[String], withNotExists:Boolean): Map[String, Any] = {
+    Try(OtJsonParser.jp.parseSpaths(line, fields, withNotExists)) match {
       case Success(v)  => v
       case Failure(ex) => Map.empty
     }
@@ -66,9 +113,9 @@ class FieldExtractor extends Serializable {
    * @param regexes [[ Map[String, String]) ]] - map with regexes (not used at the moment)
    * @return [[ Map[String, String] ]] - map with extracted fields
    */
-  def parseMVAny(line: String, fields: Set[String], regexes: Map[String, String]): Map[String, List[String]] = {
+  def parseMVAny(line: String, fields: Set[String], withNotExists:Boolean): Map[String, List[String]] = {
     val modifLine = line.replace("\\\"", quotesSub)
-    var parsed = parseJson(modifLine, fields) match {
+    var parsed = parseJson(modifLine, fields, withNotExists) match {
       case l: Map[String, Any] =>
         l.map(
           e => (e._1, e._2 match {
@@ -159,6 +206,6 @@ object FieldExtractor {
    *   .withColumn("parse", FieldExtractor.extractUDF(F.col("raw"), F.col("fields")))
    *   .show
    */
-  def extractUDF: UserDefinedFunction = udf((str: String, fields: Seq[String]) => fe.parseMVAny(str, fields.toSet, Map()))
+  def extractUDF: UserDefinedFunction = udf((str: String, fields: Seq[String], withNotExists: Boolean) => fe.parseMVAny(str, fields.toSet, withNotExists))
 
 }

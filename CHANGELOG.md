@@ -3,6 +3,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.0] - 2023-06-01
+### Changed
+- Principle of stats command working by separating time and other aggregation functions and calculations of them by different logic.
+- Principle of extraction of fields, used in query - distribution of extraction between commands, which require fields, introduced.
+### Fixed
+- Incorrect work of first-last aggregate functions in stats and stats-like commands in cases of large dataframe volume.
+- Incorrect work of join command in cases of existence of repeating by name, but not containing by join list columns in connected dataframes.
+
 ## [2.1.2] - 2023-02-01
 ### Fixed
 - Rollback of hotfix 2.1.1. 

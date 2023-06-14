@@ -1,13 +1,12 @@
 package ot.scalaotl
 package commands
 
-import ot.scalaotl.parsers._
-import ot.scalaotl.static.StatsFunctions
+import org.apache.spark.sql.DataFrame
+import ot.scalaotl.commands.OTLChart.OverBy
 import ot.scalaotl.extensions.DataFrameExt._
 import ot.scalaotl.extensions.StringExt._
-import OTLChart.OverBy
-
-import org.apache.spark.sql.DataFrame
+import ot.scalaotl.parsers._
+import ot.scalaotl.static.StatsFunctions
 
 class OTLChart(sq: SimpleQuery) extends OTLBaseCommand(sq, _seps = Set("by", "over")) with StatsParser with WildcardParser {
   val requiredKeywords = Set.empty[String]
@@ -44,7 +43,6 @@ class OTLChart(sq: SimpleQuery) extends OTLBaseCommand(sq, _seps = Set("by", "ov
       case sfHead :: sfTail => dfg.agg(sfHead, sfTail: _*).dropFake
       case _ => _df
     }
-
     // Rename columns to OTP format: from <BYVAL>_<FUNC> to <FUNC>: <BYVAL>. If needless, remove the block below and return `dfres`
     val newfields = returns.funcs.map(x => x.newfield.stripBackticks())
     val resCols = dfres.columns

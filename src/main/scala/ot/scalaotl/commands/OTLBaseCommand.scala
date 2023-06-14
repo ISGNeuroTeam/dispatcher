@@ -1,18 +1,17 @@
 package ot.scalaotl
 package commands
 
-import ot.scalaotl.extensions.StringExt._
-import ot.scalaotl.parsers._
-import ot.AppConfig.config
-import ot.AppConfig.getLogLevel
-
-import scala.util.{Failure, Success, Try}
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.functions.lit
-import org.apache.spark.sql.types.{NullType, StructField}
+import ot.AppConfig.{config, getLogLevel}
+import ot.dispatcher.sdk.core.CustomException.{E00012, E00013, E00014}
+import ot.dispatcher.sdk.proxy.PluginProxyCommand
+import ot.scalaotl.extensions.StringExt._
+import ot.scalaotl.parsers._
 import ot.scalaotl.utils.logging.StatViewer
-import ot.dispatcher.sdk.core.CustomException.{E00014, E00001, E00013, E00012}
+
+import scala.util.{Failure, Success, Try}
 
 abstract class OTLBaseCommand(sq: SimpleQuery, _seps: Set[String] = Set.empty) extends OTLSparkSession with DefaultParser {
   val args: String = sq.args
@@ -26,7 +25,7 @@ abstract class OTLBaseCommand(sq: SimpleQuery, _seps: Set[String] = Set.empty) e
   val requiredKeywords: Set[String]
   val optionalKeywords: Set[String]
 
-  def fieldsUsed: List[String] = getFieldsUsed(returns)
+  def fieldsUsed: List[String] = (getFieldsUsed(returns) ++ (positionalsMap.values.toList.flatMap(f => f.asInstanceOf[Positional].values))).distinct
 
   def fieldsGenerated: List[String] = getFieldsGenerated(returns)
 
@@ -38,6 +37,14 @@ abstract class OTLBaseCommand(sq: SimpleQuery, _seps: Set[String] = Set.empty) e
   }
 
   val classname: String = this.getClass.getSimpleName
+
+  val readingCommandsNames: List[String] = List("OTLInputlookup", "RawRead", "FullRead", "OTLRead")
+
+  def commandNotReading: Boolean = !readingCommandsNames.contains(classname)
+
+  val pluginReadingCommandNames: List[String] = List("ReadFile", "SQLRead", "FSGet")
+
+  def commandNotPluginReading: Boolean = !(classname == "PluginProxyCommand" && pluginReadingCommandNames.contains(this.asInstanceOf[PluginProxyCommand].commandname))
 
   def commandname: String = this.getClass.getSimpleName.toLowerCase.replace("otl", "")
 
@@ -121,9 +128,11 @@ abstract class OTLBaseCommand(sq: SimpleQuery, _seps: Set[String] = Set.empty) e
   def safeTransform(_df: DataFrame): DataFrame = {
     import java.lang.reflect.InvocationTargetException
     validateArgs()
-    val nullFields = fieldsUsed.distinct.map(_.stripBackticks()).diff(_df.columns.map(_.stripBackticks())).filter(!_.contains("*"))
-    val ndf = nullFields.foldLeft(_df) { (acc, col) => acc.withColumn(col, lit(null)) }
-    Try(loggedTransform(ndf)) match {
+    val workDf = if (commandNotReading && commandNotPluginReading)
+      buildWorkDf(_df)
+    else
+      _df
+    Try(loggedTransform(workDf)) match {
       case Success(df) => df
       case Failure(ex) if ex.getClass.getSimpleName.contains("CustomException") =>
         log.error(ex.getMessage)
@@ -142,6 +151,29 @@ abstract class OTLBaseCommand(sq: SimpleQuery, _seps: Set[String] = Set.empty) e
       case Failure(ex) =>
         log.error(f"Error in  '$commandname' command: ${ex.getMessage}")
         throw E00014(sq.searchId, commandname, ex)
+    }
+  }
+
+  /**
+   * Create dataframe with all columns used in current command
+   * @param df dataframe from result of previous item of pipe
+   * @return dataframe with all required columns
+   */
+  private def buildWorkDf(df: DataFrame): DataFrame = {
+    //Defining fields, which not exists in dataframe as columns but exists in command.
+    val notMakedFields: List[String] = fieldsUsed.map(_.stripBackticks).diff(df.columns.map(_.stripBackticks()))
+      .filterNot(cln => cln == "+" || cln.contains("*"))
+    notMakedFields match {
+      case head :: _ =>
+        if (df.columns.contains("_raw")) {
+          import ot.scalaotl.static.FieldExtractor
+
+          val extractor = new FieldExtractor
+          extractor.makeFieldExtraction(df, notMakedFields, FieldExtractor.extractUDF)
+        } else
+        //Otherwise (dataframe without raw) create not-maked columns as null columns
+          notMakedFields.foldLeft(df) { (acc, col) => acc.withColumn(col, lit(null)) }
+      case _ => df
     }
   }
 }

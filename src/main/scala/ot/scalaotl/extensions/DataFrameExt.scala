@@ -4,13 +4,9 @@ package extensions
 import org.apache.spark.sql.types.NullType
 
 object DataFrameExt {
-  import ot.dispatcher.OTLQuery
-  import ot.scalaotl.static.EvalFunctions
-
+  import org.apache.spark.sql.functions._
   import org.apache.spark.sql.types.NumericType
-
-  import org.apache.spark.sql.{ Column, DataFrame }
-  import org.apache.spark.sql.functions.{ lit, monotonically_increasing_id, concat, concat_ws, array_join, col, collect_set, when, size }
+  import org.apache.spark.sql.{Column, DataFrame}
 
   implicit class BetterDF(df: DataFrame) {
     // Add and drop '__fake__' column 
@@ -55,18 +51,18 @@ object DataFrameExt {
       complexAgg(group, aggFuncs: _*)
     }
 
-    def complexAgg(groups: List[String], aggFuncs: Column*): DataFrame = {
+    def complexAgg(groups: List[String], orderBy: String, aggFuncs: Column*): DataFrame = {
       aggFuncs.toList match {
         case head :: tail => {
           groups match {
-            case ghead :: gtail => df.groupBy(ghead, gtail: _*).agg(head, tail: _*)
-            case _              => df.agg(head, tail: _*)
+            case ghead :: gtail => df.groupBy(ghead, gtail: _*).agg(head, tail: _*).sort(orderBy)
+            case _              => df.agg(head, tail: _*).sort(orderBy)
           }
         }
         case _ => df
       }
     }
-    def complexAgg(groups: List[String], aggFuncs: List[Column]): DataFrame = complexAgg(groups, aggFuncs: _*)
+    def complexAgg(groups: List[String], orderBy: String = "__internal__", aggFuncs: List[Column]): DataFrame = complexAgg(groups, orderBy, aggFuncs: _*)
 
     /** Collects dataframe as boolean expression.
      * All value in columns combine with "AND" statement.

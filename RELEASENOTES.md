@@ -1,3 +1,9 @@
+## [2.2.0]
+### New
+- Principle of stats command working by separating time and other aggregation functions and calculations of them by different logic.
+- Principle of extraction of fields, used in query.
+- Improved connected logic in join command.
+
 ## [2.1.2] - Hotfix
 ### Hotfix
 - Rollback of hotfix 2.1.1. 

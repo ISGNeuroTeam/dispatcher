@@ -1,12 +1,12 @@
 package ot.scalaotl
 package commands
 
-import ot.scalaotl.parsers.ReplaceParser
-import ot.scalaotl.config.OTLLookups
-import ot.scalaotl.extensions.StringExt._
-import ot.scalaotl.extensions.DataFrameExt._
-import org.apache.spark.sql.functions.collect_set
 import org.apache.spark.sql.DataFrame
+import org.apache.spark.sql.functions.collect_set
+import ot.scalaotl.config.OTLLookups
+import ot.scalaotl.extensions.DataFrameExt._
+import ot.scalaotl.extensions.StringExt._
+import ot.scalaotl.parsers.ReplaceParser
 
 class OTLLookup(sq: SimpleQuery) extends OTLBaseCommand(sq, _seps = Set("output", "outputnew")) with OTLLookups with ReplaceParser with OTLSparkSession {
   val requiredKeywords = Set.empty[String]
@@ -30,7 +30,6 @@ class OTLLookup(sq: SimpleQuery) extends OTLBaseCommand(sq, _seps = Set("output"
       case Some(path) => spark.read.option("header", "true").option("inferSchema", "true").csv(path)
       case _ => spark.emptyDataFrame
     }
-
     val _dfCols = _df.columns.toList
     val initInputCols = inputs.fields.map(_.newfield)
     val lookupInputCols = inputs.fields.map(_.field)
@@ -52,14 +51,13 @@ class OTLLookup(sq: SimpleQuery) extends OTLBaseCommand(sq, _seps = Set("output"
         case h :: t => jdf.select(h, t: _*)
         case _ => jdf
       }
-      val isIntersects = !_df.schema.toList.exists(x => initInputCols.contains(x.name) && x.dataType.typeName == "null")
+      val isIntersects = _df.schema.toList.exists(x => initInputCols.contains(x.name))
       if (isIntersects) {
         val funcs = outputCols.map(x => collect_set(x).alias(x))
 
         val nullfields = fieldsUsedInFullQuery.intersect(_dfCols).diff(initInputCols)
 
         val dfJoined = _df.drop(nullfields: _*).join(jdfSelect, initInputCols, "left")
-
         _dfCols.map(_.addSurroundedBackticks) match {
           case h :: t =>
 
