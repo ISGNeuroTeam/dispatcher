@@ -66,22 +66,26 @@ class OtJsonParser extends Serializable {
    * @return
    */
   def parseSpaths(jsonStr: String, spaths: Set[String], withNotExistingFields:Boolean): Map[String, String] = {
-  val json = parse(jsonStr)
-    val extracted = json.extract[Map[String,Any]]
-    val paths: List[String] = {val extractedKeys = extracted.keys.toSet
+    val json = parse(jsonStr)
+    val extracted = json.extract[Map[String, Any]]
+    val paths: List[String] = (if (!withNotExistingFields) {
+      //in this case spaths filtering by confirming to json extracted keys, including multi-value cases
+      val extractedKeys = extracted.keys.toSet
       val bracketedExtractedKeys = extractedKeys.map(_ + "{}")
       val allKeys = extractedKeys.union(bracketedExtractedKeys)
       var accumPaths = spaths.intersect(allKeys)
       val dottedSpaths = spaths.filter(_.contains("."))
       accumPaths ++= dottedSpaths.filter(dsp => dsp.zipWithIndex.filter(_._1 == '.').map(_._2).map(dsp.substring(0, _)).exists(allKeys.contains))
       accumPaths
-    }.toList.distinct
+    }
+    else
+      spaths).toList.distinct
     //paths ++= extractedKeys.filter(ek => ek.contains(".") && spaths.contains(ek.substring(0, ek.indexOf(".") - 1)))
     //val flattened =
-      flattenWithFilter(extracted,"", paths.map(_.replace("{}","\\{\\d+\\}").replace("*",".*").r)
-        .toList );
-//    flattened.toList.groupBy(_._1.replaceAll("\\{\\d+\\}","{}")).map{case (k,v) => (k, v.sortBy(_._1).map(_._2))}
-//      .filter(x => x._1.contains("{}") || !(x._2.length > 1))
+    flattenWithFilter(extracted, "", paths.map(_.replace("{}", "\\{\\d+\\}").replace("*", ".*").r)
+      .toList);
+    //    flattened.toList.groupBy(_._1.replaceAll("\\{\\d+\\}","{}")).map{case (k,v) => (k, v.sortBy(_._1).map(_._2))}
+    //      .filter(x => x._1.contains("{}") || !(x._2.length > 1))
   }
 }
 
