@@ -1,14 +1,12 @@
 package ot.scalaotl
 package commands
 
-import ot.scalaotl.parsers.ExpressionParser
+import org.apache.spark.sql.DataFrame
+import org.apache.spark.sql.functions.expr
+import ot.dispatcher.sdk.core.CustomException.E00020
 import ot.scalaotl.extensions.ColumnExt._
 import ot.scalaotl.extensions.StringExt._
-
-import ot.dispatcher.sdk.core.CustomException.E00020
-
-import org.apache.spark.sql.functions.expr
-import org.apache.spark.sql.DataFrame
+import ot.scalaotl.parsers.ExpressionParser
 
 class OTLEval(sq: SimpleQuery) extends OTLBaseCommand(sq) with ExpressionParser {
   val requiredKeywords = Set.empty[String]
@@ -27,9 +25,13 @@ class OTLEval(sq: SimpleQuery) extends OTLBaseCommand(sq) with ExpressionParser 
   }
 
   override def transform(_df: DataFrame): DataFrame = {
+    log.debug("Start eval")
     val sch = _df.schema
+    log.debug("Start foldLeft")
     returns.evals.foldLeft(_df)((acc, eval) => eval match {
-      case StatsEval(newfield, expression) => acc
+      case StatsEval(newfield, expression) =>
+        log.debug("Start item")
+        acc
         .withColumn(newfield.strip("\"").strip("\'"), expr(expression.replaceFirst("""`\Q""" + newfield + """\E` *=""", "")
           .withPeriodReplace()).withExtensions(sch))
       case _ => acc
