@@ -35,7 +35,11 @@ class CacheManager(sparkSession: SparkSession) {
    */
   def makeCache(df: DataFrame, id: Int): Unit = {
     log.debug(s"Job $id. Cache: $fs$path" + s"search_$id.cache. Schema: ${df.schema}.")
+    df.explain(true)
     try {
+      //val dfView = df.collect()
+      //dfView.foreach(r => r.asInstanceOf[String])
+      val a = 0
       df.limit(maxRows).write
         .format("json")
         .save(s"$fs$path" + s"search_$id.cache/data")

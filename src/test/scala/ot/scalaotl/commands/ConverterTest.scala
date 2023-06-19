@@ -1,11 +1,8 @@
 package ot.scalaotl.commands
 
-import org.scalatest.Ignore
-
 import ot.dispatcher.OTLQuery
 import ot.scalaotl.Converter
 
-@Ignore
 class ConverterTest extends CommandTest {
 
   def createQuery(originalQuery: String, serviceQuery: String): OTLQuery = {
@@ -25,11 +22,12 @@ class ConverterTest extends CommandTest {
   }
 
   test("Test 0. Mystic columns. Command sort.") {
-    val query = "| makeresults count=10 | streamstats count as serialField | sort count=3 -serialField"
+    val query = "| makeresults count=10 | eval a = 1| eval a = a + 1 | eval a = a + 1 | eval a = a + 1 | eval a = a + 1 | eval a = a + 1 | eval a = a + 1 | eval a = a + 1 | eval a = a + 1 | eval a = a + 1 | eval a = a + 1 | outputlookup qqq.csv "
     val otlQuery = createQuery(query, query)
     val rdf = new Converter(otlQuery).run
     rdf.printSchema()
     rdf.show()
+    rdf.explain(false)
     val actual = rdf.toJSON.collect().mkString("[\n",",\n","\n]")
     val expected =
       """{}""".stripMargin

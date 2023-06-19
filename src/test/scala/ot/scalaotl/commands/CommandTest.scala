@@ -23,6 +23,7 @@ abstract class CommandTest extends FunSuite with BeforeAndAfterAll {
     .appName(config.getString("spark.appName"))
     .master(config.getString("spark.master"))
     .config("spark.sql.files.ignoreCorruptFiles", value = true)
+    .config("spark.sql.adaptive.enabled", value = true)
     .getOrCreate()
 
   val externalSchema: Boolean = config.getString("schema.external_schema").toBoolean
