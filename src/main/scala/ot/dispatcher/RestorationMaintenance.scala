@@ -17,6 +17,7 @@ class RestorationMaintenance(restorationMaintenanceArgs: Map[String, Any]) {
 
     Restorer.restoreDB(restorationMaintenanceArgs)
     Restorer.restoreCacheDirectory(restorationMaintenanceArgs)
+    Restorer.restoreCheckpointsDirectory(restorationMaintenanceArgs)
     Tracker.registerDispatcher(restorationMaintenanceArgs)
   }
 }

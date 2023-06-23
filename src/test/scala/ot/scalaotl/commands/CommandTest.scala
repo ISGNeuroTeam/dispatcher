@@ -25,7 +25,7 @@ abstract class CommandTest extends FunSuite with BeforeAndAfterAll {
     .config("spark.sql.files.ignoreCorruptFiles", value = true)
     .config("spark.sql.adaptive.enabled", value = true)
     .getOrCreate()
-
+  spark.sparkContext.setCheckpointDir("src/test/checkpoints")
   val externalSchema: Boolean = config.getString("schema.external_schema").toBoolean
   val fsdisk: String = config.getString("indexes.fs_disk")
   val fs_disk: FileSystem = {

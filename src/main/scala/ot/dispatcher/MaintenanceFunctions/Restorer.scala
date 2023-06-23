@@ -1,6 +1,6 @@
 package ot.dispatcher.MaintenanceFunctions
 
-import ot.dispatcher.{CacheManager, SuperDbConnector}
+import ot.dispatcher.{CacheManager, CheckpointsManager, SuperDbConnector}
 
 /** Consists of restoring DB and caches after reboot.
  *
@@ -26,6 +26,11 @@ object Restorer {
   def restoreCacheDirectory(systemMaintenanceArgs: Map[String, Any]): Unit = {
     val cacheManager: CacheManager = systemMaintenanceArgs("cacheManager").asInstanceOf[CacheManager]
     cacheManager.clearCacheDirectory()
+  }
+
+  def restoreCheckpointsDirectory(systemMaintenanceArgs: Map[String, Any]): Unit = {
+    val checkpointsManager: CheckpointsManager = systemMaintenanceArgs("checkpointsManager").asInstanceOf[CheckpointsManager]
+    checkpointsManager.setCheckpointsDir()
   }
 
 }
