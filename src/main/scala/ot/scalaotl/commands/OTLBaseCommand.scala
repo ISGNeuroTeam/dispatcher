@@ -104,9 +104,9 @@ abstract class OTLBaseCommand(sq: SimpleQuery, _seps: Set[String] = Set.empty) e
         .map(f => f.dataType + ":" + f.name)
         .mkString("[", ", ", "]")
     }")*/
-    log.debug("Transform started")
+    log.debug(s"${this.getClass.getSimpleName}: transform function started")
     val res = transform(_df)
-    log.debug("Transform finished")
+    log.debug(s"${this.getClass.getSimpleName}: transform function finished")
     log.debug(f"[SearchId:${sq.searchId}]Parsing attribute returns : ${returns.flatFields.mkString("[<", ">, <", ">]")}")
     log.debug(f"[SearchId:${sq.searchId}]Parsing attribute keywords : ${keywords.mkString("[", ", ", "]")}")
     log.debug(f"[SearchId:${sq.searchId}]Parsing attribute positionals : ${positionals.mkString("[", ", ", "]")}")
@@ -137,7 +137,7 @@ abstract class OTLBaseCommand(sq: SimpleQuery, _seps: Set[String] = Set.empty) e
       _df
     Try(loggedTransform(workDf)) match {
       case Success(df) =>
-        log.debug("Safe transform finished")
+        log.debug(s"transformation of ${this.getClass.getSimpleName} finished")
         df
       case Failure(ex) if ex.getClass.getSimpleName.contains("CustomException") =>
         log.error(ex.getMessage)

@@ -91,18 +91,19 @@ class Converter(otlQuery: OTLQuery, cache: Map[String, DataFrame]) extends OTLSp
   }
 
   def run: DataFrame = {
-    log.debug("Converter run started")
+    log.debug("Running of converter started.")
     var counter = 0
     transformers.foldLeft(df) {
       (accum, tr) =>
       {
         if (tr.getClass.getName.contains("OTLRead") || tr.getClass.getName.contains("OTLInputlookup") || tr.getClass.getName.contains("OTLLookup") || tr.getClass.getName.contains("RawRead") || tr.getClass.getName.contains("FullRead")) tr.setFieldsUsedInFullQuery(fieldsUsed)
-        log.debug("Cycle in converter: safeTransform")
+        log.debug(s"Cycling item in converter: transformation of ${tr.getClass.getSimpleName} started.")
         val res = tr.safeTransform(accum)
         counter += 1
-        if (counter % 100 == 0)
+        if (counter % 100 == 0) {
+          log.debug(s"Limit of $counter commands in query reached: checkpointing applied.")
           res.checkpoint()
-        else
+        } else
           res
       }
     }

@@ -69,7 +69,7 @@ class SuperVisor {
   val superCalculator = new SuperCalculator(cacheManager, superDbConnector)
   log.info("SuperCalculator started.")
 
-  //Execution environment commands provider
+  //Step 10. Loads execution environment commands provider
   val commandsProvider: Option[CommandsProvider] = if (kafkaExists) {
     Some(new CommandsProvider(config.getString("usercommands.directory"), log))
   } else {
@@ -82,7 +82,7 @@ class SuperVisor {
   /** Starts infinitive loop. */
   def run(): Unit = {
     log.info("SuperVisor started.")
-    // Step 10. Register computing node in Kafka
+    // Step 11. Register computing node in Kafka
     if (kafkaExists) {
       //host id defining through Java sys.process
       val p = Process("hostid")
@@ -92,12 +92,12 @@ class SuperVisor {
       log.info(s"Registering Node with ID ${computingNodeUuid}, Host ID: ${hostId}")
       log.info("Spark computing node registered in Kafka")
     }
-    // Step 11. Runs restoring actions after reboot or first start.
+    // Step 12. Runs restoring actions after reboot or first start.
     restorationMaintenance()
     log.info("Dispatcher restored DB and RAM Cache.")
-    // Step 12. Runs infinitive loop of system maintenance and user's queries.
+    // Step 13. Runs infinitive loop of system maintenance and user's queries.
     runInfiniteLoop()
-    // Step 13. Unregister computing node in Kafka
+    // Step 14. Unregister computing node in Kafka
     if (kafkaExists) {
       computingNodeInteractor.unregisterNode(computingNodeUuid)
       log.info(s"Unregistering Node with ID ${computingNodeUuid}")
@@ -316,12 +316,14 @@ class SuperVisor {
         }
         // Marks Job in DB as finished.
         superDbConnector.setJobStateFinished(otlQuery.id)
+        log.debug("Checkpoints data deleting...")
         sparkSession.sparkContext.getCheckpointDir match {
           case Some(dir) =>
             val fs = org.apache.hadoop.fs.FileSystem.get(new URI(dir), sparkSession.sparkContext.hadoopConfiguration)
             fs.delete(new Path(dir), true)
           case None =>
         }
+        log.debug("Checkpoints data deleted.")
         otlQuery.id
 
       } catch {
