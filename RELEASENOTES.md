@@ -1,3 +1,7 @@
+## [2.2.1] - Hotfix
+### Hotfix
+- Fixed incorrect parsing of quoted many-words-consisted keywords.
+
 ## [2.2.0]
 ### New
 - Principle of stats command working by separating time and other aggregation functions and calculations of them by different logic.
