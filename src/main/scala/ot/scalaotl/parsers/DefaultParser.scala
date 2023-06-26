@@ -18,7 +18,7 @@ trait DefaultParser {
    * @return List[[Keyword]] - list of keyword pairs
    */
   def keywordsParser: String => List[Keyword] = (args: String) => {
-    """(\S+)\s*=\s*(\S+)""".r.findAllIn(args)
+   """(\S+)\s*=\s*(".*?"|\S+)""".r.findAllIn(args)
       .matchData
       .map(x => 
         Keyword(
@@ -75,7 +75,7 @@ trait DefaultParser {
 
   /** Parses fields directly used in calculating and field names to return.
    * Also parses applied functions and eval expressions within arg string.
-   * 
+   *
    * ---
    * Example 1:
    * stats min(val) as minval, max(eval(if(val > 100000, val , val * 2))) 
