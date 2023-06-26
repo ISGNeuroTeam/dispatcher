@@ -14,7 +14,7 @@ class OTLFilldownTest extends CommandTest {
        ]"""
 
   test("Test 0. Filldown without directly fields enumeration and without defining of them (filldown by all columns). Command: table a | filldown") {
-    val actual = execute("""| filldown | table field, random_Field, ID""")
+    val actual = execute("""filldown | table field, random_Field, ID"""")
     val expected = """[
     {"field":"10","random_Field":"100","ID":"0"},
     {"field":"10","random_Field":"100","ID":"0"},
