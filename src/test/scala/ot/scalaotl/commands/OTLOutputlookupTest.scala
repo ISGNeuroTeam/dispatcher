@@ -3,6 +3,7 @@ package ot.scalaotl.commands
 import scala.io.Source
 
 class OTLOutputlookupTest extends CommandTest {
+
   test("Test 0. Command: | otoutputlookup ol1") {
     execute("""otoutputlookup ol1""")
     val actual =  Source.fromFile(f"$tmpDir/lookups/ol1").getLines.mkString("\n")

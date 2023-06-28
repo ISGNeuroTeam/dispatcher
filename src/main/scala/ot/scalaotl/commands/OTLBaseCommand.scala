@@ -9,6 +9,7 @@ import ot.dispatcher.sdk.core.CustomException.{E00012, E00013, E00014}
 import ot.dispatcher.sdk.proxy.PluginProxyCommand
 import ot.scalaotl.extensions.StringExt._
 import ot.scalaotl.parsers._
+import ot.scalaotl.utils.logging.StatViewer
 
 import scala.util.{Failure, Success, Try}
 
@@ -99,25 +100,25 @@ abstract class OTLBaseCommand(sq: SimpleQuery, _seps: Set[String] = Set.empty) e
       f" searchTimeFieldExtractionEnables: ${sq.searchTimeFieldExtractionEnables}")
     log.debug(f"[SearchId:${sq.searchId}]Fields used in query: ${fieldsUsed.mkString("[", ", ", "]")}")
     log.debug(f"[SearchId:${sq.searchId}]Fields will be generated: ${fieldsGenerated.mkString("[", ", ", "]")}")
-    /*log.debug(f"[SearchId:${sq.searchId}]Fields in input dataframe schema ${
+    log.debug(f"[SearchId:${sq.searchId}]Fields in input dataframe schema ${
       _df.schema.fields
         .map(f => f.dataType + ":" + f.name)
         .mkString("[", ", ", "]")
-    }")*/
+    }")
     log.debug(s"${this.getClass.getSimpleName}: transform function started")
     val res = transform(_df)
     log.debug(s"${this.getClass.getSimpleName}: transform function finished")
     log.debug(f"[SearchId:${sq.searchId}]Parsing attribute returns : ${returns.flatFields.mkString("[<", ">, <", ">]")}")
     log.debug(f"[SearchId:${sq.searchId}]Parsing attribute keywords : ${keywords.mkString("[", ", ", "]")}")
     log.debug(f"[SearchId:${sq.searchId}]Parsing attribute positionals : ${positionals.mkString("[", ", ", "]")}")
-    /*log.debug(f"[SearchId:${sq.searchId}]Fields in output dataframe schema ${
+    log.debug(f"[SearchId:${sq.searchId}]Fields in output dataframe schema ${
       res.schema.fields
         .map(f => f.dataType + ":" + f.name)
         .mkString("[", ", ", "]")
     }")
     if (log.getLevel == Level.DEBUG) {
       log.debug(f"[SearchId:${sq.searchId}]\n" + StatViewer.getPreviewString(res))
-    }*/
+    }
     log.debug(f"[SearchId:${sq.searchId}]======= End command $commandname ========")
     res
   }

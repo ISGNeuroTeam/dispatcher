@@ -3,6 +3,7 @@ package ot.dispatcher
 import com.isgneuro.sparkexecenv.{BaseCommand, CommandExecutor, CommandsProvider}
 import org.apache.hadoop.fs.Path
 import org.apache.log4j.{Level, Logger}
+import org.apache.spark.SparkContext
 import org.apache.spark.sql.SparkSession
 import ot.AppConfig
 import ot.AppConfig._
@@ -37,8 +38,9 @@ class SuperVisor {
   //Step 2. Generate computing node uuid
   var computingNodeUuid: String = getComputingNodeUuid().toString.replace("-", "")
   log.info(s"Computing node uuid: ${computingNodeUuid.toString}")
-  // Step 3. Loads Spark's session and runtime configs.
+  // Step 3. Loads Spark's session and context and runtime configs.
   val sparkSession: SparkSession = getSparkSession
+  val sparkContext: SparkContext = sparkSession.sparkContext
   log.info("SparkSession started.")
   // Step 4. Loads connector to DB.
   val superDbConnector = new SuperDbConnector()
@@ -259,7 +261,7 @@ class SuperVisor {
             val status = (cmJson \ "status").as[String]
             //Case of job cancelling
             if (status == "CANCELLED") {
-              val sc = sparkSession.sparkContext
+              val sc = sparkContext
               if (jobIds.contains(jobUuid)) {
                 sc.cancelJobGroup(jobUuid)
                 jobIds.remove(jobIds.indexOf(jobUuid))
@@ -305,9 +307,9 @@ class SuperVisor {
 
       try {
         // Set job group for timeout support.
-        sparkSession.sparkContext.setJobGroup(s"Search ID ${otlQuery.id}", s"Job was requested by ${otlQuery.username}", interruptOnCancel = true)
+        sparkContext.setJobGroup(s"Search ID ${otlQuery.id}", s"Job was requested by ${otlQuery.username}", interruptOnCancel = true)
         // Change pool to pool_user.
-        sparkSession.sparkContext.setLocalProperty("spark.scheduler.pool", s"pool_${otlQuery.username}")
+        sparkContext.setLocalProperty("spark.scheduler.pool", s"pool_${otlQuery.username}")
         // Starts main calculation process.
         superCalculator.calc(otlQuery)
         if (otlQuery.cache_ttl != 0) {
@@ -317,9 +319,9 @@ class SuperVisor {
         // Marks Job in DB as finished.
         superDbConnector.setJobStateFinished(otlQuery.id)
         log.debug("Checkpoints data deleting...")
-        sparkSession.sparkContext.getCheckpointDir match {
+        sparkContext.getCheckpointDir match {
           case Some(dir) =>
-            val fs = org.apache.hadoop.fs.FileSystem.get(new URI(dir), sparkSession.sparkContext.hadoopConfiguration)
+            val fs = org.apache.hadoop.fs.FileSystem.get(new URI(dir), sparkContext.hadoopConfiguration)
             fs.delete(new Path(dir), true)
           case None =>
         }
@@ -363,7 +365,7 @@ class SuperVisor {
   def execEnvFutureCalc(jobUuid: String, otlCommands: List[JsValue], commandClasses: Map[String, Class[_ <: BaseCommand]]) = {
     import scala.concurrent.blocking
     blocking {
-      sparkSession.sparkContext.setJobGroup(jobUuid, s"jobs of uuid ${jobUuid}")
+      sparkContext.setJobGroup(jobUuid, s"jobs of uuid ${jobUuid}")
       jobIds +: jobUuid
       val commandsExecutor = new CommandExecutor(commandClasses, computingNodeInteractor.logProgressMessage)
       commandsExecutor.execute(jobUuid, otlCommands)

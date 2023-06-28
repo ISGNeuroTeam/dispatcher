@@ -35,7 +35,6 @@ class CacheManager(sparkSession: SparkSession) {
    */
   def makeCache(df: DataFrame, id: Int): Unit = {
     log.debug(s"Job $id. Cache: $fs$path" + s"search_$id.cache. Schema: ${df.schema}.")
-    df.explain(true)
     try {
       df.limit(maxRows).write
         .format("json")
