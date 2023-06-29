@@ -1,5 +1,6 @@
 package ot.scalaotl
 
+import org.apache.hadoop.fs.Path
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.types.{StringType, StructField, StructType}
 import org.apache.spark.sql.{DataFrame, Row}
@@ -9,6 +10,8 @@ import ot.scalaotl.commands._
 import ot.scalaotl.commands.service.ReloadCommand
 import ot.scalaotl.extensions.DataFrameExt._
 import ot.scalaotl.extensions.StringExt._
+
+import java.net.URI
 
 /**
  * Transforms OTL queries to Spark queries, calculate resulting Spark DataFrame.
@@ -98,13 +101,20 @@ class Converter(otlQuery: OTLQuery, cache: Map[String, DataFrame]) extends OTLSp
       {
         if (tr.getClass.getName.contains("OTLRead") || tr.getClass.getName.contains("OTLInputlookup") || tr.getClass.getName.contains("OTLLookup") || tr.getClass.getName.contains("RawRead") || tr.getClass.getName.contains("FullRead")) tr.setFieldsUsedInFullQuery(fieldsUsed)
         log.debug(s"Cycling item in converter: transformation of ${tr.getClass.getSimpleName} started.")
-        val res = tr.safeTransform(accum)
+        val dfTransformed = tr.safeTransform(accum)
         counter += 1
         if (counter % 100 == 0) {
           log.debug(s"Limit of $counter commands in query reached: checkpointing applied.")
-          res.checkpoint()
+          val dfCheckpointed = dfTransformed.checkpoint()
+          spark.sparkContext.getCheckpointDir match {
+            case Some(dir) =>
+              val fs = org.apache.hadoop.fs.FileSystem.get(new URI(dir), spark.sparkContext.hadoopConfiguration)
+              fs.delete(new Path(dir + "/rdd*"), false)
+            case None =>
+          }
+          dfCheckpointed
         } else
-          res
+          dfTransformed
       }
     }
   }
