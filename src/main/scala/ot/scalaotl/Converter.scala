@@ -1,17 +1,15 @@
 package ot.scalaotl
 
-import org.apache.hadoop.fs.Path
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.types.{StringType, StructField, StructType}
 import org.apache.spark.sql.{DataFrame, Row}
+import ot.AppConfig
 import ot.AppConfig.getLogLevel
 import ot.dispatcher.OTLQuery
 import ot.scalaotl.commands._
 import ot.scalaotl.commands.service.ReloadCommand
 import ot.scalaotl.extensions.DataFrameExt._
 import ot.scalaotl.extensions.StringExt._
-
-import java.net.URI
 
 /**
  * Transforms OTL queries to Spark queries, calculate resulting Spark DataFrame.
@@ -96,6 +94,27 @@ class Converter(otlQuery: OTLQuery, cache: Map[String, DataFrame]) extends OTLSp
   def run: DataFrame = {
     log.debug("Running of converter started.")
     var counter = 0
+    /*for ((tr, i) <- transformers.zipWithIndex) {
+      val workDf = df
+      if (tr.getClass.getName.contains("OTLRead") || tr.getClass.getName.contains("OTLInputlookup") || tr.getClass.getName.contains("OTLLookup") || tr.getClass.getName.contains("RawRead") || tr.getClass.getName.contains("FullRead")) tr.setFieldsUsedInFullQuery(fieldsUsed)
+      log.debug(s"Cycling item in converter: transformation of ${tr.getClass.getSimpleName} started.")
+      val dfTransformed = tr.safeTransform(workDf)
+      if (i % 100 == 0) {
+        log.debug(s"Limit of $i commands in query reached: checkpointing applied.")
+        val dfCheckpointed = dfTransformed.checkpoint()
+        df = spark.createDataFrame(dfCheckpointed.toJavaRDD, dfCheckpointed.schema)
+      } else
+        df = dfTransformed
+      if (i > 100 && i % 50 == 0 && i % 100 != 0) {
+        spark.sparkContext.getCheckpointDir match {
+          case Some(dir) =>
+            val fs = org.apache.hadoop.fs.FileSystem.get(new URI(dir), spark.sparkContext.hadoopConfiguration)
+            fs.delete(new Path(dir + "/rdd*"), true)
+          case None =>
+        }
+      }
+    }
+    df*/
     transformers.foldLeft(df) {
       (accum, tr) =>
       {
@@ -103,15 +122,9 @@ class Converter(otlQuery: OTLQuery, cache: Map[String, DataFrame]) extends OTLSp
         log.debug(s"Cycling item in converter: transformation of ${tr.getClass.getSimpleName} started.")
         val dfTransformed = tr.safeTransform(accum)
         counter += 1
-        if (counter % 100 == 0) {
-          log.debug(s"Limit of $counter commands in query reached: checkpointing applied.")
+        if (counter % 500 == 0 && AppConfig.withCheckpoints) {
+          log.debug(s"Limit by plan size in query reached: checkpointing applied.")
           val dfCheckpointed = dfTransformed.checkpoint()
-          spark.sparkContext.getCheckpointDir match {
-            case Some(dir) =>
-              val fs = org.apache.hadoop.fs.FileSystem.get(new URI(dir), spark.sparkContext.hadoopConfiguration)
-              fs.delete(new Path(dir + "/rdd*"), false)
-            case None =>
-          }
           dfCheckpointed
         } else
           dfTransformed

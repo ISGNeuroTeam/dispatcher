@@ -1,11 +1,11 @@
 package ot
 
-import java.io.{File, FileInputStream}
-import java.util.Properties
-
 import com.typesafe.config.{Config, ConfigFactory}
 import org.apache.log4j.{Level, Logger}
 import ot.scalaotl.extensions.StringExt._
+
+import java.io.{File, FileInputStream}
+import java.util.Properties
 
 /** Loads config from application.conf or file from spark.application.config.
  *
@@ -13,6 +13,8 @@ import ot.scalaotl.extensions.StringExt._
  */
 object AppConfig {
   var logLevels: Map[String, Properties] = Map()
+
+  var withCheckpoints: Boolean = true
 
   def getLogLevel(config: Config, path: String): String = {
     getLogLevel(config, path, "main")
