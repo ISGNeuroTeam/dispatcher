@@ -94,27 +94,6 @@ class Converter(otlQuery: OTLQuery, cache: Map[String, DataFrame]) extends OTLSp
   def run: DataFrame = {
     log.debug("Running of converter started.")
     var counter = 0
-    /*for ((tr, i) <- transformers.zipWithIndex) {
-      val workDf = df
-      if (tr.getClass.getName.contains("OTLRead") || tr.getClass.getName.contains("OTLInputlookup") || tr.getClass.getName.contains("OTLLookup") || tr.getClass.getName.contains("RawRead") || tr.getClass.getName.contains("FullRead")) tr.setFieldsUsedInFullQuery(fieldsUsed)
-      log.debug(s"Cycling item in converter: transformation of ${tr.getClass.getSimpleName} started.")
-      val dfTransformed = tr.safeTransform(workDf)
-      if (i % 100 == 0) {
-        log.debug(s"Limit of $i commands in query reached: checkpointing applied.")
-        val dfCheckpointed = dfTransformed.checkpoint()
-        df = spark.createDataFrame(dfCheckpointed.toJavaRDD, dfCheckpointed.schema)
-      } else
-        df = dfTransformed
-      if (i > 100 && i % 50 == 0 && i % 100 != 0) {
-        spark.sparkContext.getCheckpointDir match {
-          case Some(dir) =>
-            val fs = org.apache.hadoop.fs.FileSystem.get(new URI(dir), spark.sparkContext.hadoopConfiguration)
-            fs.delete(new Path(dir + "/rdd*"), true)
-          case None =>
-        }
-      }
-    }
-    df*/
     transformers.foldLeft(df) {
       (accum, tr) =>
       {
