@@ -1,3 +1,7 @@
+## [2.2.2] - Hotfix
+### Hotfix
+- Fixed incorrect definition of mainArgs parameter in dispatcher-sdk.
+
 ## [2.2.1] - Hotfix
 ### Hotfix
 - Fixed incorrect parsing of quoted many-words-consisted keywords.
