@@ -1,7 +1,6 @@
 package ot.scalaotl.commands
 
 import org.scalatest.Ignore
-
 import ot.dispatcher.OTLQuery
 import ot.scalaotl.Converter
 

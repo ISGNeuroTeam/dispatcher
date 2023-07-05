@@ -1,7 +1,9 @@
 package ot.dispatcher
 
 import com.isgneuro.sparkexecenv.{BaseCommand, CommandExecutor, CommandsProvider}
+import org.apache.hadoop.fs.Path
 import org.apache.log4j.{Level, Logger}
+import org.apache.spark.SparkContext
 import org.apache.spark.sql.SparkSession
 import ot.AppConfig
 import ot.AppConfig._
@@ -10,6 +12,7 @@ import ot.dispatcher.sdk.core.CustomException
 import ot.dispatcher.sdk.core.CustomException.E00017
 import play.api.libs.json.JsValue
 
+import java.net.URI
 import java.sql.ResultSet
 import java.util.{Calendar, UUID}
 import scala.collection.mutable.ArrayBuffer
@@ -18,12 +21,19 @@ import scala.sys.process.Process
 /** Gets settings from config file and then runs infinitive loop of user's and system's queries.
  *
  * 1. Loads logger.
- * 2. Loads Spark's session and update runtime configs.
- * 3. Loads connector to DB.
- * 4. Loads RAM cache manager.
- * 5. Loads calculation manager.
- * 6. Runs restoring actions after reboot or first start.
- * 7. Runs infinitive loop of system maintenance and user's queries.
+ * 2. Generate computing node uuid.
+ * 3. Loads Spark's session and update runtime configs.
+ * 4. Loads connector to DB.
+ * 5. Load interactor with Kafka.
+ * 6. Kafka service existing checking.
+ * 7. Loads RAM cache manager.
+ * 8. Loads Spark checkpoints manager.
+ * 9. Loads calculation manager.
+ * 10. Loads execution environment commands provider.
+ * 11. Register computing node in Kafka.
+ * 12. Runs restoring actions after reboot or first start.
+ * 13. Runs infinitive loop of system maintenance and user's queries.
+ * 14. Unregister computing node in Kafka.
  *
  * @author Andrey Starchenkov (astarchenkov@ot.ru)
  */
@@ -32,11 +42,12 @@ class SuperVisor {
   // Step 1. Loads logger.
   val log: Logger = Logger.getLogger("VisorLogger")
   log.setLevel(Level.toLevel(getLogLevel(config, "visor")))
-  //Step 2. Generate computing node uuid
+  //Step 2. Generate computing node uuid.
   var computingNodeUuid: String = getComputingNodeUuid().toString.replace("-", "")
   log.info(s"Computing node uuid: ${computingNodeUuid.toString}")
-  // Step 3. Loads Spark's session and runtime configs.
+  // Step 3. Loads Spark's session and context and runtime configs.
   val sparkSession: SparkSession = getSparkSession
+  val sparkContext: SparkContext = sparkSession.sparkContext
   log.info("SparkSession started.")
   // Step 4. Loads connector to DB.
   val superDbConnector = new SuperDbConnector()
@@ -46,7 +57,7 @@ class SuperVisor {
   val kafkaPort: Int = config.getInt("kafka.port")
   val kafkaExists: Boolean = config.getBoolean("kafka.computing_node_mode_enabled")
   val computingNodeInteractor: ComputingNodeInteractable = if (kafkaExists){new ComputingNodeInteractor(kafkaIpAddress, kafkaPort)} else {new NullComputingNodeInteractor}
-  //Step 6. Kafka service existing checking
+  //Step 6. Kafka service existing checking.
   if (kafkaExists) {
     log.info("SuperKafkaConnector is ready.")
     log.info("Computing Node Mode is enabled")
@@ -58,11 +69,16 @@ class SuperVisor {
   // Step 7. Loads RAM cache manager.
   val cacheManager = new CacheManager(sparkSession)
   log.info("CacheManager started.")
-  // Step 8. Loads calculation manager.
+
+  // Step 8. Loads Spark checkpoints manager.
+  val checkpointsManager = new CheckpointsManager(sparkSession)
+  log.info("CheckpointsManager started.")
+
+  // Step 9. Loads calculation manager.
   val superCalculator = new SuperCalculator(cacheManager, superDbConnector)
   log.info("SuperCalculator started.")
 
-  //Execution environment commands provider
+  //Step 10. Loads execution environment commands provider.
   val commandsProvider: Option[CommandsProvider] = if (kafkaExists) {
     Some(new CommandsProvider(config.getString("usercommands.directory"), log))
   } else {
@@ -75,7 +91,7 @@ class SuperVisor {
   /** Starts infinitive loop. */
   def run(): Unit = {
     log.info("SuperVisor started.")
-    // Step 9. Register computing node in Kafka
+    // Step 11. Register computing node in Kafka.
     if (kafkaExists) {
       //host id defining through Java sys.process
       val p = Process("hostid")
@@ -85,12 +101,12 @@ class SuperVisor {
       log.info(s"Registering Node with ID ${computingNodeUuid}, Host ID: ${hostId}")
       log.info("Spark computing node registered in Kafka")
     }
-    // Step 10. Runs restoring actions after reboot or first start.
+    // Step 12. Runs restoring actions after reboot or first start.
     restorationMaintenance()
     log.info("Dispatcher restored DB and RAM Cache.")
-    // Step 11. Runs infinitive loop of system maintenance and user's queries.
+    // Step 13. Runs infinitive loop of system maintenance and user's queries.
     runInfiniteLoop()
-    // Step 12. Unregister computing node in Kafka
+    // Step 14. Unregister computing node in Kafka.
     if (kafkaExists) {
       computingNodeInteractor.unregisterNode(computingNodeUuid)
       log.info(s"Unregistering Node with ID ${computingNodeUuid}")
@@ -183,6 +199,7 @@ class SuperVisor {
     val restorationMaintenanceArgs = Map(
       "superConnector" -> superDbConnector,
       "cacheManager" -> cacheManager,
+      "checkpointsManager" -> checkpointsManager,
       "sparkSession" -> sparkSession
     )
 
@@ -251,9 +268,8 @@ class SuperVisor {
             val status = (cmJson \ "status").as[String]
             //Case of job cancelling
             if (status == "CANCELLED") {
-              val sc = sparkSession.sparkContext
               if (jobIds.contains(jobUuid)) {
-                sc.cancelJobGroup(jobUuid)
+                sparkContext.cancelJobGroup(jobUuid)
                 jobIds.remove(jobIds.indexOf(jobUuid))
                 log.info(s"Job with uuid ${jobUuid} was canceled.")
               } else {
@@ -297,9 +313,9 @@ class SuperVisor {
 
       try {
         // Set job group for timeout support.
-        sparkSession.sparkContext.setJobGroup(s"Search ID ${otlQuery.id}", s"Job was requested by ${otlQuery.username}", interruptOnCancel = true)
+        sparkContext.setJobGroup(s"Search ID ${otlQuery.id}", s"Job was requested by ${otlQuery.username}", interruptOnCancel = true)
         // Change pool to pool_user.
-        sparkSession.sparkContext.setLocalProperty("spark.scheduler.pool", s"pool_${otlQuery.username}")
+        sparkContext.setLocalProperty("spark.scheduler.pool", s"pool_${otlQuery.username}")
         // Starts main calculation process.
         superCalculator.calc(otlQuery)
         if (otlQuery.cache_ttl != 0) {
@@ -308,6 +324,14 @@ class SuperVisor {
         }
         // Marks Job in DB as finished.
         superDbConnector.setJobStateFinished(otlQuery.id)
+        log.debug("Checkpoints data deleting...")
+        sparkContext.getCheckpointDir match {
+          case Some(dir) =>
+            val fs = org.apache.hadoop.fs.FileSystem.get(new URI(dir), sparkContext.hadoopConfiguration)
+            fs.delete(new Path(dir), true)
+          case None =>
+        }
+        log.debug("Checkpoints data deleted.")
         otlQuery.id
 
       } catch {
@@ -347,7 +371,7 @@ class SuperVisor {
   def execEnvFutureCalc(jobUuid: String, otlCommands: List[JsValue], commandClasses: Map[String, Class[_ <: BaseCommand]]) = {
     import scala.concurrent.blocking
     blocking {
-      sparkSession.sparkContext.setJobGroup(jobUuid, s"jobs of uuid ${jobUuid}")
+      sparkContext.setJobGroup(jobUuid, s"jobs of uuid ${jobUuid}")
       jobIds +: jobUuid
       val commandsExecutor = new CommandExecutor(commandClasses, computingNodeInteractor.logProgressMessage)
       commandsExecutor.execute(jobUuid, otlCommands)
