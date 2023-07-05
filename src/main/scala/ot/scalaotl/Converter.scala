@@ -103,8 +103,7 @@ class Converter(otlQuery: OTLQuery, cache: Map[String, DataFrame]) extends OTLSp
         counter += 1
         if (counter % 500 == 0 && AppConfig.withCheckpoints) {
           log.debug(s"Limit by plan size in query reached: checkpointing applied.")
-          val dfCheckpointed = dfTransformed.checkpoint()
-          dfCheckpointed
+          dfTransformed.checkpoint()
         } else
           dfTransformed
       }

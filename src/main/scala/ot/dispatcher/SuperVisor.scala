@@ -21,12 +21,19 @@ import scala.sys.process.Process
 /** Gets settings from config file and then runs infinitive loop of user's and system's queries.
  *
  * 1. Loads logger.
- * 2. Loads Spark's session and update runtime configs.
- * 3. Loads connector to DB.
- * 4. Loads RAM cache manager.
- * 5. Loads calculation manager.
- * 6. Runs restoring actions after reboot or first start.
- * 7. Runs infinitive loop of system maintenance and user's queries.
+ * 2. Generate computing node uuid.
+ * 3. Loads Spark's session and update runtime configs.
+ * 4. Loads connector to DB.
+ * 5. Load interactor with Kafka.
+ * 6. Kafka service existing checking.
+ * 7. Loads RAM cache manager.
+ * 8. Loads Spark checkpoints manager.
+ * 9. Loads calculation manager.
+ * 10. Loads execution environment commands provider.
+ * 11. Register computing node in Kafka.
+ * 12. Runs restoring actions after reboot or first start.
+ * 13. Runs infinitive loop of system maintenance and user's queries.
+ * 14. Unregister computing node in Kafka.
  *
  * @author Andrey Starchenkov (astarchenkov@ot.ru)
  */
@@ -35,7 +42,7 @@ class SuperVisor {
   // Step 1. Loads logger.
   val log: Logger = Logger.getLogger("VisorLogger")
   log.setLevel(Level.toLevel(getLogLevel(config, "visor")))
-  //Step 2. Generate computing node uuid
+  //Step 2. Generate computing node uuid.
   var computingNodeUuid: String = getComputingNodeUuid().toString.replace("-", "")
   log.info(s"Computing node uuid: ${computingNodeUuid.toString}")
   // Step 3. Loads Spark's session and context and runtime configs.
@@ -50,7 +57,7 @@ class SuperVisor {
   val kafkaPort: Int = config.getInt("kafka.port")
   val kafkaExists: Boolean = config.getBoolean("kafka.computing_node_mode_enabled")
   val computingNodeInteractor: ComputingNodeInteractable = if (kafkaExists){new ComputingNodeInteractor(kafkaIpAddress, kafkaPort)} else {new NullComputingNodeInteractor}
-  //Step 6. Kafka service existing checking
+  //Step 6. Kafka service existing checking.
   if (kafkaExists) {
     log.info("SuperKafkaConnector is ready.")
     log.info("Computing Node Mode is enabled")
@@ -63,7 +70,7 @@ class SuperVisor {
   val cacheManager = new CacheManager(sparkSession)
   log.info("CacheManager started.")
 
-  // Step 8. Loads Spark checkpoints manager
+  // Step 8. Loads Spark checkpoints manager.
   val checkpointsManager = new CheckpointsManager(sparkSession)
   log.info("CheckpointsManager started.")
 
@@ -71,7 +78,7 @@ class SuperVisor {
   val superCalculator = new SuperCalculator(cacheManager, superDbConnector)
   log.info("SuperCalculator started.")
 
-  //Step 10. Loads execution environment commands provider
+  //Step 10. Loads execution environment commands provider.
   val commandsProvider: Option[CommandsProvider] = if (kafkaExists) {
     Some(new CommandsProvider(config.getString("usercommands.directory"), log))
   } else {
@@ -84,7 +91,7 @@ class SuperVisor {
   /** Starts infinitive loop. */
   def run(): Unit = {
     log.info("SuperVisor started.")
-    // Step 11. Register computing node in Kafka
+    // Step 11. Register computing node in Kafka.
     if (kafkaExists) {
       //host id defining through Java sys.process
       val p = Process("hostid")
@@ -99,7 +106,7 @@ class SuperVisor {
     log.info("Dispatcher restored DB and RAM Cache.")
     // Step 13. Runs infinitive loop of system maintenance and user's queries.
     runInfiniteLoop()
-    // Step 14. Unregister computing node in Kafka
+    // Step 14. Unregister computing node in Kafka.
     if (kafkaExists) {
       computingNodeInteractor.unregisterNode(computingNodeUuid)
       log.info(s"Unregistering Node with ID ${computingNodeUuid}")
@@ -261,9 +268,8 @@ class SuperVisor {
             val status = (cmJson \ "status").as[String]
             //Case of job cancelling
             if (status == "CANCELLED") {
-              val sc = sparkContext
               if (jobIds.contains(jobUuid)) {
-                sc.cancelJobGroup(jobUuid)
+                sparkContext.cancelJobGroup(jobUuid)
                 jobIds.remove(jobIds.indexOf(jobUuid))
                 log.info(s"Job with uuid ${jobUuid} was canceled.")
               } else {

@@ -2,7 +2,7 @@ package ot.dispatcher.MaintenanceFunctions
 
 import ot.dispatcher.{CacheManager, CheckpointsManager, SuperDbConnector}
 
-/** Consists of restoring DB and caches after reboot.
+/** Consists of restoring DB, checkpoints and caches after reboot.
  *
  * @author Andrey Starchenkov (astarchenkov@ot.ru)
  */
@@ -28,9 +28,14 @@ object Restorer {
     cacheManager.clearCacheDirectory()
   }
 
+  /**
+   * Removes all content from checkpoints directory and set path to checkpoints directory in spark context
+   * @param systemMaintenanceArgs Map with all args for different functions.
+   */
   def restoreCheckpointsDirectory(systemMaintenanceArgs: Map[String, Any]): Unit = {
     val checkpointsManager: CheckpointsManager = systemMaintenanceArgs("checkpointsManager").asInstanceOf[CheckpointsManager]
-    checkpointsManager.setCheckpointsDir()
+    checkpointsManager.clearCheckpointsDirectory()
+    checkpointsManager.setCheckpointsDirectory()
   }
 
 }

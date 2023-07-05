@@ -13,17 +13,17 @@ import ot.scalaotl.extensions.StringExt._
  *
  * __'''filldown'''__ takes three optional argument:
  *
- *    1.  _'''wc-field-list'''_ - comma-separated field names to which the command will apply. If this param
+ *    1.  '''wc-field-list''' - comma-separated field names to which the command will apply. If this param
  *    is empty, than command will apply to all NULL-value-containing fields
  *
- *    2. _'''by'''_ - defines the field by which grouping occurs in the table to further replace
- *    the null values of the fields specified in the _'''wc-field-list'''_ parameter separately for each group.
+ *    2. '''by''' - defines the field by which grouping occurs in the table to further replace
+ *    the null values of the fields specified in the '''wc-field-list''' parameter separately for each group.
  *
- *    3. _'''defineTargetColumns'''_ - boolean parameter;
- *    if true, than in case of missing _'''wc-field-list'''_ target (null values containing) columns defined automatically, else __'''filldown'''__ try to work on all columns.
- *    In case, if _'''wc-field-list'''_ exists, this parameter will be ignored. Default value: false.
+ *    3. '''defineTargetColumns''' - boolean parameter;
+ *    if true, than in case of missing '''wc-field-list''' target (null values containing) columns defined automatically, else __'''filldown'''__ try to work on all columns.
+ *    In case, if '''wc-field-list''' exists, this parameter will be ignored. Default value: false.
  *
- * Note: if _'''by'''_ is used, the parameter _'''wc-field-list'''_ should be specified.
+ * Note: if '''by''' is used, the parameter '''wc-field-list''' should be specified.
  *
  * =Usage examples=
  * * OTL 1:
