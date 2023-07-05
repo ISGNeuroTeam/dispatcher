@@ -1,3 +1,7 @@
+## [2.3.0]
+### New
+- Applying of checkpointing technology to support the performance and fault tolerance of large queries.
+
 ## [2.2.2] - Hotfix
 ### Hotfix
 - Fixed incorrect definition of mainArgs parameter in dispatcher-sdk.
