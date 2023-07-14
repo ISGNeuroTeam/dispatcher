@@ -25,9 +25,11 @@ class OTLEval(sq: SimpleQuery) extends OTLBaseCommand(sq) with ExpressionParser 
   }
 
   override def transform(_df: DataFrame): DataFrame = {
-    val sch = _df.schema
+    var sch = _df.schema
     returns.evals.foldLeft(_df)((acc, eval) => eval match {
-      case StatsEval(newfield, expression) => acc
+      case StatsEval(newfield, expression) =>
+        sch = acc.schema
+        acc
         .withColumn(newfield.strip("\"").strip("\'"), expr(expression.replaceFirst("""`\Q""" + newfield + """\E` *=""", "")
           .withPeriodReplace()).withExtensions(sch))
       case _ => acc

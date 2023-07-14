@@ -101,7 +101,7 @@ class Converter(otlQuery: OTLQuery, cache: Map[String, DataFrame]) extends OTLSp
         log.debug(s"Cycling item in converter: transformation of ${tr.getClass.getSimpleName} started.")
         val dfTransformed = tr.safeTransform(accum)
         counter += 1
-        if (counter % 500 == 0 && AppConfig.withCheckpoints) {
+        if ((counter % 500 == 0 || dfTransformed.queryExecution.logical.toString().length > 80000) && AppConfig.withCheckpoints) {
           log.debug(s"Limit by plan size in query reached: checkpointing applied.")
           dfTransformed.checkpoint()
         } else
