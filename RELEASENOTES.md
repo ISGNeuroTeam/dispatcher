@@ -1,3 +1,7 @@
+## [2.3.1]
+### Hotfix
+- Added support for long commands combined to long queries.
+
 ## [2.3.0]
 ### New
 - Applying of checkpointing technology to support the performance and fault tolerance of large queries.
