@@ -105,7 +105,9 @@ abstract class OTLBaseCommand(sq: SimpleQuery, _seps: Set[String] = Set.empty) e
         .map(f => f.dataType + ":" + f.name)
         .mkString("[", ", ", "]")
     }")
+    log.debug(s"${this.getClass.getSimpleName}: transform function started")
     val res = transform(_df)
+    log.debug(s"${this.getClass.getSimpleName}: transform function finished")
     log.debug(f"[SearchId:${sq.searchId}]Parsing attribute returns : ${returns.flatFields.mkString("[<", ">, <", ">]")}")
     log.debug(f"[SearchId:${sq.searchId}]Parsing attribute keywords : ${keywords.mkString("[", ", ", "]")}")
     log.debug(f"[SearchId:${sq.searchId}]Parsing attribute positionals : ${positionals.mkString("[", ", ", "]")}")
@@ -127,13 +129,17 @@ abstract class OTLBaseCommand(sq: SimpleQuery, _seps: Set[String] = Set.empty) e
 
   def safeTransform(_df: DataFrame): DataFrame = {
     import java.lang.reflect.InvocationTargetException
+    log.debug("Start args validating")
     validateArgs()
+    log.debug("Start creating work df")
     val workDf = if (commandNotReading && commandNotPluginReading)
       buildWorkDf(_df)
     else
       _df
     Try(loggedTransform(workDf)) match {
-      case Success(df) => df
+      case Success(df) =>
+        log.debug(s"transformation of ${this.getClass.getSimpleName} finished")
+        df
       case Failure(ex) if ex.getClass.getSimpleName.contains("CustomException") =>
         log.error(ex.getMessage)
         throw ex

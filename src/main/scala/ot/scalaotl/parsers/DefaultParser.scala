@@ -18,7 +18,7 @@ trait DefaultParser {
    * @return List[[Keyword]] - list of keyword pairs
    */
   def keywordsParser: String => List[Keyword] = (args: String) => {
-   """(\S+)\s*=\s*(".*?"|\S+)""".r.findAllIn(args)
+    """(\S+)\s*=\s*(".*?"|\S+)""".r.findAllIn(args)
       .matchData
       .map(x => 
         Keyword(

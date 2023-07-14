@@ -107,11 +107,11 @@ config-1.3.4.jar
 json4s-ast_2.11-3.5.5.jar  
 json4s-native_2.11-3.5.5.jar  
 postgresql-42.2.5.jar  
-dispatcher-sdk_2.11-1.2.2.jar
+dispatcher-sdk_2.11-1.4.0.jar
 
 ## Compatible with
 
-ot_simple_rest 1.7.0   
+ot_simple_rest 1.17.3   
 ot_simple 1.0.0  
 zeppelin-spl 2.2.0
 ot_simple_zeppelin 0.2.1
@@ -129,6 +129,7 @@ Nikolay Ryabykh (nryabykh@isgneuro.com)
 Sergei Ermilov (sermilov@isgneuro.com)  
 Dmitriy Gusarov (dgusarov@isgneuro.com)  
 Andrey Starchenkov (astarchenkov@isgneuro.com) 
+Dmitrii Nikolaev (dnikolaev@isgneuro.com)
 
 ## License
 

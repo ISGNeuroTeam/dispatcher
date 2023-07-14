@@ -3,6 +3,7 @@ package ot.scalaotl
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.types.{StringType, StructField, StructType}
 import org.apache.spark.sql.{DataFrame, Row}
+import ot.AppConfig
 import ot.AppConfig.getLogLevel
 import ot.dispatcher.OTLQuery
 import ot.scalaotl.commands._
@@ -90,12 +91,23 @@ class Converter(otlQuery: OTLQuery, cache: Map[String, DataFrame]) extends OTLSp
     totalFieldsUsed.distinct
   }
 
-  def run: DataFrame = transformers.foldLeft(df) {
+  def run: DataFrame = {
+    log.debug("Running of converter started.")
+    var counter = 0
+    transformers.foldLeft(df) {
       (accum, tr) =>
       {
         if (tr.getClass.getName.contains("OTLRead") || tr.getClass.getName.contains("OTLInputlookup") || tr.getClass.getName.contains("OTLLookup") || tr.getClass.getName.contains("RawRead") || tr.getClass.getName.contains("FullRead")) tr.setFieldsUsedInFullQuery(fieldsUsed)
-        tr.safeTransform(accum)
+        log.debug(s"Cycling item in converter: transformation of ${tr.getClass.getSimpleName} started.")
+        val dfTransformed = tr.safeTransform(accum)
+        counter += 1
+        if (counter % 500 == 0 && AppConfig.withCheckpoints) {
+          log.debug(s"Limit by plan size in query reached: checkpointing applied.")
+          dfTransformed.checkpoint()
+        } else
+          dfTransformed
       }
+    }
   }
 
   def findSubsearches(s: String) = {

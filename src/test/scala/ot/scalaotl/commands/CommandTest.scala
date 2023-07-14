@@ -12,6 +12,7 @@ import ot.scalaotl.Converter
 import ot.scalaotl.extensions.StringExt._
 
 import java.io.{File, PrintWriter}
+import java.net.URI
 import scala.collection.mutable.ListBuffer
 import scala.reflect.io.Directory
 
@@ -24,7 +25,8 @@ abstract class CommandTest extends FunSuite with BeforeAndAfterAll {
     .master(config.getString("spark.master"))
     .config("spark.sql.files.ignoreCorruptFiles", value = true)
     .getOrCreate()
-
+  val sparkContext = spark.sparkContext
+  sparkContext.setCheckpointDir("src/test/checkpoints")
   val externalSchema: Boolean = config.getString("schema.external_schema").toBoolean
   val fsdisk: String = config.getString("indexes.fs_disk")
   val fs_disk: FileSystem = {
@@ -237,11 +239,21 @@ abstract class CommandTest extends FunSuite with BeforeAndAfterAll {
    */
   override def afterAll(): Unit = {
     cleanIndexFiles(tmpDir)
+    cleanCheckpointsDirectory()
   }
 
   def cleanIndexFiles(path: String): AnyVal ={
     val indexDir = new Directory(new File(path))
     if (indexDir.exists) indexDir.deleteRecursively()
+  }
+
+  def cleanCheckpointsDirectory(): Unit = {
+    sparkContext.getCheckpointDir match {
+      case Some(dir) =>
+        val fs = org.apache.hadoop.fs.FileSystem.get(new URI(dir), sparkContext.hadoopConfiguration)
+        fs.delete(new Path(dir), true)
+      case None =>
+    }
   }
 
   def setNullableStateOfColumn(df: DataFrame, column: String, nullable: Boolean) : DataFrame = {
