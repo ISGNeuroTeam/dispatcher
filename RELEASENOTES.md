@@ -1,3 +1,7 @@
+## [2.3.2]
+### Hotfix
+- Added support for checkpointing on parallel working queries.
+
 ## [2.3.1]
 ### Hotfix
 - Added support for long commands combined to long queries.
