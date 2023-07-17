@@ -85,7 +85,9 @@ class SuperVisor {
     None
   }
 
-  //Identifiers of executing jobs
+
+  //Identifiers of executing jobs (For Dispatcher without and with Kafka )
+  var activeJobIds = new ArrayBuffer[Int]()
   var jobIds = new ArrayBuffer[String]()
 
   /** Starts infinitive loop. */
@@ -168,7 +170,7 @@ class SuperVisor {
       //Launch process of getting jobs from Kafka in separate thread
       computingNodeInteractor.launchJobsGettingProcess(computingNodeUuid)
     }
-      //Importing commands for executing in spark execution environment
+    //Importing commands for executing in spark execution environment
     val commandClasses:  Map[String, Class[_ <: BaseCommand]] = if (kafkaExists) {commandsProvider.get.commandClasses} else {Map()}
 
     while (true) {
@@ -263,34 +265,34 @@ class SuperVisor {
       try {
         var cmJson = commandStructs.poll().asInstanceOf[JsValue]
         while (cmJson != null) {
-            //log.info("cmJson" + cmJson.toString() + cmJson.getClass.getName)
-            val jobUuid = (cmJson \ "uuid").as[String]
-            val status = (cmJson \ "status").as[String]
-            //Case of job cancelling
-            if (status == "CANCELLED") {
-              if (jobIds.contains(jobUuid)) {
-                sparkContext.cancelJobGroup(jobUuid)
-                jobIds.remove(jobIds.indexOf(jobUuid))
-                log.info(s"Job with uuid ${jobUuid} was canceled.")
-              } else {
-                log.info(s"Job with uuid ${jobUuid} isn't exists among launched jobs.")
-              }
-            } //Case of job executing
-              else if (status == "READY_TO_EXECUTE") {
-              log.info("Ready to exec " + jobUuid)
-              val jsCommands = cmJson \ "commands"
-              //log.info("Js commands: " + jsCommands.toString + jsCommands.getClass.getName)
-              val execEnvFuture = Future(execEnvFutureCalc(jobUuid, jsCommands.as[List[JsValue]], commandClasses))
-              execEnvFuture.onComplete {
-                case Success(value) =>
-                  log.info(s"Future Job ${jobUuid} is finished.")
-                case Failure(exception) =>
-                  log.error(s"Future failed: ${exception.getLocalizedMessage}.")
-                  val jobStatusText = exception.getLocalizedMessage
-                  computingNodeInteractor.jobStatusNotify(jobUuid, "FAILED", jobStatusText)
-                  log.error(s"Failed ${jobUuid} ", exception)
-              }
+          //log.info("cmJson" + cmJson.toString() + cmJson.getClass.getName)
+          val jobUuid = (cmJson \ "uuid").as[String]
+          val status = (cmJson \ "status").as[String]
+          //Case of job cancelling
+          if (status == "CANCELLED") {
+            if (jobIds.contains(jobUuid)) {
+              sparkContext.cancelJobGroup(jobUuid)
+              jobIds.remove(jobIds.indexOf(jobUuid))
+              log.info(s"Job with uuid ${jobUuid} was canceled.")
+            } else {
+              log.info(s"Job with uuid ${jobUuid} isn't exists among launched jobs.")
             }
+          } //Case of job executing
+          else if (status == "READY_TO_EXECUTE") {
+            log.info("Ready to exec " + jobUuid)
+            val jsCommands = cmJson \ "commands"
+            //log.info("Js commands: " + jsCommands.toString + jsCommands.getClass.getName)
+            val execEnvFuture = Future(execEnvFutureCalc(jobUuid, jsCommands.as[List[JsValue]], commandClasses))
+            execEnvFuture.onComplete {
+              case Success(value) =>
+                log.info(s"Future Job ${jobUuid} is finished.")
+              case Failure(exception) =>
+                log.error(s"Future failed: ${exception.getLocalizedMessage}.")
+                val jobStatusText = exception.getLocalizedMessage
+                computingNodeInteractor.jobStatusNotify(jobUuid, "FAILED", jobStatusText)
+                log.error(s"Failed ${jobUuid} ", exception)
+            }
+          }
           cmJson = commandStructs.poll().asInstanceOf[JsValue]
         }
       } catch {
@@ -312,6 +314,8 @@ class SuperVisor {
     blocking {
 
       try {
+        // Add id of active job to list
+        activeJobIds += otlQuery.id
         // Set job group for timeout support.
         sparkContext.setJobGroup(s"Search ID ${otlQuery.id}", s"Job was requested by ${otlQuery.username}", interruptOnCancel = true)
         // Change pool to pool_user.
@@ -324,14 +328,20 @@ class SuperVisor {
         }
         // Marks Job in DB as finished.
         superDbConnector.setJobStateFinished(otlQuery.id)
-        log.debug("Checkpoints data deleting...")
-        sparkContext.getCheckpointDir match {
-          case Some(dir) =>
-            val fs = org.apache.hadoop.fs.FileSystem.get(new URI(dir), sparkContext.hadoopConfiguration)
-            fs.delete(new Path(dir), true)
-          case None =>
+        synchronized {
+          if (activeJobIds.toArray.diff(Array(otlQuery.id)).isEmpty) {
+            log.debug("Checkpoints data deleting...")
+            sparkContext.getCheckpointDir match {
+              case Some(dir) =>
+                val fs = org.apache.hadoop.fs.FileSystem.get(new URI(dir), sparkContext.hadoopConfiguration)
+                fs.delete(new Path(dir), true)
+              case None =>
+            }
+            log.debug("Checkpoints data deleted.")
+          }
+          val jobIndex = activeJobIds.indexOf(otlQuery.id)
+          activeJobIds.remove(jobIndex)
         }
-        log.debug("Checkpoints data deleted.")
         otlQuery.id
 
       } catch {
