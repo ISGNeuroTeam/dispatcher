@@ -328,20 +328,6 @@ class SuperVisor {
         }
         // Marks Job in DB as finished.
         superDbConnector.setJobStateFinished(otlQuery.id)
-        synchronized {
-          if (activeJobIds.toArray.diff(Array(otlQuery.id)).isEmpty) {
-            log.debug("Checkpoints data deleting...")
-            sparkContext.getCheckpointDir match {
-              case Some(dir) =>
-                val fs = org.apache.hadoop.fs.FileSystem.get(new URI(dir), sparkContext.hadoopConfiguration)
-                fs.delete(new Path(dir), true)
-              case None =>
-            }
-            log.debug("Checkpoints data deleted.")
-          }
-          val jobIndex = activeJobIds.indexOf(otlQuery.id)
-          activeJobIds.remove(jobIndex)
-        }
         otlQuery.id
 
       } catch {
@@ -368,6 +354,21 @@ class SuperVisor {
           superDbConnector.setJobStateFailed(otlQuery.id, throwable.getLocalizedMessage)
           superDbConnector.unlockCaches(otlQuery.id)
           throw throwable
+      } finally {
+        synchronized {
+          if (activeJobIds.toArray.diff(Array(otlQuery.id)).isEmpty) {
+            log.debug("Checkpoints data deleting...")
+            sparkContext.getCheckpointDir match {
+              case Some(dir) =>
+                val fs = org.apache.hadoop.fs.FileSystem.get(new URI(dir), sparkContext.hadoopConfiguration)
+                fs.delete(new Path(dir), true)
+              case None =>
+            }
+            log.debug("Checkpoints data deleted.")
+          }
+          val jobIndex = activeJobIds.indexOf(otlQuery.id)
+          activeJobIds.remove(jobIndex)
+        }
       }
     }
   }
