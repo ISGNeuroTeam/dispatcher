@@ -1,3 +1,7 @@
+## [2.3.3]
+### Hotfix
+- Functionality of checkpoints cleaning extended for cases of failed/canceled jobs.
+
 ## [2.3.2]
 ### Hotfix
 - Added support for checkpointing on parallel working queries.
