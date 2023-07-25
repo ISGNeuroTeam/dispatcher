@@ -2,6 +2,7 @@ package ot.scalaotl.commands
 
 import org.apache.spark.sql.DataFrame
 import ot.AppConfig
+import ot.AppConfig._
 import ot.dispatcher.sdk.core.CustomException.E00012
 import ot.scalaotl.SimpleQuery
 import ot.scalaotl.extensions.StringExt._
@@ -38,14 +39,16 @@ class OTLCheckpoints(sq: SimpleQuery) extends OTLBaseCommand(sq) {
   override val optionalKeywords =  Set.empty[String]
 
   override def transform(_df: DataFrame): DataFrame = {
-    val command = if(returns.flatFields.nonEmpty)
-      returns.flatFields.head
+    val command = if (returns.flatFields.nonEmpty && List("`on`", "`off`").contains(returns.flatFields.head))
+      returns.flatFields.head.stripBackticks
     else
       throw E00012(sq.searchId, commandname, "managing_word")
-    if (command.stripBackticks() == "on" && !AppConfig.withCheckpoints)
-      AppConfig.withCheckpoints = true
-    else if (command.stripBackticks() == "off" && AppConfig.withCheckpoints)
+    if (config.getString("checkpoints.enabled") == "onlyFalse" || (command == "off" && AppConfig.withCheckpoints)) {
       AppConfig.withCheckpoints = false
+    }
+    else if (command == "on" && !AppConfig.withCheckpoints) {
+      AppConfig.withCheckpoints = true
+    }
     _df
   }
 }

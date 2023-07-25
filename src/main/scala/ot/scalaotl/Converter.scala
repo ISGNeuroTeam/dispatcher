@@ -1,11 +1,13 @@
 package ot.scalaotl
 
+import com.typesafe.config.ConfigException
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.types.{StringType, StructField, StructType}
 import org.apache.spark.sql.{DataFrame, Row}
 import ot.AppConfig
-import ot.AppConfig.getLogLevel
+import ot.AppConfig._
 import ot.dispatcher.OTLQuery
+import ot.dispatcher.sdk.core.CustomException.E00002
 import ot.scalaotl.commands._
 import ot.scalaotl.commands.service.ReloadCommand
 import ot.scalaotl.extensions.DataFrameExt._
@@ -57,11 +59,27 @@ class Converter(otlQuery: OTLQuery, cache: Map[String, DataFrame]) extends OTLSp
   val fieldsUsed = getFieldsUsedInQuery(transformers)
   log.debug(f"Fields used in full query ${fieldsUsed.mkString("[", ", ","]")}")
 
-  def splitQuery(s: String) = s.withKeepQuotedText[String](str => str.replace("\\n", ""))
+  def splitQuery(s: String): List[String] = {
+    val preResult: List[String] = s.withKeepQuotedText[String](str => str.replace("\\n", ""))
     .withKeepTextInBrackets(_.split("\\|").toSeq,"\\[","\\]")
     .map(_.trim)
     .filterNot(_.isEmpty)
     .toList
+    val hasCheckpoints: Boolean = preResult.exists(_.contains("checkpoints"))
+    if (hasCheckpoints) {
+      if (!preResult.last.contains("checkpoints") || preResult.count(_.contains("checkpoints")) > 1) {
+        throw E00002(otlQuery.id, "Command checkpoints should be only one in query and last in query's commands list")
+      }
+      val checkpointsCommand = preResult.last
+      checkpointsCommand :: preResult.reverse.tail.reverse
+    } else {
+      AppConfig.withCheckpoints = AppConfig.config.getString("checkpoints.enabled") match {
+        case "true" => true
+        case _ => false
+      }
+      preResult
+    }
+  }
 
   def getTransformers(commands: Seq[String]): Seq[OTLBaseCommand] = {
     val commandPattern = """^(\w+)\s*(.*)""".r
@@ -94,6 +112,18 @@ class Converter(otlQuery: OTLQuery, cache: Map[String, DataFrame]) extends OTLSp
   def run: DataFrame = {
     log.debug("Running of converter started.")
     var counter = 0
+    var checkpointsCommandsLimitUsed = true
+    try {
+      AppConfig.config.getInt("checkpoints.commands_limit")
+    } catch {
+      case ex: ConfigException.Missing => checkpointsCommandsLimitUsed = false
+    }
+    var checkpointsPlanSizeLimitUsed = true
+    try {
+      AppConfig.config.getInt("checkpoints.plan_size_limit")
+    } catch {
+      case ex: ConfigException.Missing => checkpointsPlanSizeLimitUsed = false
+    }
     transformers.foldLeft(df) {
       (accum, tr) =>
       {
@@ -101,9 +131,12 @@ class Converter(otlQuery: OTLQuery, cache: Map[String, DataFrame]) extends OTLSp
         log.debug(s"Cycling item in converter: transformation of ${tr.getClass.getSimpleName} started.")
         val dfTransformed = tr.safeTransform(accum)
         counter += 1
-        if ((counter % 500 == 0 || dfTransformed.queryExecution.logical.toString().length > 80000) && AppConfig.withCheckpoints) {
+        if (AppConfig.withCheckpoints && ((checkpointsCommandsLimitUsed && counter % AppConfig.config.getInt("checkpoints.commands_limit") == 0)
+          || (checkpointsPlanSizeLimitUsed && dfTransformed.queryExecution.logical.toString().length > AppConfig.config.getInt("checkpoints.plan_size_limit")))) {
+
           log.debug(s"Limit by plan size in query reached: checkpointing applied.")
           dfTransformed.checkpoint()
+
         } else
           dfTransformed
       }
