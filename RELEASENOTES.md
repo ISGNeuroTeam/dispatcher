@@ -1,3 +1,7 @@
+## [2.4.0]
+### New
+- Principle of command checkpoints action: 1 (last) command in query, act (change config settings) only in current query.
+
 ## [2.3.3]
 ### Hotfix
 - Functionality of checkpoints cleaning extended for cases of failed/canceled jobs.
