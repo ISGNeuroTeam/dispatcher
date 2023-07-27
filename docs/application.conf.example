@@ -1,6 +1,13 @@
 spark {
   master = "local"
-  appName = "dispatcher (2.2.0)"
+  appName = "dispatcher (2.4.1)"
+}
+
+checkpoints {
+  enabled = "false"
+  path = "/opt/otp/dispatcher/checkpoints"
+  commands_limit = 500
+  plan_size_limit = 80000
 }
 
 schema {

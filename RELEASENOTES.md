@@ -1,3 +1,7 @@
+## [2.4.1]
+### Hotfix
+- Fixed low performance of queries with checkpoints - repeating queries to config was deleted.
+
 ## [2.4.0]
 ### New
 - Principle of command checkpoints action: 1 (last) command in query, act (change config settings) only in current query.

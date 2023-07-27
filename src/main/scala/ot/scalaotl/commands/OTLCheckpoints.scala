@@ -13,6 +13,8 @@ import ot.scalaotl.extensions.StringExt._
  * __'''checkpoints'''__ manages the possibility of checkpointing technology applying to improve query performance and fault tolerance.
  * This command controls a setting of the application by on|off principle and does not change the dataframe.
  *
+ * __'''checkpoints'''__ may be only 1 and last in query.
+ *
  * __'''checkpoints'''__ takes one required argument:
  *
  *    1.  '''managing_word''' - a word from a set of 2 values (on/off),
