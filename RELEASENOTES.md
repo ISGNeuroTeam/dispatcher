@@ -1,3 +1,7 @@
+## [2.4.2]
+### Hotfix
+- Added config parameters for managing the use of checkpoints limits.
+
 ## [2.4.1]
 ### Hotfix
 - Fixed low performance of queries with checkpoints - repeating queries to config was deleted.

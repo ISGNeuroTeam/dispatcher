@@ -122,17 +122,25 @@ class SuperVisor {
 
   def checkOneCheckpointLimitExists() = {
     log.info("Checking to one checkpoint limit exists.")
-    var checkpointsCommandsLimitUsed = true
+    var checkpointsCommandsLimitUsed = config.getBoolean("checkpoints.use_commands_limit")
     try {
-      log.info(s"Checkpoints commands limit: ${config.getInt("checkpoints.commands_limit")}")
+      val commandsLimit = config.getInt("checkpoints.commands_limit")
+      log.info(s"Checkpoints commands limit: ${commandsLimit}")
     } catch {
-      case ex: ConfigException.Missing => checkpointsCommandsLimitUsed = false
+      case ex: ConfigException.Missing =>
+        if (config.getBoolean("checkpoints.use_commands_limit"))
+          log.warn("Config checkpoints.use_commands_limit is true, but checkpoints.commands_limit value is missing. commands_limit will not bes used.")
+        checkpointsCommandsLimitUsed = false
     }
-    var checkpointsPlanSizeLimitUsed = true
+    var checkpointsPlanSizeLimitUsed = config.getBoolean("checkpoints.use_plan_size_limit")
     try {
-      log.info(s"Checkpoints plan size limit: ${config.getInt("checkpoints.plan_size_limit")}")
+      val planSizeLimit = config.getInt("checkpoints.plan_size_limit")
+      log.info(s"Checkpoints plan size limit: ${planSizeLimit}")
     } catch {
-      case ex: ConfigException.Missing => checkpointsPlanSizeLimitUsed = false
+      case ex: ConfigException.Missing =>
+        if (config.getBoolean("checkpoints.use_plan_size_limit"))
+          log.warn("Config checkpoints.use_plan_size_limit is true, but checkpoints.plan_size_limit value is missing. plan_size_limit will not bes used.")
+        checkpointsPlanSizeLimitUsed = false
     }
     if (!checkpointsCommandsLimitUsed && !checkpointsPlanSizeLimitUsed
           && config.getString("checkpoints.enabled") != "onlyFalse") {
@@ -144,8 +152,8 @@ class SuperVisor {
   def checkCheckpointsLimitCorrectness() = {
     try {
       log.info("Checkpoints limit checking.")
-      if (config.getString("checkpoints.enabled") == "true" && config.getInt("checkpoints.commands_limit") == 0)
-        throw new IllegalArgumentException("Checkpoints is enabled, but commands limit for checkpointing is 0. Checkpointing is unreachable. Application will be exited.")
+      if (config.getString("checkpoints.enabled") != "onlyFalse" && config.getInt("checkpoints.commands_limit") == 0)
+        throw new IllegalArgumentException("Checkpoints may be enabled, but commands limit for checkpointing is 0. Checkpointing is unreachable. Application will be exited.")
     } catch {
       case ex: ConfigException.Missing =>
     }

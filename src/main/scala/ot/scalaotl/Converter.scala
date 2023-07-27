@@ -112,18 +112,16 @@ class Converter(otlQuery: OTLQuery, cache: Map[String, DataFrame]) extends OTLSp
   def run: DataFrame = {
     log.debug("Running of converter started.")
     var counter = 0
-    var checkpointsCommandsLimitUsed = true
+    var checkpointsCommandsLimitUsed = AppConfig.config.getBoolean("checkpoints.use_commands_limit")
     var commandsLimit = 1
     try {
-      AppConfig.config.getInt("checkpoints.commands_limit")
       commandsLimit = AppConfig.config.getInt("checkpoints.commands_limit")
     } catch {
       case ex: ConfigException.Missing => checkpointsCommandsLimitUsed = false
     }
-    var checkpointsPlanSizeLimitUsed = true
+    var checkpointsPlanSizeLimitUsed = AppConfig.config.getBoolean("checkpoints.use_plan_size_limit")
     var planSizeLimit = 0
     try {
-      AppConfig.config.getInt("checkpoints.plan_size_limit")
       planSizeLimit = AppConfig.config.getInt("checkpoints.plan_size_limit")
     } catch {
       case ex: ConfigException.Missing => checkpointsPlanSizeLimitUsed = false
