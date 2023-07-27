@@ -5,6 +5,7 @@ import ot.dispatcher.sdk.core.CustomException
 
 class OTLCheckpointsTest extends CommandTest {
   test("Test 0. Checkpoints off when checkpoints are on") {
+    AppConfig.withCheckpoints = true
     val actual = execute("checkpoints off")
     assert(!AppConfig.withCheckpoints)
   }
@@ -22,6 +23,7 @@ class OTLCheckpointsTest extends CommandTest {
   }
 
   test("Test 3. Checkpoints on when checkpoints are on") {
+    AppConfig.withCheckpoints = true
     val actual = execute("checkpoints on")
     assert(AppConfig.withCheckpoints)
   }

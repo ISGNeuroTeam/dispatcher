@@ -113,14 +113,18 @@ class Converter(otlQuery: OTLQuery, cache: Map[String, DataFrame]) extends OTLSp
     log.debug("Running of converter started.")
     var counter = 0
     var checkpointsCommandsLimitUsed = true
+    var commandsLimit = 1
     try {
       AppConfig.config.getInt("checkpoints.commands_limit")
+      commandsLimit = AppConfig.config.getInt("checkpoints.commands_limit")
     } catch {
       case ex: ConfigException.Missing => checkpointsCommandsLimitUsed = false
     }
     var checkpointsPlanSizeLimitUsed = true
+    var planSizeLimit = 0
     try {
       AppConfig.config.getInt("checkpoints.plan_size_limit")
+      planSizeLimit = AppConfig.config.getInt("checkpoints.plan_size_limit")
     } catch {
       case ex: ConfigException.Missing => checkpointsPlanSizeLimitUsed = false
     }
@@ -131,8 +135,8 @@ class Converter(otlQuery: OTLQuery, cache: Map[String, DataFrame]) extends OTLSp
         log.debug(s"Cycling item in converter: transformation of ${tr.getClass.getSimpleName} started.")
         val dfTransformed = tr.safeTransform(accum)
         counter += 1
-        if (AppConfig.withCheckpoints && ((checkpointsCommandsLimitUsed && counter % AppConfig.config.getInt("checkpoints.commands_limit") == 0)
-          || (checkpointsPlanSizeLimitUsed && dfTransformed.queryExecution.logical.toString().length > AppConfig.config.getInt("checkpoints.plan_size_limit")))) {
+        if (AppConfig.withCheckpoints && ((checkpointsCommandsLimitUsed && counter % commandsLimit == 0)
+          || (checkpointsPlanSizeLimitUsed && dfTransformed.queryExecution.logical.toString().length > planSizeLimit))) {
 
           log.debug(s"Limit by plan size in query reached: checkpointing applied.")
           dfTransformed.checkpoint()

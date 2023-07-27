@@ -25,10 +25,14 @@ import ot.scalaotl.extensions.StringExt._
  * {{{| makeresults | checkpoints on}}}
  * Result: the checkpointing technology will be work in queries with large count of commands, the calculation will not be heavy due to the distribution of the load.
  *
+ * Note: If app config parameter checkpoints.enabled is true, command '''checkpoints on''' isn't necessary
+ *
  *
  * * OTL 2:
  * {{{| makeresults | checkpoints off}}}
  * Result: the checkpointing technology will not be work.
+ *
+ * Note: If app config parameter checkpoints.enabled is false, command '''checkpoints off''' isn't necessary
 
  * @constructor creates new instance of [[OTLCheckpoints]]
  * @param sq [[SimpleQuery]]
