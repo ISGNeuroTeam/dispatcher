@@ -14,7 +14,7 @@ import java.util.Properties
 object AppConfig {
   var logLevels: Map[String, Properties] = Map()
 
-  var withCheckpoints: Boolean = true
+  var withCheckpoints: Boolean = false
 
   def getLogLevel(config: Config, path: String): String = {
     getLogLevel(config, path, "main")

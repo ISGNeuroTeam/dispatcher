@@ -1,6 +1,7 @@
 package ot.dispatcher
 
 import com.isgneuro.sparkexecenv.{BaseCommand, CommandExecutor, CommandsProvider}
+import com.typesafe.config.ConfigException
 import org.apache.hadoop.fs.Path
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.SparkContext
@@ -21,19 +22,20 @@ import scala.sys.process.Process
 /** Gets settings from config file and then runs infinitive loop of user's and system's queries.
  *
  * 1. Loads logger.
- * 2. Generate computing node uuid.
- * 3. Loads Spark's session and update runtime configs.
- * 4. Loads connector to DB.
- * 5. Load interactor with Kafka.
- * 6. Kafka service existing checking.
- * 7. Loads RAM cache manager.
- * 8. Loads Spark checkpoints manager.
- * 9. Loads calculation manager.
- * 10. Loads execution environment commands provider.
- * 11. Register computing node in Kafka.
- * 12. Runs restoring actions after reboot or first start.
- * 13. Runs infinitive loop of system maintenance and user's queries.
- * 14. Unregister computing node in Kafka.
+ * 2. Loads Spark's session and update runtime configs.
+ * 3. Checking to configured checkpoints limits correctness.
+ * 4. Generate computing node uuid.
+ * 5. Loads connector to DB.
+ * 6. Load interactor with Kafka.
+ * 7. Kafka service existing checking.
+ * 8. Loads RAM cache manager.
+ * 9. Loads Spark checkpoints manager.
+ * 10. Loads calculation manager.
+ * 11. Loads execution environment commands provider.
+ * 12. Register computing node in Kafka.
+ * 13. Runs restoring actions after reboot or first start.
+ * 14. Runs infinitive loop of system maintenance and user's queries.
+ * 15. Unregister computing node in Kafka.
  *
  * @author Andrey Starchenkov (astarchenkov@ot.ru)
  */
@@ -42,22 +44,25 @@ class SuperVisor {
   // Step 1. Loads logger.
   val log: Logger = Logger.getLogger("VisorLogger")
   log.setLevel(Level.toLevel(getLogLevel(config, "visor")))
-  //Step 2. Generate computing node uuid.
-  var computingNodeUuid: String = getComputingNodeUuid().toString.replace("-", "")
-  log.info(s"Computing node uuid: ${computingNodeUuid.toString}")
-  // Step 3. Loads Spark's session and context and runtime configs.
+  // Step 2. Loads Spark's session and context and runtime configs.
   val sparkSession: SparkSession = getSparkSession
   val sparkContext: SparkContext = sparkSession.sparkContext
   log.info("SparkSession started.")
-  // Step 4. Loads connector to DB.
+  // Step 3. Checking to configured checkpoints limits correctness.
+  checkOneCheckpointLimitExists()
+  checkCheckpointsLimitCorrectness()
+  //Step 4. Generate computing node uuid.
+  var computingNodeUuid: String = getComputingNodeUuid().toString.replace("-", "")
+  log.info(s"Computing node uuid: ${computingNodeUuid.toString}")
+  // Step 5. Loads connector to DB.
   val superDbConnector = new SuperDbConnector()
   log.info("SuperDbConnector is ready.")
-  //Step 5. Load interactor with Kafka.
+  //Step 6. Load interactor with Kafka.
   val kafkaIpAddress: String = config.getString("kafka.ip_address")
   val kafkaPort: Int = config.getInt("kafka.port")
   val kafkaExists: Boolean = config.getBoolean("kafka.computing_node_mode_enabled")
   val computingNodeInteractor: ComputingNodeInteractable = if (kafkaExists){new ComputingNodeInteractor(kafkaIpAddress, kafkaPort)} else {new NullComputingNodeInteractor}
-  //Step 6. Kafka service existing checking.
+  //Step 7. Kafka service existing checking.
   if (kafkaExists) {
     log.info("SuperKafkaConnector is ready.")
     log.info("Computing Node Mode is enabled")
@@ -66,19 +71,19 @@ class SuperVisor {
   } else {
     log.info("Computing Node Mode is disabled")
   }
-  // Step 7. Loads RAM cache manager.
+  // Step 8. Loads RAM cache manager.
   val cacheManager = new CacheManager(sparkSession)
   log.info("CacheManager started.")
 
-  // Step 8. Loads Spark checkpoints manager.
+  // Step 9. Loads Spark checkpoints manager.
   val checkpointsManager = new CheckpointsManager(sparkSession)
   log.info("CheckpointsManager started.")
 
-  // Step 9. Loads calculation manager.
+  // Step 10. Loads calculation manager.
   val superCalculator = new SuperCalculator(cacheManager, superDbConnector)
   log.info("SuperCalculator started.")
 
-  //Step 10. Loads execution environment commands provider.
+  //Step 11. Loads execution environment commands provider.
   val commandsProvider: Option[CommandsProvider] = if (kafkaExists) {
     Some(new CommandsProvider(config.getString("usercommands.directory"), log))
   } else {
@@ -93,7 +98,7 @@ class SuperVisor {
   /** Starts infinitive loop. */
   def run(): Unit = {
     log.info("SuperVisor started.")
-    // Step 11. Register computing node in Kafka.
+    // Step 12. Register computing node in Kafka.
     if (kafkaExists) {
       //host id defining through Java sys.process
       val p = Process("hostid")
@@ -103,15 +108,46 @@ class SuperVisor {
       log.info(s"Registering Node with ID ${computingNodeUuid}, Host ID: ${hostId}")
       log.info("Spark computing node registered in Kafka")
     }
-    // Step 12. Runs restoring actions after reboot or first start.
+    // Step 13. Runs restoring actions after reboot or first start.
     restorationMaintenance()
     log.info("Dispatcher restored DB and RAM Cache.")
-    // Step 13. Runs infinitive loop of system maintenance and user's queries.
+    // Step 14. Runs infinitive loop of system maintenance and user's queries.
     runInfiniteLoop()
-    // Step 14. Unregister computing node in Kafka.
+    // Step 15. Unregister computing node in Kafka.
     if (kafkaExists) {
       computingNodeInteractor.unregisterNode(computingNodeUuid)
       log.info(s"Unregistering Node with ID ${computingNodeUuid}")
+    }
+  }
+
+  def checkOneCheckpointLimitExists() = {
+    log.info("Checking to one checkpoint limit exists.")
+    var checkpointsCommandsLimitUsed = true
+    try {
+      log.info(s"Checkpoints commands limit: ${config.getInt("checkpoints.commands_limit")}")
+    } catch {
+      case ex: ConfigException.Missing => checkpointsCommandsLimitUsed = false
+    }
+    var checkpointsPlanSizeLimitUsed = true
+    try {
+      log.info(s"Checkpoints plan size limit: ${config.getInt("checkpoints.plan_size_limit")}")
+    } catch {
+      case ex: ConfigException.Missing => checkpointsPlanSizeLimitUsed = false
+    }
+    if (!checkpointsCommandsLimitUsed && !checkpointsPlanSizeLimitUsed
+          && config.getString("checkpoints.enabled") != "onlyFalse") {
+      throw new IllegalArgumentException("It's possible to use checkpoints, because checkpoints.enabled isn't onlyFalse, but limits for checkpoints not installed. " +
+        "Application will be exited.")
+    }
+  }
+
+  def checkCheckpointsLimitCorrectness() = {
+    try {
+      log.info("Checkpoints limit checking.")
+      if (config.getString("checkpoints.enabled") == "true" && config.getInt("checkpoints.commands_limit") == 0)
+        throw new IllegalArgumentException("Checkpoints is enabled, but commands limit for checkpointing is 0. Checkpointing is unreachable. Application will be exited.")
+    } catch {
+      case ex: ConfigException.Missing =>
     }
   }
 

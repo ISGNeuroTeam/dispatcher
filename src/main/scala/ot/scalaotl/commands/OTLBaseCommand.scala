@@ -40,7 +40,11 @@ abstract class OTLBaseCommand(sq: SimpleQuery, _seps: Set[String] = Set.empty) e
 
   val readingCommandsNames: List[String] = List("OTLInputlookup", "RawRead", "FullRead", "OTLRead")
 
+  val manageCommandsNames: List[String] = List("OTLCheckpoints")
+
   def commandNotReading: Boolean = !readingCommandsNames.contains(classname)
+
+  def commandNotManage: Boolean = !manageCommandsNames.contains(classname)
 
   val pluginReadingCommandNames: List[String] = List("ReadFile", "SQLRead", "FSGet")
 
@@ -132,7 +136,7 @@ abstract class OTLBaseCommand(sq: SimpleQuery, _seps: Set[String] = Set.empty) e
     log.debug("Start args validating")
     validateArgs()
     log.debug("Start creating work df")
-    val workDf = if (commandNotReading && commandNotPluginReading)
+    val workDf = if (commandNotReading && commandNotPluginReading && commandNotManage)
       buildWorkDf(_df)
     else
       _df
