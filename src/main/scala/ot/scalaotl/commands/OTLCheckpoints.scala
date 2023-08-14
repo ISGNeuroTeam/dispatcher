@@ -15,12 +15,16 @@ import ot.scalaotl.extensions.StringExt._
  *
  * __'''checkpoints'''__ may be only 1 and last in query.
  *
- * __'''checkpoints'''__ takes one required argument:
+ * __'''checkpoints'''__ takes one required and one optional argument:
  *
  *    1.  '''managing_word''' - a word from a set of 2 values (on/off),
  *    by which a decision is made regarding the operation of the checkpointing technology during the execution of queries.
  *
  *    Allowed values: '''on''', '''off'''.
+ *
+ *    2. '''usedLimit''' - kind of limit, upon reaching the value of which a checkpoint is created
+ *
+ *    Allowed values: '''commands''', '''plan_size'''
  *
  * =Usage examples=
  * * OTL 1:
@@ -35,6 +39,14 @@ import ot.scalaotl.extensions.StringExt._
  * Result: the checkpointing technology will not be work.
  *
  * Note: If app config parameter checkpoints.enabled is false, command '''checkpoints off''' isn't necessary
+ *
+ * * OTL 3:
+ * {{{| makeresults | checkpoints on usedLimit = commands}}}
+ * Result: the checkpointing technology will be work with commands limit.
+ *
+ * * OTL 4:
+ * {{{| makeresults | checkpoints on usedLimit = plan_size}}}
+ * Result: the checkpointing technology will be work with plan size limit.
 
  * @constructor creates new instance of [[OTLCheckpoints]]
  * @param sq [[SimpleQuery]]
@@ -43,6 +55,11 @@ import ot.scalaotl.extensions.StringExt._
 class OTLCheckpoints(sq: SimpleQuery) extends OTLBaseCommand(sq) {
   override val requiredKeywords =  Set.empty[String]
   override val optionalKeywords =  Set.empty[String]
+
+  /**
+   * Kind of limit for checkpointing. If empty, than config '''checkpoints.use_<>_limit''' value used in query
+   */
+  val usedLimit = getKeyword("usedLimit").getOrElse("")
 
   override def transform(_df: DataFrame): DataFrame = {
     val command = if (returns.flatFields.nonEmpty && List("`on`", "`off`").contains(returns.flatFields.head))

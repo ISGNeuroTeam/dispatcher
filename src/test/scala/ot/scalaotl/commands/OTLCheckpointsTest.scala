@@ -51,4 +51,10 @@ class OTLCheckpointsTest extends CommandTest {
     }
     assert(thrown.getMessage().contains("Required argument(s) managing_word not found"))
   }
+
+  test ("Test 8. Checkpoints with used limit (check than main logic of checkpoints is correct)") {
+    AppConfig.withCheckpoints = false
+    val actual = execute("eval a = 1 | checkpoints on usedLimit = plan_size")
+    assert(AppConfig.withCheckpoints)
+  }
 }
