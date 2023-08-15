@@ -1,3 +1,7 @@
+## [2.5.0]
+### New
+- Optional keyword usedLimit added to checkpoints command.
+
 ## [2.4.2]
 ### Hotfix
 - Added config parameters for managing the use of checkpoints limits.
