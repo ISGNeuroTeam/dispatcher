@@ -18,15 +18,16 @@ trait DefaultParser {
    * @return List[[Keyword]] - list of keyword pairs
    */
   def keywordsParser: String => List[Keyword] = (args: String) => {
-    """(\S+)\s*=\s*(".*?"|\S+)""".r.findAllIn(args)
-      .matchData
-      .map(x => 
-        Keyword(
-          key = x.group(1),
-          value = x.group(2)
+      """(\S+)\s*=\s*(".*?"|\S+)""".r.findAllIn(args)
+        .matchData
+        .filter(x => x.group(1)(0) != '"' || x.group(2).last != '"')
+        .map(x =>
+          Keyword(
+            key = x.group(1),
+            value = x.group(2)
+          )
         )
-      )
-      .toList
+        .toList
   }
 
   def fieldsToMap: Seq[Field] => Map[String, Field] = (vs: Seq[Field]) => vs.flatMap(x => x.toMap).toMap
