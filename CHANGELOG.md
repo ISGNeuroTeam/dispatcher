@@ -3,6 +3,9 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+- Fixed not-renaming of field by as in *stats commands in cases of > 1 whitespaces between function name and as or between as and alias.
+
 ## [2.5.0] - 2023-08-15
 ### Changed
 - Optional keyword usedLimit added to checkpoints command.
