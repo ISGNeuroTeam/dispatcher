@@ -30,8 +30,8 @@ class OTLEval(sq: SimpleQuery) extends OTLBaseCommand(sq) with ExpressionParser 
       case StatsEval(newfield, expression) =>
         sch = acc.schema
         acc
-        .withColumn(newfield.strip("\"").strip("\'"), expr(expression.replaceFirst("""`\Q""" + newfield + """\E` *=""", "")
-          .withPeriodReplace()).withExtensions(sch))
+          .withColumn(newfield.strip("\"").strip("\'"), expr(expression.replaceFirst("""`\Q""" + newfield + """\E` *=""", "")
+            .withPeriodReplace()).withExtensions(sch))
       case _ => acc
     }
     )
