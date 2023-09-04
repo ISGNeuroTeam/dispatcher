@@ -3,6 +3,9 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+- Fixed incorrect behavior of rex command if new field name equals column name.
+
 ## [2.5.0] - 2023-08-15
 ### Changed
 - Optional keyword usedLimit added to checkpoints command.
