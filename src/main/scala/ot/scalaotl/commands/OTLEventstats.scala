@@ -2,6 +2,7 @@ package ot.scalaotl
 package commands
 
 import org.apache.spark.sql.DataFrame
+import ot.scalaotl.extensions.DataFrameExt._
 import ot.scalaotl.extensions.StringExt._
 import ot.scalaotl.parsers.StatsParser
 
@@ -14,11 +15,11 @@ class OTLEventstats(sq: SimpleQuery) extends OTLBaseCommand(sq, _seps = Set("by"
 
   override def transform(_df: DataFrame): DataFrame = {
     val _df_out = transformer.transform(_df)
-    val res = positionalsMap.get("by") match {
+    val res = (positionalsMap.get("by") match {
       case Some(Positional("by", List())) => _df.drop(fieldsGenerated: _*).crossJoin(_df_out)
       case Some(Positional("by", byList)) => _df.drop(fieldsGenerated: _*).join(_df_out, byList.map(_.stripBackticks()))
       case _ => _df_out
-    }
+    }).dropFake
     res
   }
 }
