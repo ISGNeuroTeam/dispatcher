@@ -3,7 +3,8 @@ package commands
 
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.expressions.UserDefinedFunction
-import org.apache.spark.sql.functions.{array, array_min, col, collect_set, expr, lit, size, udf}
+import org.apache.spark.sql.functions._
+import ot.scalaotl.commands.commonconstructions.StatsTransformer
 
 /** =Abstract=
  * This class provides support of __'''transaction'''__ otl command.
@@ -27,6 +28,11 @@ import org.apache.spark.sql.functions.{array, array_min, col, collect_set, expr,
 class OTLTransaction(sq: SimpleQuery) extends OTLBaseCommand(sq) {
   val requiredKeywords = Set.empty[String]
   val optionalKeywords = Set.empty[String]
+
+  /**
+   * Transformer with logic of stats command
+   */
+  val statsTransformer = new StatsTransformer(SimpleQuery(s"values(*) as * by $args"), spark)
 
   def mapUdf: UserDefinedFunction = udf { (col: Seq[Seq[String]]) => col.map(x => (x.head, x(1))).toMap }
 
@@ -61,9 +67,7 @@ class OTLTransaction(sq: SimpleQuery) extends OTLBaseCommand(sq) {
   override def transform(_df: DataFrame): DataFrame = {
     if (_df.isEmpty)
       return _df
-    // calling OTL-stats with received arguments
-    val s = SimpleQuery(s"values(*) as * by $args")
-    val dfTransaction = convertArraysToSingle(new OTLStats(s).transform(_df))
+    val dfTransaction = convertArraysToSingle(statsTransformer.transform(_df))
     // if _time not exists in original df then return empty dataframe
     if (dfTransaction.columns.contains("_time")){
       if (dfTransaction.schema("_time").dataType.typeName == "array")
