@@ -4,26 +4,26 @@ import org.apache.spark.sql.expressions.{Window, WindowSpec}
 import org.apache.spark.sql.functions.{lit, max, min, monotonically_increasing_id}
 import org.apache.spark.sql.types.{StringType, StructField, StructType}
 import org.apache.spark.sql.{DataFrame, Row, SparkSession}
+import ot.scalaotl._
 import ot.scalaotl.extensions.DataFrameExt._
 import ot.scalaotl.extensions.StringExt._
 import ot.scalaotl.parsers.{StatsParser, WildcardParser}
 import ot.scalaotl.static.StatsFunctions
-import ot.scalaotl._
 
-class StatsTransformer(sq: SimpleQuery, spark: SparkSession, context: Option[StatsContext] = None) extends StatsParser with WildcardParser {
+class StatsTransformer(context: Either[StatsContext, String], spark: SparkSession) extends StatsParser with WildcardParser {
   val seps = Set("by")
   val returns: Return = context match {
-    case Some(s: StatsContext) => s.returns
-    case None => returnsParser(sq.args, seps)
+    case Left(s: StatsContext) => s.returns
+    case Right(args: String) => returnsParser(args, seps)
   }
   val positionals: Map[String, Field] = context match {
-    case Some(s: StatsContext) => s.positionalsMap
-    case None => fieldsToMap(positionalsParser(sq.args, seps))
+    case Left(s: StatsContext) => s.positionalsMap
+    case Right(args: String) => fieldsToMap(positionalsParser(args, seps))
   }
   //Time column (for defining it's min or max values in time functions). _time by defaut, else other user defined column
   val timeColumn: String = context match {
-    case Some(s: StatsContext) => s.timeColumn
-    case None => "_time"
+    case Left(s: StatsContext) => s.timeColumn
+    case Right(args: String) => "_time"
   }
   val timeFuncs: List[String] = List("earliest", "latest", "first", "last")
   //Checkings to time or non-time function
@@ -209,4 +209,4 @@ class StatsTransformer(sq: SimpleQuery, spark: SparkSession, context: Option[Sta
   }
 }
 
-case class StatsContext(spark: SparkSession, returns: Return, positionalsMap: Map[String, Field], timeColumn: String)
+case class StatsContext(returns: Return, positionalsMap: Map[String, Field], timeColumn: String)

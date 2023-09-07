@@ -6,7 +6,7 @@ import ot.scalaotl.Converter
 
 class OTLUntableTest extends CommandTest {
 
-  test("Test 1. Command: Convert wide table to long table ") {
+  test("Test 0. Command: Convert wide table to long table ") {
     val query = createQuery(
       """table WordField ,serialField, random_Field
         || untable WordField, field, value""", "otstats", s"$test_index")
@@ -36,7 +36,7 @@ class OTLUntableTest extends CommandTest {
     compareDataFrames(actual, jsonToDf(expected))
   }
 
-  test("Test 2. Command: Fixed column missing among data fields") {
+  test("Test 1. Command: Fixed column missing among data fields") {
     val query = createQuery("""table serialField, random_Field
                               || untable WordField, field, value""", "otstats", s"$test_index")
     var actual = new Converter(query).run
@@ -68,7 +68,7 @@ class OTLUntableTest extends CommandTest {
     compareDataFrames(actual, expected)
   }
 
-  test("Test 3. Command: Fixed column contains nulls") {
+  test("Test 2. Command: Fixed column contains nulls") {
     val query = createQuery("""table serialField, random_Field
                               | table WordField ,serialField, random_Field
                               | untable WordField, field, value""", "otstats", s"$test_index")
@@ -106,6 +106,27 @@ class OTLUntableTest extends CommandTest {
                               || untable WordField, field""", "otstats", s"$test_index")
     val actual = new Converter(query).run
     compareDataFrames(actual, spark.emptyDataFrame)
+  }
+
+  test("Test 4. Command: Untable in 1-column table ") {
+    val query = createQuery(
+      """table WordField
+        || untable WordField, field, value""", "otstats", s"$test_index")
+    val actual = new Converter(query).run
+    val expected =
+      """[
+        |{"WordField":"qwe"},
+        |{"WordField":"rty"},
+        |{"WordField":"uio"},
+        |{"WordField":"GreenPeace"},
+        |{"WordField":"fgh"},
+        |{"WordField":"jkl"},
+        |{"WordField":"zxc"},
+        |{"WordField":"RUS"},
+        |{"WordField":"MMM"},
+        |{"WordField":"USA"}
+        |]""".stripMargin
+    compareDataFrames(actual, jsonToDf(expected))
   }
 
 }

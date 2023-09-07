@@ -13,7 +13,7 @@ class OTLStats(sq: SimpleQuery) extends OTLBaseCommand(sq, _seps = Set("by")) wi
   override val fieldsGenerated: List[String] = getFieldsGenerated(returns)
 
   override def transform(_df: DataFrame): DataFrame = {
-    val statsTransformer = new StatsTransformer(sq, StatsContext(spark, returns, positionalsMap, getKeyword("timeCol").getOrElse("_time")))
+    val statsTransformer = new StatsTransformer(Left(StatsContext(returns, positionalsMap, getKeyword("timeCol").getOrElse("_time"))), spark)
     statsTransformer.transform(_df)
   }
 

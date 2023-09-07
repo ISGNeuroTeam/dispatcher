@@ -3,9 +3,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [2.6.0] - 2023-09-08
+### Added
+- Possibility of processing of the null-containing fields by eventstats command.
+### Changed
+- untable command in case of dataframe, containing only fixed column (no columns for untable processing), return input dataframe now.
 ### Fixed
 - Incorrect behavior in parsing OTL command arguments when the equals sign is inside quotes.
+- Parsing of evaluated expressions: equal symbol inside eval functions not identified as expression equal symbol now.
+- Non-renaming of field by as in *stats commands in cases of > 1 whitespaces between function name and as or between as and alias.
+- Incorrect behavior of rex command in case of extracting from raw if new field name equals name from raw.
+- OTLEventstats dependency from OTLStats deleted.
+- Output of command inner work field 'fake' in result table of eventstats command.
+- OTLTransaction dependency from OTLStats deleted.
 
 ## [2.5.0] - 2023-08-15
 ### Changed

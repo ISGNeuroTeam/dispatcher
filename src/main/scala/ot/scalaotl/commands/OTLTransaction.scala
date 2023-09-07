@@ -32,7 +32,7 @@ class OTLTransaction(sq: SimpleQuery) extends OTLBaseCommand(sq) {
   /**
    * Transformer with logic of stats command
    */
-  val statsTransformer = new StatsTransformer(SimpleQuery(s"values(*) as * by $args"), spark)
+  val statsTransformer = new StatsTransformer(Right(SimpleQuery(s"values(*) as * by $args").args), spark)
 
   def mapUdf: UserDefinedFunction = udf { (col: Seq[Seq[String]]) => col.map(x => (x.head, x(1))).toMap }
 

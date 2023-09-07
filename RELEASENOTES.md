@@ -1,3 +1,14 @@
+## [2.6.0]
+### New
+- Possibility of processing of the null-containing fields by eventstats command.
+- Logic of untable command: in case of dataframe, containing only fixed column (no columns for untable processing), return input dataframe now.
+### Bugfix
+- Incorrect behavior in parsing OTL command arguments when the equals sign is inside quotes.
+- Parsing of evaluated expressions: equal symbol inside eval functions not identified as expression equal symbol now.
+- Non-renaming of field by as in *stats commands in cases of > 1 whitespaces between function name and as or between as and alias.
+- Incorrect behavior of rex command in case of extracting from raw if new field name equals name from raw.
+- Output of command inner work field 'fake' in result table of eventstats command.
+
 ## [2.5.0]
 ### New
 - Optional keyword usedLimit added to checkpoints command.

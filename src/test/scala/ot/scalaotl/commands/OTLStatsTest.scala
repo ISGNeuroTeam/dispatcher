@@ -29,7 +29,7 @@ class OTLStatsTest extends CommandTest {
     assert(jsonCompare(actual, expected), f"Result : $actual\n---\nExpected : $expected")
   }
 
-  test("Test 3. Command: | stats count by column") {
+  test("Test 3.0. Command: | stats count by column") {
     val actual = execute(""" stats count by random_Field""")
     val expected =
       """[
@@ -45,6 +45,41 @@ class OTLStatsTest extends CommandTest {
         |]""".stripMargin
     assert(jsonCompare(actual, expected), f"Result : $actual\n---\nExpected : $expected")
   }
+
+  test("Test 3.1. Command: | stats count by column with alias") {
+    val actual = execute(""" stats count as c by random_Field""")
+    val expected =
+      """[
+        |{"random_Field":"-90","c":1},
+        |{"random_Field":"30","c":1},
+        |{"random_Field":"0","c":1},
+        |{"random_Field":"100","c":1},
+        |{"random_Field":"60","c":1},
+        |{"random_Field":"-100","c":1},
+        |{"random_Field":"20","c":1},
+        |{"random_Field":"10","c":1},
+        |{"random_Field":"50","c":2}
+        |]""".stripMargin
+    assert(jsonCompare(actual, expected), f"Result : $actual\n---\nExpected : $expected")
+  }
+
+  test("Test 3.2. Command: | stats count by column with alias with backspaces between stats func, as and alias") {
+    val actual = execute(""" stats count   as  c by random_Field""")
+    val expected =
+      """[
+        |{"random_Field":"-90","c":1},
+        |{"random_Field":"30","c":1},
+        |{"random_Field":"0","c":1},
+        |{"random_Field":"100","c":1},
+        |{"random_Field":"60","c":1},
+        |{"random_Field":"-100","c":1},
+        |{"random_Field":"20","c":1},
+        |{"random_Field":"10","c":1},
+        |{"random_Field":"50","c":2}
+        |]""".stripMargin
+    assert(jsonCompare(actual, expected), f"Result : $actual\n---\nExpected : $expected")
+  }
+
 
   test("Test 4. Command: | stats count as c by absent_column | eval x=c") {
     val actual = execute(""" stats count as c by absent_column | eval x=c""") //count number of null values

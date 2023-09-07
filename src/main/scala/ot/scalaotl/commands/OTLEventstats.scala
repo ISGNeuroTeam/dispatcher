@@ -3,20 +3,21 @@ package commands
 
 import org.apache.spark.sql.DataFrame
 import ot.scalaotl.commands.commonconstructions.{StatsContext, StatsTransformer}
+import ot.scalaotl.extensions.DataFrameExt._
 import ot.scalaotl.extensions.StringExt._
 import ot.scalaotl.parsers.StatsParser
 
 class OTLEventstats(sq: SimpleQuery) extends OTLBaseCommand(sq, _seps = Set("by")) with StatsParser {
   val requiredKeywords = Set.empty[String]
   val optionalKeywords = Set.empty[String]
-  val transformer = new StatsTransformer(sq, StatsContext(spark, returns, positionalsMap, getKeyword("timeCol").getOrElse("_time")))
+  val transformer = new StatsTransformer(Left(StatsContext(returns, positionalsMap, "_time")), spark)
   override val fieldsUsed: List[String] = getFieldsUsed(returns) ++ getPositionalFieldUsed(positionals)
   override val fieldsGenerated: List[String] = getFieldsGenerated(returns).map(_.stripBackticks())
 
   override def transform(_df: DataFrame): DataFrame = {
     val outDf = transformer.transform(_df)
     val workDf = _df.drop(fieldsGenerated: _*)
-    val eventstatsDf = positionalsMap.get("by") match {
+    val eventstatsDf = (positionalsMap.get("by") match {
       case Some(Positional("by", List())) => workDf.crossJoin(outDf)
       case Some(Positional("by", byList)) => {
         val workByList = byList.map(_.stripBackticks())
@@ -31,7 +32,7 @@ class OTLEventstats(sq: SimpleQuery) extends OTLBaseCommand(sq, _seps = Set("by"
         workDf.join(outDf, cols).drop(outCols)
       }
       case _ => outDf
-    }
+    }).dropFake
     if (eventstatsDf.columns.contains("_time"))
       eventstatsDf.sort("_time")
     else
