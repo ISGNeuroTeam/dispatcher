@@ -10,12 +10,21 @@ import ot.scalaotl.parsers.{StatsParser, WildcardParser}
 import ot.scalaotl.static.StatsFunctions
 import ot.scalaotl._
 
-class StatsTransformer(sq: SimpleQuery, context: StatsContext) extends StatsParser with WildcardParser {
-  val spark: SparkSession = context.spark
-  val returns: Return = context.returns
-  val positionals: Map[String, Field] = context.positionalsMap
+class StatsTransformer(sq: SimpleQuery, spark: SparkSession, context: Option[StatsContext] = None) extends StatsParser with WildcardParser {
+  val seps = Set("by")
+  val returns: Return = context match {
+    case Some(s: StatsContext) => s.returns
+    case None => returnsParser(sq.args, seps)
+  }
+  val positionals: Map[String, Field] = context match {
+    case Some(s: StatsContext) => s.positionalsMap
+    case None => fieldsToMap(positionalsParser(sq.args, seps))
+  }
   //Time column (for defining it's min or max values in time functions). _time by defaut, else other user defined column
-  val timeColumn: String = context.timeColumn
+  val timeColumn: String = context match {
+    case Some(s: StatsContext) => s.timeColumn
+    case None => "_time"
+  }
   val timeFuncs: List[String] = List("earliest", "latest", "first", "last")
   //Checkings to time or non-time function
   val timeChecking: StatsFunc => Boolean = { f: StatsFunc => timeFuncs.contains(f.func) }
