@@ -1,16 +1,16 @@
 package ot.scalaotl
 package parsers
 
-import ot.scalaotl.static.StatsFunctions
 import ot.scalaotl.commands.OTLEval
 import ot.scalaotl.extensions.StringExt._
+import ot.scalaotl.static.StatsFunctions
 
 import scala.util.matching.Regex
 
 trait StatsParser extends DefaultParser {
 
-  def rexSimpleStatsFunc(funcs: String): Regex = (s"($funcs)" + """(\((\'.+?\'|\S+?)\))?( as ([^,\s]+))?(,|\s|$)""").r
-  def rexStatsEvalFunc(funcs: String): Regex = (s"($funcs)" + """\(eval\((.*?)\)\) as ([a-zA-Z0-9]+)(\s|,|$)""").r
+  def rexSimpleStatsFunc(funcs: String): Regex = (s"($funcs)" + """(\((\'.+?\'|\S+?)\))?(\s*as\s*([^,\s]+))?(,|\s|$)""").r
+  def rexStatsEvalFunc(funcs: String): Regex = (s"($funcs)" + """\(eval\((.*?)\)\)\s*as\s*([a-zA-Z0-9]+)(\s|,|$)""").r
 
   def parseEvals(args: String, funclist: String = StatsFunctions.funclistString): (List[StatsEval], String) = {
     val evals = rexStatsEvalFunc(funclist).findAllIn(args)
