@@ -290,7 +290,7 @@ class OTLEvalTest extends CommandTest {
     assert(jsonCompare(actual, expected), f"Result : $actual\n---\nExpected : $expected")
   }
 
-  test("Test 15. Command: | eval true") {
+  test("Test 15.0. Command: | eval true") {
     val actual = execute("""eval result=if(true(),1,0)""")
     val expected = """[
                      |{"_raw":"{\"serialField\": \"0\", \"random_Field\": \"100\", \"WordField\": \"qwe\", \"junkField\": \"q2W\"}","_time":1568026476854,"result":1},
@@ -304,6 +304,24 @@ class OTLEvalTest extends CommandTest {
                      |{"_raw":"{\"serialField\": \"8\", \"random_Field\": \"0\", \"WordField\": \"MMM\", \"junkField\": \"112\"}","_time":1568026476862,"result":1},
                      |{"_raw":"{\"serialField\": \"9\", \"random_Field\": \"10\", \"WordField\": \"USA\", \"junkField\": \"word\"}","_time":1568026476863,"result":1}
                      |]""".stripMargin
+    assert(jsonCompare(actual, expected), f"Result : $actual\n---\nExpected : $expected")
+  }
+
+  test("Test 15.1. Command: | eval if equals") {
+    val actual = execute("""eval result=if(random_Field=50,1,2)""")
+    val expected =
+      """[
+        |{"_time":1568026476854,"_raw":"{\"serialField\": \"0\", \"random_Field\": \"100\", \"WordField\": \"qwe\", \"junkField\": \"q2W\"}","random_Field":"100","result":2},
+        |{"_time":1568026476855,"_raw":"{\"serialField\": \"1\", \"random_Field\": \"-90\", \"WordField\": \"rty\", \"junkField\": \"132_.\"}","random_Field":"-90","result":2},
+        |{"_time":1568026476856,"_raw":"{\"serialField\": \"2\", \"random_Field\": \"50\", \"WordField\": \"uio\", \"junkField\": \"asd.cx\"}","random_Field":"50","result":1},
+        |{"_time":1568026476857,"_raw":"{\"serialField\": \"3\", \"random_Field\": \"20\", \"WordField\": \"GreenPeace\", \"junkField\": \"XYZ\"}","random_Field":"20","result":2},
+        |{"_time":1568026476858,"_raw":"{\"serialField\": \"4\", \"random_Field\": \"30\", \"WordField\": \"fgh\", \"junkField\": \"123_ASD\"}","random_Field":"30","result":2},
+        |{"_time":1568026476859,"_raw":"{\"serialField\": \"5\", \"random_Field\": \"50\", \"WordField\": \"jkl\", \"junkField\": \"casd(@#)asd\"}","random_Field":"50","result":1},
+        |{"_time":1568026476860,"_raw":"{\"serialField\": \"6\", \"random_Field\": \"60\", \"WordField\": \"zxc\", \"junkField\": \"QQQ.2\"}","random_Field":"60","result":2},
+        |{"_time":1568026476861,"_raw":"{\"serialField\": \"7\", \"random_Field\": \"-100\", \"WordField\": \"RUS\", \"junkField\": \"00_3\"}","random_Field":"-100","result":2},
+        |{"_time":1568026476862,"_raw":"{\"serialField\": \"8\", \"random_Field\": \"0\", \"WordField\": \"MMM\", \"junkField\": \"112\"}","random_Field":"0","result":2},
+        |{"_time":1568026476863,"_raw":"{\"serialField\": \"9\", \"random_Field\": \"10\", \"WordField\": \"USA\", \"junkField\": \"word\"}","random_Field":"10","result":2}
+        |]""".stripMargin
     assert(jsonCompare(actual, expected), f"Result : $actual\n---\nExpected : $expected")
   }
 
@@ -399,7 +417,7 @@ class OTLEvalTest extends CommandTest {
     assert(jsonCompare(actual, expected), f"Result : $actual\n---\nExpected : $expected")
   }
 
-  test("Test 18.1 Command: | eval f2=strptime(f1, format)") {
+  test("Test 18.0 Command: | eval f2=strptime(f1, format)") {
     val actual = execute("""eval f1="Mon Oct 21 05:00:00 EDT 2019" | eval f2=strptime(f1, "%a %b %d %H:%M:%S %Z %Y")""")
     val expected =
       """[
@@ -417,7 +435,7 @@ class OTLEvalTest extends CommandTest {
     assert(jsonCompare(actual, expected), f"Result : $actual\n---\nExpected : $expected")
   }
 
-  test("Test 18.2 Command: | eval f2=strptime(mv f1, format)") {
+  test("Test 18.1 Command: | eval f2=strptime(mv f1, format)") {
     val actual = execute("""eval f1="Mon Oct 21 05:00:00 EDT 2019" | stats values(f1) as f2 | eval f2 = mvindex(f2,0) | eval f3=strptime(f2, "%a %b %d %H:%M:%S %Z %Y")""")
     val expected =
       """[
@@ -426,7 +444,7 @@ class OTLEvalTest extends CommandTest {
     assert(jsonCompare(actual, expected), f"Result : $actual\n---\nExpected : $expected")
   }
 
-  test("Test 18.3 Command: | eval f2=strptime(null f1, format)") {
+  test("Test 18.2 Command: | eval f2=strptime(null f1, format)") {
     val actual = execute("""stats values(f1) as f2  | eval f3=strptime(f2, "%a %b %d %H:%M:%S %Z %Y")""")
     val expected =
       """[
@@ -435,7 +453,7 @@ class OTLEvalTest extends CommandTest {
     assert(jsonCompare(actual, expected), f"Result : $actual\n---\nExpected : $expected")
   }
 
-  test("Test 18.4 Command: | eval x = _num_ + strptime(...)") {
+  test("Test 18.3 Command: | eval x = _num_ + strptime(...)") {
     val actual = execute("""| eval g = 1 + strptime("2016-01-01", "%Y-%m-%d")""")
     val expected =
       """[
@@ -558,7 +576,7 @@ class OTLEvalTest extends CommandTest {
     assert(jsonCompare(actual, expected), f"Result : $actual\n---\nExpected : $expected")
   }
 
-  test("Test 24. Command: | eval replace with $ in args") {
+  test("Test 25. Command: | eval replace with $ in args") {
     val actual = execute("""  |eval t1=replace(WordField, ".+$", "X") """)
     val expected = """[
                      |{"_time":1568026476854,"_raw":"{\"serialField\": \"0\", \"random_Field\": \"100\", \"WordField\": \"qwe\", \"junkField\": \"q2W\"}","WordField":"qwe","t1":"X"},
@@ -575,7 +593,7 @@ class OTLEvalTest extends CommandTest {
     assert(jsonCompare(actual, expected), f"Result : $actual\n---\nExpected : $expected")
   }
 
-  test("Test 25.0 Command: | eval mvfind") {//TODO
+  test("Test 26.0 Command: | eval mvfind") {//TODO
     val actual = execute("""stats values(random_Field) as rf| eval result=mvfind(rf, "-.*" )""")
     val expected = """[
                      |{"rf":["50","20","30","100","-90","-100","10","60","0"],"result":4}
@@ -583,7 +601,7 @@ class OTLEvalTest extends CommandTest {
     assert(jsonCompare(actual, expected), f"Result : $actual\n---\nExpected : $expected")
   }
 
-  test("Test 25.1 Command: | eval mvfind") {//TODO
+  test("Test 26.1 Command: | eval mvfind") {//TODO
     val actual = execute("""stats values(random_Field) as rf| eval result=mvfind(x, "-.*" )""")
     val expected = """[
                      |{"rf":["50","20","30","100","-90","-100","10","60","0"]}
@@ -591,7 +609,7 @@ class OTLEvalTest extends CommandTest {
     assert(jsonCompare(actual, expected), f"Result : $actual\n---\nExpected : $expected")
   }
 
-  test("Test 25.2 Command: | eval mvfind") {//TODO
+  test("Test 26.2 Command: | eval mvfind") {//TODO
     val actual = execute("""stats values(random_Field) as rf| eval result=mvfind(rf, x )""")
     val expected = """[
                      |{"rf":["50","20","30","100","-90","-100","10","60","0"],"result":-1}

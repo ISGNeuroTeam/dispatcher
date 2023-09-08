@@ -2,7 +2,7 @@ package ot.scalaotl
 package commands
 
 import org.apache.spark.sql.DataFrame
-import org.apache.spark.sql.functions.{col, expr, explode}
+import org.apache.spark.sql.functions.{col, explode, expr}
 import ot.scalaotl.extensions.StringExt._
 
 /** =Abstract=
@@ -42,6 +42,9 @@ class OTLUntable(sq: SimpleQuery) extends OTLBaseCommand(sq) {
     if (_df.columns.contains(fixed)) {
       // select columns that not in args
       val cols = _df.columns.filter(x => x != fixed && x != field && x != value).map(_.addSurroundedBackticks)
+      if (cols.isEmpty) {
+        return _df.drop(field, value)
+      }
       // for all columns that not in args convert to arrays [column name, value]
       cols.foldLeft(_df) {
         (accum, colname) => {

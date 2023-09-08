@@ -1,6 +1,6 @@
 spark {
   master = "local"
-  appName = "dispatcher (2.5.0)"
+  appName = "dispatcher (2.6.0)"
 }
 
 checkpoints {

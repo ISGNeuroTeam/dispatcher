@@ -1,11 +1,11 @@
 package ot.scalaotl
 package commands
 
-import org.apache.spark.sql.functions.{col, lit, typedLit, udf}
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.expressions.UserDefinedFunction
-import ot.scalaotl.extensions.StringExt._
+import org.apache.spark.sql.functions.{col, lit, typedLit, udf}
 import ot.scalaotl.extensions.DataFrameExt._
+import ot.scalaotl.extensions.StringExt._
 import ot.scalaotl.static.OtHash
 
 import scala.util.matching.Regex
@@ -19,7 +19,7 @@ class OTLRex(sq: SimpleQuery) extends OTLBaseCommand(sq) {
   //Replaces allows the use of a symbol '_' in group names
   val replMap: Map[String, String] = getGroupReplaces(regexStr)
   val normalisedRegexStr: String = regexStr.replaceByMap(replMap)
-  val replBackMap: Map[String, String] = replMap.map(_.swap)
+  val replBackMap: Map[String, String] = replMap.map(m => m._1.substring(2, m._1.length-1) -> m._2.substring(2, m._2.length-1)).map(_.swap)
 
   val groupNamesIter: Iterator[Regex.Match] = """\(\?<([a-zA-Z][a-zA-Z0-9]*)>""".r.findAllMatchIn(normalisedRegexStr)
   val groupNames: Array[String] = groupNamesIter.map(i => i.group(1)).toArray
@@ -71,8 +71,9 @@ class OTLRex(sq: SimpleQuery) extends OTLBaseCommand(sq) {
     val sdf = df.withColumn("used_" + field, col(field))
     val rdf = if (_df.getColumTypeName(field) == "array")
       sdf.withColumn("dict", extractMultivalUDF(col("used_" + field), col("rex"), col("max_match"), col("group_names")))
-    else
+    else {
       sdf.withColumn("dict", extractUDF(col("used_" + field), col("rex"), col("max_match"), col("group_names")))
+    }
     val mrdf = rdf.drop("rex", "max_match", "group_names", "used_" + field)
 
     groupNames.foldLeft(mrdf) {
@@ -86,6 +87,8 @@ class OTLRex(sq: SimpleQuery) extends OTLBaseCommand(sq) {
 
   def getGroupReplaces(str: String): Map[String, String] = {
     val rexStr = """\?<(([A-Za-z0-9_])*)>"""
-    rexStr.r.findAllIn(str).matchData.map { x => x.group(1) -> ("x" + OtHash.md5(x.group(1))) }.toMap
+    rexStr.r.findAllIn(str).matchData.map {
+      x =>
+        x.group(0) -> ("?<" + "x" + OtHash.md5(x.group(1)) + ">") }.toMap
   }
 }
