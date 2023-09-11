@@ -1,3 +1,7 @@
+## [2.6.1]
+### Hotfix
+- Fixed eventstats behavior for columns with only null values: the input table will be returned.
+
 ## [2.6.0]
 ### New
 - Possibility of processing of the null-containing fields by eventstats command.
