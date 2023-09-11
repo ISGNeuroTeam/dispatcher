@@ -16,26 +16,30 @@ class OTLEventstats(sq: SimpleQuery) extends OTLBaseCommand(sq, _seps = Set("by"
 
   override def transform(_df: DataFrame): DataFrame = {
     val outDf = transformer.transform(_df)
-    val workDf = _df.drop(fieldsGenerated: _*)
-    val eventstatsDf = (positionalsMap.get("by") match {
-      case Some(Positional("by", List())) => workDf.crossJoin(outDf)
-      case Some(Positional("by", byList)) => {
-        val workByList = byList.map(_.stripBackticks())
-        val colItem = workDf(workByList.head) <=> outDf(workByList.head)
-        val cols = workByList.tail.foldLeft(colItem) {
-          (col, p) => col && workDf(p) <=> outDf(p)
+    if (!outDf.isEmpty) {
+      val workDf = _df.drop(fieldsGenerated: _*)
+      val eventstatsDf = (positionalsMap.get("by") match {
+        case Some(Positional("by", List())) => workDf.crossJoin(outDf)
+        case Some(Positional("by", byList)) => {
+          val workByList = byList.map(_.stripBackticks())
+          val colItem = workDf(workByList.head) <=> outDf(workByList.head)
+          val cols = workByList.tail.foldLeft(colItem) {
+            (col, p) => col && workDf(p) <=> outDf(p)
+          }
+          val outColItem = outDf(workByList.head)
+          val outCols = workByList.tail.foldLeft(outColItem) {
+            (outCol, p) => outCol && outDf(p)
+          }
+          workDf.join(outDf, cols).drop(outCols)
         }
-        val outColItem = outDf(workByList.head)
-        val outCols = workByList.tail.foldLeft(outColItem) {
-          (outCol, p) => outCol && outDf(p)
-        }
-        workDf.join(outDf, cols).drop(outCols)
-      }
-      case _ => outDf
-    }).dropFake
-    if (eventstatsDf.columns.contains("_time"))
-      eventstatsDf.sort("_time")
+        case _ => outDf
+      }).dropFake
+      if (eventstatsDf.columns.contains("_time"))
+        eventstatsDf.sort("_time")
+      else
+        eventstatsDf
+    }
     else
-      eventstatsDf
+      _df
   }
 }
