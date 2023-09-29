@@ -1,5 +1,7 @@
 package ot.scalaotl.commands
 
+import ot.dispatcher.sdk.core.CustomException
+
 class OTLRenameTest extends CommandTest {
 
   test("Test 0. Command: | rename serialField as sf") {
@@ -224,4 +226,10 @@ class OTLRenameTest extends CommandTest {
         |}]""".stripMargin
     assert(jsonCompare(actual, expected), f"Actual:\n$actual\n---\nExpected:\n$expected")
   }
+
+  test("Test 4. Command: | rename serialField ass sf") {
+    val thrown = intercept[CustomException]{execute("""rename serialField ass sf""")}
+    assert(thrown.getMessage().contains("Required argument(s) wc-field not found"))
+  }
+
 }

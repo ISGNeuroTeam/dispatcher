@@ -3,7 +3,7 @@ package ot.scalaotl.commands
 class OTLWhereTest extends CommandTest {
 
   test("Test 0. Command: |  where field > value") {
-    val actual = execute("""table _raw, _time, serialField | where serialField > 5""")//TODO
+    val actual = execute("""table _raw, _time, serialField | where serialField > 5"""")//TODO
     val expected = """[
                      |{"_raw":"{\"serialField\": \"6\", \"random_Field\": \"60\", \"WordField\": \"zxc\", \"junkField\": \"QQQ.2\"}","_time":1568026476860,"serialField":"6"},
                      |{"_raw":"{\"serialField\": \"7\", \"random_Field\": \"-100\", \"WordField\": \"RUS\", \"junkField\": \"00_3\"}","_time":1568026476861,"serialField":"7"},

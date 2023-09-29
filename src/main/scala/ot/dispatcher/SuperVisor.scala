@@ -428,7 +428,7 @@ class SuperVisor {
     blocking {
       sparkContext.setJobGroup(jobUuid, s"jobs of uuid ${jobUuid}")
       jobIds +: jobUuid
-      val commandsExecutor = new CommandExecutor(commandClasses, computingNodeInteractor.logProgressMessage)
+      val commandsExecutor = new CommandExecutor(AppConfig.config, commandClasses, computingNodeInteractor.logProgressMessage)
       commandsExecutor.execute(jobUuid, otlCommands)
       computingNodeInteractor.jobStatusNotify(jobUuid, "FINISHED", s"Job ${jobUuid} was finished succesfully")
     }
