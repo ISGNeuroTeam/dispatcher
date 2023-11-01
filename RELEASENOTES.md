@@ -1,3 +1,15 @@
+## [Unreleased]
+### New
+- Possibility to use rename command in v2 queries.
+- Possibility to use replace command in v2 queries.
+- Possibility to use search command in v2 queries.
+- Possibility to use eval command in v2 queries (partially realized - only simplest cases, such as eval column = text/number).
+- Possibility to use where command in v2 queries (partially realized - only where column = text/number)
+### Bugfix
+- Incorrect behavior of rename command in case there is lexical error in 'as' keyword: syntax error is thrown now.
+- Incorrect behavior of replace command in case of double quotes in replacing text.
+- Bug of where command in 'where a = false' case.
+
 ## [2.6.1]
 ### Hotfix
 - Fixed eventstats behavior for columns with only null values: the input table will be returned.

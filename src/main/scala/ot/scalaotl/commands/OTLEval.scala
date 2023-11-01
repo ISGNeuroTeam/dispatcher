@@ -1,10 +1,10 @@
 package ot.scalaotl
 package commands
 
+import com.isgneuro.otl.processors.Eval
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.functions.expr
 import ot.dispatcher.sdk.core.CustomException.E00020
-import ot.scalaotl.extensions.ColumnExt._
 import ot.scalaotl.extensions.StringExt._
 import ot.scalaotl.parsers.ExpressionParser
 
@@ -25,15 +25,11 @@ class OTLEval(sq: SimpleQuery) extends OTLBaseCommand(sq) with ExpressionParser 
   }
 
   override def transform(_df: DataFrame): DataFrame = {
-    var sch = _df.schema
-    returns.evals.foldLeft(_df)((acc, eval) => eval match {
-      case StatsEval(newfield, expression) =>
-        sch = acc.schema
-        acc
-          .withColumn(newfield.strip("\"").strip("\'"), expr(expression.replaceFirst("""`\Q""" + newfield + """\E` *=""", "")
-            .withPeriodReplace()).withExtensions(sch))
-      case _ => acc
-    }
-    )
+    val evalsMap = {
+      for {e <- returns.evals}
+        yield (e.newfield -> e.expr)
+    }.toMap
+    val worker = new Eval(evalsMap)
+    worker.transform(_df)
   }
 }

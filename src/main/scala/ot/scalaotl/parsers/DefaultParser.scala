@@ -64,7 +64,7 @@ trait DefaultParser {
 
   /** Removes positionals and separators from arg string
    */
-  def excludePositionals: (String, Set[String]) => String = (args: String, seps: Set[String]) => if (seps.isEmpty) args else args.split(seps.mkString("|")).head
+  def excludePositionals: (String, Set[String]) => String = (args: String, seps: Set[String]) => if (seps.isEmpty) args else args.split(seps.map(" " + _ + " ").mkString("|")).head
 
   /** Remove one specified keyword pair from arg string
    */

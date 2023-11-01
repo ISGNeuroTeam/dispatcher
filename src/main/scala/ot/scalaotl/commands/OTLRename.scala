@@ -16,10 +16,10 @@ class OTLRename(sq: SimpleQuery) extends OTLBaseCommand(sq) with WildcardParser 
   override def transform(_df: DataFrame): DataFrame = {
     val existingFieldNames = returns.fields.map(f => f.field.stripBackticks())
     val newFieldNames = returns.fields.map(f => f.newfield)
-    if (existingFieldNames.length != newFieldNames.length || existingFieldNames.isEmpty) {
+    if (existingFieldNames.isEmpty) {
       throw E00012(sq.searchId, "rename", "wc-field")
     }
-    val worker = new Rename(returns.fields.map(f => f.field.stripBackticks()), returns.fields.map(f => f.newfield))
+    val worker = new Rename(existingFieldNames.zip(newFieldNames).toMap)
     worker.transform(_df)
   }
 }

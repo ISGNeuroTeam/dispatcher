@@ -1,17 +1,14 @@
 package ot.scalaotl
 package commands
 
-import org.apache.spark.sql.functions._
-import org.apache.spark.sql.{AnalysisException, Column, DataFrame, functions => F}
+import com.isgneuro.otl.processors
+import org.apache.spark.sql.DataFrame
 import org.json4s._
 import org.json4s.native.JsonMethods._
+import ot.dispatcher.sdk.core.CustomException.E00026
 import ot.scalaotl.config.OTLIndexes
-import ot.scalaotl.extensions.DataFrameExt._
 import ot.scalaotl.extensions.StringExt._
 import ot.scalaotl.parsers.{ExpressionParser, WildcardParser}
-import ot.scalaotl.utils.searchinternals._
-
-import scala.collection.mutable.ListBuffer
 
 /** =Abstract=
  * This class provides support of __'''search'''__ otl command.
@@ -44,7 +41,6 @@ class RawRead(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLIndexes with E
   val requiredKeywords = Set.empty[String]
   val optionalKeywords: Set[String] = Set("limit", "subsearch")
   val SimpleQuery(_args, searchId, cache, subsearches, tws, twf, stfe, preview) = sq
-  var ifdfe: DataFrame = spark.emptyDataFrame
   // Command has no optional keywords, nothing to validate
   override def validateOptionalKeywords(): Unit = ()
 
@@ -53,20 +49,8 @@ class RawRead(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLIndexes with E
     parse(jsonStr).extract[Map[String, Map[String, String]]]
   }
 
-  // Get a list of available indexes (reading from filesystem)
-  val allIndexes: ListBuffer[String] = getAllIndexes
   // Search in the query for all indexes containing * and look for similar ones among the available indexes
   var indexQueriesMap: Map[String, Map[String, String]] = jsonStrToMap(excludeKeywords(_args.trim, List(Keyword("limit", "t"))))
-  for (index <- indexQueriesMap) {
-    if (index._1.contains("*")) {
-      val regex_raw = index._1.replace("*", ".*").r
-      log.debug(s"[SearchID:$searchId] filterRegex for maskIndex : $regex_raw")
-      val mask_indexes = allIndexes filter (x => regex_raw.pattern.matcher(x).matches())
-      log.debug(s"[SearchID:$searchId] maskIndexes : $mask_indexes")
-      indexQueriesMap -= index._1
-      mask_indexes.foreach(x => indexQueriesMap = indexQueriesMap + (x -> index._2))
-    }
-  }
 
   // Get a list of fields used in query (this list next used for build fieldsUsedInFullQuery)
   // Select query from each entry in indexQueriesMap
@@ -81,97 +65,6 @@ class RawRead(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLIndexes with E
       .map(_.strip("!").strip("'").strip("\"").stripBackticks().addSurroundedBackticks)
   }.toList.flatten
 
-  /** Modifies the query item in several steps
-   * For all fieldnames in the fieldsUsedInFullQuery list following steps are performed
-   * Step 1. All occurrences of the fieldname in substrings of the form "(fieldname" and " fieldname"
-   * followed by characters =, >, <, !=, like, rlike are replaced to fieldname surrounded with backticks
-   * Step 2. All occurrences of the fieldname in substrings of the form fieldname="null" and fieldname!="null"
-   * are replaced to 'fieldname is null' and 'fieldname is not null' respectively
-   * Earlier in this method was the replacement of {} brackets to []
-   *
-   * @param i [[ String, Map[String, String] ]] - item with original query
-   * @return [[ String ]] - modified item
-   */
-  def getModifedQuery(i: (String, Map[String, String])): String = {
-    val query = i._2.getOrElse("query", "")
-    fieldsUsedInFullQuery.foldLeft(query)((q, field) => {
-      val nf = field.addSurroundedBackticks
-      // Here a regular expression is used instead of a simple replacement,
-      // because the name of one field can be a substring of another field
-      // Starts with a bracket or space, then a quotation mark or backtick
-      q.replaceAll("""([\(| ])(['`]*\Q""" + field + """\E['`]*)\s*(=|>|<|!=| like| rlike)""", s"$$1$nf$$3")
-        .replace(nf + "=\"null\"", s"$nf is null")
-        .replace(nf + "!=\"null\"", s"$nf is not null")
-    })
-  }
-
-  /**
-   * Reads data from indexes
-   * Determines which fields can be obtained from indexes and which cannot
-   * Columns not found are added as null columns
-   *
-   * @param query [[Map[String, Map[String, String]]] - source query
-   * @return [[DataFrame]] - dataframe with index time fields
-   */
-  private def searchMap(query: Map[String, Map[String, String]]): DataFrame = {
-    val (df, allExceptions) = query.foldLeft((spark.emptyDataFrame, List[Exception]())) {
-      case (accum, item) =>
-        log.debug(s"[SearchID:$searchId]Query is " + item)
-        val modifiedQuery = getModifedQuery(item)
-        val nItem = (item._1, item._2 + ("query" -> modifiedQuery))
-        log.debug(s"[SearchID:$searchId]Modified query is" + nItem)
-
-        val s = new IndexSearch(spark, nItem, searchId, Seq[String](), preview)
-        try {
-          // Read index data (only _time and _raw) and make field extraction
-          val fdfe: DataFrame = extractFields(s.search())
-          // If the index for some reason already contained an index field, it will be removed
-          // because the value of the index field may differ from the name of the index directory
-          ifdfe = if (fieldsUsedInFullQuery.contains("index"))
-            fdfe.drop("index").withColumn("index", lit(item._1))
-          else
-            fdfe
-          // Dataframe filtering by _raw field
-          val fdf: DataFrame = if (modifiedQuery == "") ifdfe else ifdfe.filter(modifiedQuery)
-          val cols1 = fdf.columns.map(_.stripBackticks().addSurroundedBackticks).toSet
-          val cols2 = accum._1.columns.map(_.stripBackticks().addSurroundedBackticks).toSet
-          val totalCols = (cols1 ++ cols2).toList
-          def expr(myCols: Set[String], allCols: Set[String]): List[Column] = {
-            allCols.toList.map(x => if (myCols.contains(x)) F.col(x).as(x.stripBackticks()) else F.lit(null).as(x.stripBackticks()))
-          }
-
-          if (totalCols.nonEmpty) (fdf.select(expr(cols1, totalCols.toSet): _*).union(accum._1.select(expr(cols2, totalCols.toSet): _*)), accum._2)
-          else accum
-        } catch {
-          case aex: AnalysisException => if (aex.message.contains("cannot resolve")) (ifdfe.filter("_time = 0"), accum._2) else (accum._1, aex +: accum._2)
-          case ex: Exception => (accum._1, ex +: accum._2)
-        }
-    }
-    // Throw exception if for all index get errors
-    if (query.size == allExceptions.size) throw allExceptions.head
-    // Add columns which are used in query but does not exist in dataframe after read (as null values)
-    df
-  }
-
-  /**
-   * Finds fields from the query that are not among the non-empty fields of the dataframe
-   * Makes field extraction for these search-time-field-extraction Fields with only existing in raw fields (by calling makeFieldExtraction, withNotExists = false)
-   * Adds extracted columns to dataframe
-   * Extracting algorithms are described in the FieldExtractor class
-   *
-   * @param df [[DataFrame]] - source dataframe
-   * @return [[DataFrame]] - dataframe with search time fields
-   */
-  private def extractFields(df: DataFrame): DataFrame = {
-
-    import ot.scalaotl.static.FieldExtractor
-
-    val stfeFields = fieldsUsedInFullQuery.diff(df.notNullColumns)
-    log.debug(s"[SearchID:$searchId] Search-time field extraction: $stfeFields")
-    val extractor = new FieldExtractor
-    extractor.makeFieldExtraction(df, stfeFields, FieldExtractor.extractUDF, false)
-  }
-
   /**
    * Standard method called by Converter in each OTL-command.
    *
@@ -179,20 +72,17 @@ class RawRead(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLIndexes with E
    * @return [[DataFrame]]  - outgoing dataframe with OTL-command results
    */
   override def transform(_df: DataFrame): DataFrame = {
-    log.debug(s"searchId = $searchId queryMap: $indexQueriesMap")
-    val dfInit = searchMap(indexQueriesMap)
-    val dfLimit = getKeyword("limit") match {
-      case Some(lim) => log.debug(s"[SearchID:$searchId] Dataframe is limited to $lim"); dfInit.limit(100000)
-      case _ => dfInit
+    var limit: Int = 0
+    try {
+      val limitText: String = getKeyword("limit") match {
+        case Some(lim) => lim
+        case _ => limit.toString
+      }
+      limit = limitText.toInt
+    } catch {
+      case e: IllegalArgumentException => throw E00026(searchId, e.getMessage)
     }
-    // If subsearches exist, then we combine the dataframe with their results
-    getKeyword("subsearch") match {
-      case Some(str) =>
-        cache.get(str) match {
-          case Some(jdf) => new OTLJoin(SimpleQuery(s"""type=inner max=1 ${jdf.columns.toList.mkString(",")} subsearch=$str""", cache)).transform(dfLimit)
-          case None => dfLimit
-        }
-      case None => dfLimit
-    }
+    val reader = new processors.RawRead(spark, log, searchId.toString, otlconfig, indexQueriesMap, limit, fieldsUsedInFullQuery)
+    reader.transform(_df)
   }
 }
