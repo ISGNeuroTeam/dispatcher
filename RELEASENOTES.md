@@ -1,10 +1,12 @@
-## [Unreleased]
+## [2.7.0]
 ### New
 - Possibility to use rename command in v2 queries.
 - Possibility to use replace command in v2 queries.
 - Possibility to use search command in v2 queries.
 - Possibility to use eval command in v2 queries (partially realized - only simplest cases, such as eval column = text/number).
 - Possibility to use where command in v2 queries (partially realized - only where column = text/number)
+- Possibility to use makeresults command in v2 queries.
+- Note: v2 queries can only be used on nodes that have architecture 2.0 components deployed.
 ### Bugfix
 - Incorrect behavior of rename command in case there is lexical error in 'as' keyword: syntax error is thrown now.
 - Incorrect behavior of replace command in case of double quotes in replacing text.

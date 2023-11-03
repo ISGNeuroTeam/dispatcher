@@ -590,7 +590,7 @@ class EvalCommandTest extends Command2Test {
       """{
         "name": "eval",
         "arguments": {
-          "evaluation": [
+          "evaluations": [
             {
                 "key": "Колонка с пробелами",
                 "type": "string",
@@ -624,7 +624,7 @@ class EvalCommandTest extends Command2Test {
       """{
         "name": "eval",
         "arguments": {
-          "evaluation": [
+          "evaluations": [
             {
                 "key": "a",
                 "type": "integer",
@@ -632,9 +632,7 @@ class EvalCommandTest extends Command2Test {
                 "arg_type": "kwarg",
                 "group_by": [],
                 "named_as": ""
-              }
-          ],
-          "evaluations": [
+              },
             {
                 "key": "b",
                       "type": "integer",
