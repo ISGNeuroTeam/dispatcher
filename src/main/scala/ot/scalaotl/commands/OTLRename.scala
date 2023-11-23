@@ -19,7 +19,7 @@ class OTLRename(sq: SimpleQuery) extends OTLBaseCommand(sq) with WildcardParser 
     if (existingFieldNames.isEmpty) {
       throw E00012(sq.searchId, "rename", "wc-field")
     }
-    val worker = new Rename(existingFieldNames.zip(newFieldNames).toMap)
+    val worker = new Rename(spark, existingFieldNames.zip(newFieldNames).toMap)
     worker.transform(_df)
   }
 }

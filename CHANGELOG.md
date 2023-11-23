@@ -3,13 +3,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.7.0]
+## [2.7.0] - 2023-11-23
 ### Added
 - Possibility to use rename command in Arch 2.0 queries.
 - Possibility to use replace command in Arch 2.0 queries.
 - Possibility to use search command in Arch 2.0 queries.
-- Possibility to use eval command in Arch 2.0 queries (partially realized - only simplest cases, such as eval column = text/number).
-- Possibility to use where command in Arch 2.0 queries (partially realized - only where column = text/number)
+- Possibility to use eval command in Arch 2.0 queries (practically all functionality - elementary operands, expressions and functions).
+- Possibility to use where command in Arch 2.0 queries (partially realized - only where column = <number/text/boolean>)
 - Possibility to use makeresults command in Arch 2.0 queries.
 ### Changed
 - Processing of rename command moved to otl_processors library.

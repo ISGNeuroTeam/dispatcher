@@ -7,7 +7,7 @@ class ReplaceCommandTest extends Command2Test {
       """{
         |        "name": "eval",
         |        "arguments": {
-        |          "evaluation": [
+        |          "evaluations": [
         |            {
         |                "key": "junkField",
         |                "type": "string",
@@ -97,7 +97,7 @@ class ReplaceCommandTest extends Command2Test {
       """{
         |        "name": "eval",
         |        "arguments": {
-        |          "evaluation": [
+        |          "evaluations": [
         |            {
         |                "key": "text",
         |                "type": "string",
@@ -187,7 +187,7 @@ class ReplaceCommandTest extends Command2Test {
       """{
         |        "name": "eval",
         |        "arguments": {
-        |          "evaluation": [
+        |          "evaluations": [
         |            {
         |                "key": "text",
         |                "type": "string",
@@ -277,7 +277,7 @@ class ReplaceCommandTest extends Command2Test {
       """{
         |        "name": "eval",
         |        "arguments": {
-        |          "evaluation": [
+        |          "evaluations": [
         |            {
         |                "key": "eqField",
         |                "type": "string",
@@ -367,7 +367,7 @@ class ReplaceCommandTest extends Command2Test {
       """{
         |        "name": "eval",
         |        "arguments": {
-        |          "evaluation": [
+        |          "evaluations": [
         |            {
         |                "key": "bracesText",
         |                "type": "string",

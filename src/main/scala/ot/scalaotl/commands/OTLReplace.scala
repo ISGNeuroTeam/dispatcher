@@ -24,7 +24,7 @@ class OTLReplace(sq: SimpleQuery) extends OTLBaseCommand(sq, _seps = Set("in")) 
     if (replsMap.forall(f => f._1 == f._2)) {
       throw E00013(sq.searchId, "replace", replsMap.keys.mkString(", "))
     }
-    val worker = new Replace(colToReplace, replsMap)
+    val worker = new Replace(spark, colToReplace, replsMap)
     worker.transform(_df)
   }
 }

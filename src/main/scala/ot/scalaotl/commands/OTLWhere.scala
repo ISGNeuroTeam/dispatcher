@@ -38,7 +38,7 @@ class OTLWhere(sq: SimpleQuery) extends OTLBaseCommand(sq) with ExpressionParser
 
   override def transform(_df: DataFrame): DataFrame = {
     val exprs = returns.evals.map(_.expr)
-    val worker = new Where(exprs, log)
+    val worker = new Where(spark, exprs, log)
     worker.transform(_df)
   }
 

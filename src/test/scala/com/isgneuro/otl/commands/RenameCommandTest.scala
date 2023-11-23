@@ -8,7 +8,7 @@ class RenameCommandTest extends Command2Test {
         |  {
         |        "name": "eval",
         |        "arguments": {
-        |          "evaluation": [
+        |          "evaluations": [
         |            {
         |                "key": "a",
         |                "type": "integer",

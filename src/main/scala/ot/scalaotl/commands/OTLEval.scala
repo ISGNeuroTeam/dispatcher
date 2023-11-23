@@ -29,7 +29,7 @@ class OTLEval(sq: SimpleQuery) extends OTLBaseCommand(sq) with ExpressionParser 
       for {e <- returns.evals}
         yield (e.newfield -> e.expr)
     }.toMap
-    val worker = new Eval(evalsMap)
+    val worker = new Eval(spark, evalsMap)
     worker.transform(_df)
   }
 }
