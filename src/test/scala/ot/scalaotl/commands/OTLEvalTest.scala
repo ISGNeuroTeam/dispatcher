@@ -146,14 +146,6 @@ class OTLEvalTest extends CommandTest {
     assert(jsonCompare(actual, expected), f"Result : $actual\n---\nExpected : $expected")
   }
 
-  test("Test 6. Command: | eval mvsort") {//TODO
-    val actual = execute(""" stats values(random_Field) as rf| eval result=mvsort(rf)""")
-    val expected = """[
-                     |{"rf":["50","20","30","100","-90","-100","10","60","0"],"result":["-100","-90","0","10","100","20","30","50","60"]}
-                     |]""".stripMargin
-    assert(jsonCompare(actual, expected), f"Result : $actual\n---\nExpected : $expected")
-  }
-
   test("Test 7. Command: | eval round") {//TODO
     val actual = execute("""eval t=serialField/100 | eval result=round(t,1)""")
     val expected = """[

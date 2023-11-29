@@ -17,7 +17,8 @@ Install:
 ### Installing
 
 1. Publish local dispatcher-sdk.
-2. Download managed dependencies.
+2. Download otl_main_set_2.11_x.y.z.jar, see otl_main_set README for instructions to deploy otl_main_set in dispatcher structure.  
+3. Download managed dependencies.
 
 ### Command List
 

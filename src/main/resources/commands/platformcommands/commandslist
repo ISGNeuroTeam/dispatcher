@@ -1,0 +1,8 @@
+commands {
+  rename = "com.isgneuro.otl.commands.RenameCommand"
+  makeresults = "com.isgneuro.otl.commands.MakeresultsCommand"
+  replace = "com.isgneuro.otl.commands.ReplaceCommand"
+  eval = "com.isgneuro.otl.commands.EvalCommand"
+  where = "com.isgneuro.otl.commands.WhereCommand"
+  search = "com.isgneuro.otl.commands.SearchCommand"
+}

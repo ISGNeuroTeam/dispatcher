@@ -1,6 +1,6 @@
 spark {
   master = "local"
-  appName = "dispatcher (2.6.1)"
+  appName = "dispatcher (2.7.0)"
 }
 
 checkpoints {
@@ -25,13 +25,13 @@ jdbc {
 }
 
 kafka {
-  computing_node_mode_enabled = false
+  computing_node_mode_enabled = true
   ip_address = "localhost"
   port = 9092
 }
 
 usercommands {
-directory = "/opt/otp/dispatcher/commands"
+directory = "src/main/resources/commands"
 }
 
 loop {

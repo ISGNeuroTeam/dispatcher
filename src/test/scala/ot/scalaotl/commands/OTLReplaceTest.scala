@@ -75,5 +75,12 @@ class OTLReplaceTest extends CommandTest {
     assert(jsonCompare(actual, expected), f"Result : $actual\n---\nExpected : $expected")
   }
 
-
+  test("Test 5. Command: | replace word1 (word2 word3) with simple_word in text") {
+    val actual = execute("""makeresults | eval bracesText = "start finish (a*bc)" | replace "start finish \(a*bc\)" with "c_action" in bracesText | fields - _time """)
+    val expected =
+      """[
+        |{"bracesText":"c_action"}
+        |]""".stripMargin
+    assert(jsonCompare(actual, expected), f"Result : $actual\n---\nExpected : $expected")
+  }
 }

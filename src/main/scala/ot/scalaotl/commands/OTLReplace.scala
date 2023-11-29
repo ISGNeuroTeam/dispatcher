@@ -1,11 +1,10 @@
 package ot.scalaotl
 package commands
 
-import ot.scalaotl.parsers.ReplaceParser
+import com.isgneuro.otl.processors.Replace
 import org.apache.spark.sql.DataFrame
-import org.apache.spark.sql.functions.{col, regexp_replace}
-import ot.scalaotl.extensions.StringExt._
-import OTLReplace.ColumnNotFoundException
+import ot.dispatcher.sdk.core.CustomException.{E00012, E00013}
+import ot.scalaotl.parsers.ReplaceParser
 
 class OTLReplace(sq: SimpleQuery) extends OTLBaseCommand(sq, _seps = Set("in")) with ReplaceParser {
   val requiredKeywords = Set.empty[String]
@@ -15,22 +14,17 @@ class OTLReplace(sq: SimpleQuery) extends OTLBaseCommand(sq, _seps = Set("in")) 
 
   override def transform(_df: DataFrame): DataFrame = {
     val colToReplace = fieldsUsed.headOption.getOrElse("")
-    if (_df.columns.contains(colToReplace.stripBackticks())) {
-      returns.fields.foldLeft(_df) {
-        case (accum, ReturnField(replacement, rexStr)) =>
-          val rex = rexStr.stripBackticks().stripPrefix("\"").stripSuffix("\"").replace("*", ".*")
-
-          val finalReplacement = replacement.stripBackticks().stripPrefix("\"").stripSuffix("\"")
-
-          accum.withColumn(colToReplace.stripBackticks(), regexp_replace(col(colToReplace), rex, finalReplacement))
-      }
-    } else {
-      throw ColumnNotFoundException(colToReplace, s"[${_df.columns.mkString(", ")}]")
+    val replsMap = {
+      for {e <- returns.fields}
+        yield e.field -> e.newfield
+    }.toMap
+    if (replsMap.isEmpty) {
+      throw E00012(sq.searchId, "replace", "wc-field")
     }
+    if (replsMap.forall(f => f._1 == f._2)) {
+      throw E00013(sq.searchId, "replace", replsMap.keys.mkString(", "))
+    }
+    val worker = new Replace(spark, colToReplace, replsMap)
+    worker.transform(_df)
   }
-}
-
-object OTLReplace {
-  case class ColumnNotFoundException(colname: String, columns: String)
-    extends Exception(s"Column $colname does not exist in dataframe with columns $columns")
 }

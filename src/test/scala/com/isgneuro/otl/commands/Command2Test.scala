@@ -1,23 +1,22 @@
-package ot.scalaotl.commands
+package com.isgneuro.otl.commands
 
+import com.isgneuro.sparkexecenv.{BaseCommand, CommandExecutor, CommandsProvider}
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.log4j.Logger
 import org.apache.spark.sql.types._
-import org.apache.spark.sql.{Column, DataFrame, SparkSession, functions => F}
-import org.scalatest.{Assertion, BeforeAndAfterAll, FunSuite}
+import org.apache.spark.sql.{DataFrame, SparkSession, functions => F}
+import org.scalatest.{BeforeAndAfterAll, FunSuite}
+import ot.AppConfig
 import ot.AppConfig.config
-import ot.dispatcher.OTLQuery
-import ot.scalaotl.Converter
-import ot.scalaotl.extensions.StringExt._
+import play.api.libs.json.{JsValue, Json}
 
 import java.io.{File, PrintWriter}
 import java.net.URI
 import scala.collection.mutable.ListBuffer
 import scala.reflect.io.Directory
 
-abstract class CommandTest extends FunSuite with BeforeAndAfterAll {
-
+class Command2Test extends FunSuite with BeforeAndAfterAll {
   val log: Logger = Logger.getLogger("TestLogger")
 
   val spark: SparkSession = SparkSession.builder()
@@ -48,150 +47,68 @@ abstract class CommandTest extends FunSuite with BeforeAndAfterAll {
       |{"_time":1568026476862,"_meta":"_subsecond::.854 timestamp::none","host":"test.local:9990","sourcetype":"jmx","index":"test_index","source":"test_source","_raw":"{\"serialField\": \"8\", \"random_Field\": \"0\", \"WordField\": \"MMM\", \"junkField\": \"112\"}","_nifi_time":"1568037188487","serialField":"8","random_Field":"0","WordField":"MMM","junkField":"112","_subsecond":"854","timestamp":"none","_nifi_time_out":"1568037488752"},
       |{"_time":1568026476863,"_meta":"_subsecond::.854 timestamp::none","host":"test.local:9990","sourcetype":"jmx","index":"test_index","source":"test_source","_raw":"{\"serialField\": \"9\", \"random_Field\": \"10\", \"WordField\": \"USA\", \"junkField\": \"word\"}","_nifi_time":"1568037188487","serialField":"9","random_Field":"10","WordField":"USA","junkField":"word","_subsecond":"854","timestamp":"none","_nifi_time_out":"1568037488752"}
       |]"""
-  val tmpDir: String =  "src/test/resources/temp"
+
+  val tmpDir: String = "src/test/resources/temp"
   val test_index = s"test_index-${this.getClass.getSimpleName}"
   val stfeRawSeparators: Array[String] = Array("json", ": ", "= ", " :", " =", " : ", " = ", ":", "=")
-  // example timestamps for tws twf
-  val start_time = 1649145660
-  val finish_time = 1663228860
 
-  val datasetSchema: StructType =StructType(Array(
-    StructField("WordField",StringType,nullable = true),
-    StructField("_meta",StringType,nullable = true),
-    StructField("_nifi_time",StringType,nullable = true),
-    StructField("_nifi_time_out",StringType,nullable = true),
-    StructField("_raw",StringType,nullable = true),
-    StructField("_subsecond",StringType,nullable = true),
-    StructField("_time",LongType,nullable = true),
-    StructField("host",StringType,nullable = true),
-    StructField("index",StringType,nullable = true),
-    StructField("junkField",StringType,nullable = true),
-    StructField("random_Field",StringType,nullable = true),
-    StructField("serialField",StringType,nullable = true),
-    StructField("source",StringType,nullable = true),
-    StructField("sourcetype",StringType,nullable = true),
-    StructField("timestamp",StringType,nullable = true)
+  val datasetSchema: StructType = StructType(Array(
+    StructField("WordField", StringType, nullable = true),
+    StructField("_meta", StringType, nullable = true),
+    StructField("_nifi_time", StringType, nullable = true),
+    StructField("_nifi_time_out", StringType, nullable = true),
+    StructField("_raw", StringType, nullable = true),
+    StructField("_subsecond", StringType, nullable = true),
+    StructField("_time", LongType, nullable = true),
+    StructField("host", StringType, nullable = true),
+    StructField("index", StringType, nullable = true),
+    StructField("junkField", StringType, nullable = true),
+    StructField("random_Field", StringType, nullable = true),
+    StructField("serialField", StringType, nullable = true),
+    StructField("source", StringType, nullable = true),
+    StructField("sourcetype", StringType, nullable = true),
+    StructField("timestamp", StringType, nullable = true)
   ))
 
-  val readingDatasetSchema: StructType =StructType(Array(
-    StructField("_time",LongType,nullable = true),
-    StructField("floor",IntegerType,nullable = true),
-    StructField("room",IntegerType,nullable = true),
-    StructField("ip",StringType,nullable = true),
-    StructField("id",StringType,nullable = true),
-    StructField("type",StringType,nullable = true),
-    StructField("description",StringType,nullable = true),
-    StructField("metric_name",StringType,nullable = true),
-    StructField("metric_long_name",StringType,nullable = true),
-    StructField("value",DoubleType,nullable = true),
-    StructField("index",StringType,nullable = true),
-    StructField("text",StringType,nullable = true),
-    StructField("text[1].val",StringType,nullable = true),
-    StructField("text[2].val",StringType,nullable = true),
-    StructField("num",IntegerType,nullable = true),
-    StructField("num[1].val",IntegerType,nullable = true),
-    StructField("num[2].val",IntegerType,nullable = true),
-    StructField("listField",StringType,nullable = true),
-    StructField("nestedField",StringType,nullable = true),
-    StructField("_raw",StringType,nullable = true)))
+  val readingDatasetSchema: StructType = StructType(Array(
+    StructField("_time", LongType, nullable = true),
+    StructField("floor", IntegerType, nullable = true),
+    StructField("room", IntegerType, nullable = true),
+    StructField("ip", StringType, nullable = true),
+    StructField("id", StringType, nullable = true),
+    StructField("type", StringType, nullable = true),
+    StructField("description", StringType, nullable = true),
+    StructField("metric_name", StringType, nullable = true),
+    StructField("metric_long_name", StringType, nullable = true),
+    StructField("value", DoubleType, nullable = true),
+    StructField("index", StringType, nullable = true),
+    StructField("text", StringType, nullable = true),
+    StructField("text[1].val", StringType, nullable = true),
+    StructField("text[2].val", StringType, nullable = true),
+    StructField("num", IntegerType, nullable = true),
+    StructField("num[1].val", IntegerType, nullable = true),
+    StructField("num[2].val", IntegerType, nullable = true),
+    StructField("listField", StringType, nullable = true),
+    StructField("nestedField", StringType, nullable = true),
+    StructField("_raw", StringType, nullable = true)))
 
-  def createFullQuery(command_original_otl: String, service_original_otl: String,
-                      index: String, tws: Int = 0, twf: Int = 0, fe: Boolean = false): OTLQuery ={
-    val otlQuery = new OTLQuery(
-      id = 0,
-      original_otl = command_original_otl,
-      service_otl = service_original_otl,
-      tws = tws,
-      twf = twf,
-      cache_ttl = 0,
-      indexes = Array(index),
-      subsearches = Map(),
-      username = "admin",
-      field_extraction = fe,
-      preview = false
-    )
-    log.debug(s"otlQuery: $otlQuery.")
-    otlQuery
-  }
+  // Example timestamps
+  val startTime = 1649145660
+  val finishTime = 1663228860
 
-  def createQuery(command_otl: String, read_cmd: String = "read",
-                  index: String = test_index, tws: Int = 0, twf: Int = 0): OTLQuery ={
-    createFullQuery(
-      s"search index=$index| $command_otl",
-      s""" | $read_cmd {"$index": {"query": "", "tws": "$tws", "twf": "$twf"}} |  $command_otl """,
-      test_index, tws, twf)
-  }
+  var commandClasses:  Map[String, Class[_ <: BaseCommand]] = Map()
 
-  def createQuery(command_otl: String): OTLQuery ={
-    createQuery(command_otl, "read", test_index)
-  }
-
-  def readIndexDF(index : String, schema: StructType = datasetSchema): DataFrame = {
-    val filenames = ListBuffer[String]()
-    try {
-      val status = fs_disk.listStatus(new Path(s"$tmpDir/indexes/$index"))
-      status.foreach(x => filenames += s"$tmpDir/indexes/$index/${x.getPath.getName}")
-    }
-    catch { case e: Exception => log.debug(e);}
-    spark.read.options(Map("recursiveFileLookup"->"true")).schema(schema)
-      .parquet(filenames.seq: _*)
-      .withColumn("index", F.lit(index))
-  }
-
-  def jsonCompare(json1 : String,json2 : String): Boolean = {
-    import spray.json._
-    val j1 = json1.parseJson.sortedPrint
-    val j2 = json2.parseJson.sortedPrint
-    j1==j2
-  }
-
-
-  def countCols(columns:Array[String]):Array[Column]={
-    columns.map(c=>{
-      F.count(F.when(F.col(c).isNull,c)).alias(c)
-    })
-  }
-
-  def execute(query: String): String = {
-    val otlQuery = createQuery(query)
-    val df = new Converter(otlQuery).run
-    df.toJSON.collect().mkString("[\n", ",\n", "\n]")
-  }
-
-
-  def execute(otlQuery : OTLQuery): String = {
-    val df = new Converter(otlQuery).run
-    df.toJSON.collect().mkString("[\n", ",\n", "\n]")
-  }
-
-  def execute(query: String, initDf: DataFrame): String = {
-    val otlQuery = createQuery(query)
-    val df = new Converter(otlQuery).setDF(initDf).run
-    df.toJSON.collect().mkString("[\n", ",\n", "\n]")
-  }
-
-  def getFieldsUsed(query: String): String = {
-    val otlQuery = OTLQuery(query)
-    val fieldsUsed = new Converter(otlQuery).fieldsUsed.map(_.stripBackticks()).sorted
-    fieldsUsed.mkString(", ")
-  }
-
-
-
-  def jsonToDf(json :String): DataFrame = {
-    import spark.implicits._
-    spark.read.json(Seq(json.stripMargin).toDS)
-  }
-
-
-  /** This code is executed before running the OTL-command
-   * Step 1 Check existing of test index
-   * Step2 If index exists, it is removed
-   * Step3 If an external data schema is used, it will be written next to the parquet
-   */
   override def beforeAll(): Unit = {
     cleanIndexFiles(tmpDir)
-    if (List("RawRead", "FullRead").exists(this.getClass.getName.contains(_))){
+    val log: Logger = Logger.getLogger("test")
+    val kafkaExists: Boolean = config.getBoolean("kafka.computing_node_mode_enabled")
+    val commandsProvider: Option[CommandsProvider] = if (kafkaExists) {
+      Some(new CommandsProvider(config.getString("usercommands.directory"), log))
+    } else {
+      None
+    }
+    commandClasses = if (kafkaExists) {commandsProvider.get.commandClasses} else {Map()}
+    if (List("SearchCommand", "OtstatsCommand").exists(this.getClass.getName.contains(_))) {
       val df = spark.read.options(
         Map("inferSchema" -> "true", "delimiter" -> ",", "header" -> "true", "quote" -> "\"", "escape" -> "\"")
       )
@@ -202,7 +119,7 @@ abstract class CommandTest extends FunSuite with BeforeAndAfterAll {
       val time_step = time_min_max.getLong(1) - time_min_max.getLong(0)
       val bucket_period = 3600 * 24 * 30
       val buckets_cnt = math.floor(time_step / bucket_period).toInt
-      for(i <- stfeRawSeparators.indices){
+      for (i <- stfeRawSeparators.indices) {
         val df_new = if (i == 0) df
         else df.withColumn("index", F.lit(s"$test_index-$i"))
           .withColumn("_raw", F.ltrim(F.col("_raw"), "{"))
@@ -221,8 +138,7 @@ abstract class CommandTest extends FunSuite with BeforeAndAfterAll {
             }
         }
       }
-    }
-    else {
+    } else {
       val df = jsonToDf(dataset)
       val bucketPath = s"$tmpDir/indexes/$test_index/bucket-0-${Int.MaxValue}-${System.currentTimeMillis / 1000}"
       df.write.parquet(bucketPath)
@@ -234,17 +150,98 @@ abstract class CommandTest extends FunSuite with BeforeAndAfterAll {
     }
   }
 
-  /** This code is executed after running the OTL-command tests
-   * Recursively delete created indexes
-   */
+  def cleanIndexFiles(path: String): AnyVal = {
+    val indexDir = new Directory(new File(path))
+    if (indexDir.exists) indexDir.deleteRecursively()
+  }
+
+  def jsonToDf(json: String): DataFrame = {
+    import spark.implicits._
+    spark.read.json(Seq(json.stripMargin).toDS)
+  }
+
+  def execute(query: String): String = {
+    val fullQuery = createQuery(query)
+    val cmdJson: JsValue = Json.parse(fullQuery)
+    val commandsExecutor = new CommandExecutor(AppConfig.config, commandClasses, null)
+    val resDf = commandsExecutor.execute("1", cmdJson.as[List[JsValue]])
+    resDf.toJSON.collect().mkString("[\n", ",\n", "\n]")
+  }
+
+  def executeFull(query: String): DataFrame = {
+    val cmdJson: JsValue = Json.parse(query)
+    val commandsExecutor = new CommandExecutor(AppConfig.config, commandClasses, null)
+    commandsExecutor.execute("1", cmdJson.as[List[JsValue]])
+  }
+
+  def createQuery(otlCommand: String, readCommand: String = "search",
+                  index: String = test_index, startTime: Int = 0, finishTime: Int = 0): String = {
+    val readQueryPart = readCommand match {
+      case "search" =>
+        s"""{
+          |"name": "$readCommand",
+          |"arguments": {
+          | "index": [
+          | {
+          |          "key": "index",
+          |          "type": "string",
+          |          "value": "$index",
+          |          "arg_type": "arg",
+          |          "group_by": [],
+          |          "named_as": ""
+          | }
+          | ],
+          | "earliest": [
+          | {
+          |          "key": "earliest",
+          |          "type": "integer",
+          |          "value": $startTime,
+          |          "arg_type": "arg",
+          |          "group_by": [],
+          |          "named_as": ""
+          | }
+          | ],
+          | "latest": [
+          | {
+          |          "key": "latest",
+          |          "type": "integer",
+          |          "value": $finishTime,
+          |          "arg_type": "arg",
+          |          "group_by": [],
+          |          "named_as": ""
+          | }
+          | ]
+          |}
+          |}""".stripMargin
+      case _ => ""
+    }
+    "[" + readQueryPart + {if(otlCommand.nonEmpty) "," else ""} + otlCommand + "]"
+  }
+
+  def readIndexDF(index: String, schema: StructType = datasetSchema): DataFrame = {
+    val filenames = ListBuffer[String]()
+    try {
+      val status = fs_disk.listStatus(new Path(s"$tmpDir/indexes/$index"))
+      status.foreach(x => filenames += s"$tmpDir/indexes/$index/${x.getPath.getName}")
+    }
+    catch {
+      case e: Exception => log.debug(e);
+    }
+    spark.read.options(Map("recursiveFileLookup" -> "true")).schema(schema)
+      .parquet(filenames.seq: _*)
+      .withColumn("index", F.lit(index))
+  }
+
+  def jsonCompare(json1: String, json2: String): Boolean = {
+    import spray.json._
+    val j1 = json1.parseJson.sortedPrint
+    val j2 = json2.parseJson.sortedPrint
+    j1 == j2
+  }
+
   override def afterAll(): Unit = {
     cleanIndexFiles(tmpDir)
     cleanCheckpointsDirectory()
-  }
-
-  def cleanIndexFiles(path: String): AnyVal ={
-    val indexDir = new Directory(new File(path))
-    if (indexDir.exists) indexDir.deleteRecursively()
   }
 
   def cleanCheckpointsDirectory(): Unit = {
@@ -253,50 +250,6 @@ abstract class CommandTest extends FunSuite with BeforeAndAfterAll {
         val fs = org.apache.hadoop.fs.FileSystem.get(new URI(dir), sparkContext.hadoopConfiguration)
         fs.delete(new Path(dir), true)
       case None =>
-    }
-  }
-
-  def setNullableStateOfColumn(df: DataFrame, column: String, nullable: Boolean) : DataFrame = {
-    setNullableStateOfColumn(df, List(column), nullable)
-  }
-
-  def setNullableStateOfColumn(df: DataFrame, columns: List[String], nullable: Boolean) : DataFrame = {
-    val schema = df.schema
-    val newSchema = StructType(schema.map {
-      case StructField( c, t, _, m) if columns.contains(c) => StructField( c, t, nullable = nullable, m)
-      case y: StructField => y
-    })
-    df.sqlContext.createDataFrame( df.rdd, newSchema )
-  }
-
-  def writeTextFile(content : String, relativePath :String) : Unit={
-    val lookupFile = tmpDir + "/" + relativePath
-    val directory = new Directory(new File(lookupFile).getParentFile)
-    directory.createDirectory()
-    new PrintWriter(lookupFile) { write(content); close() }
-  }
-
-  def compareDataFrames(df_actual: DataFrame, df_expected: DataFrame): Assertion={
-    assert(
-      df_actual.schema == df_expected.schema,
-      "DataFrames schemas should be equal"
-    )
-
-    assert(
-      df_actual.count() == df_expected.count(),
-      "DataFrames sizes should be equal"
-    )
-
-    if (df_actual.isEmpty && df_expected.isEmpty)
-      assert(true)
-    else {
-      val diff = df_actual.except(df_expected).union(df_expected.except(df_actual))
-      assert(
-        diff.isEmpty,
-        s"DataFrames are different. " +
-          s"\n Counts actual ${df_actual.count()} / expected ${df_expected.count()} / diff ${diff.count()} " +
-          s"\n Difference is:\n${diff.collect().mkString("\n")}"
-      )
     }
   }
 }
