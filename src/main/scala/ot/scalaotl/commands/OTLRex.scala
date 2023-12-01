@@ -21,7 +21,7 @@ class OTLRex(sq: SimpleQuery) extends OTLBaseCommand(sq) {
   val normalisedRegexStr: String = regexStr.replaceByMap(replMap)
   val replBackMap: Map[String, String] = replMap.map(m => m._1.substring(2, m._1.length-1) -> m._2.substring(2, m._2.length-1)).map(_.swap)
 
-  val groupNamesIter: Iterator[Regex.Match] = """\(\?<([a-zA-Z][a-zA-Z0-9]*)>""".r.findAllMatchIn(normalisedRegexStr)
+  val groupNamesIter: Iterator[Regex.Match] = """\(\?<([a-zA-Zа-яА-Я][a-zA-Zа-яА-Я0-9]*)>""".r.findAllMatchIn(normalisedRegexStr)
   val groupNames: Array[String] = groupNamesIter.map(i => i.group(1)).toArray
 
   object Udfs extends Serializable { //Needed to make serialisable udfs with calls from one function to another function
@@ -86,7 +86,7 @@ class OTLRex(sq: SimpleQuery) extends OTLBaseCommand(sq) {
   }
 
   def getGroupReplaces(str: String): Map[String, String] = {
-    val rexStr = """\?<(([A-Za-z0-9_])*)>"""
+    val rexStr = """\?<(([A-Za-zА-Яа-я0-9_])*)>"""
     rexStr.r.findAllIn(str).matchData.map {
       x =>
         x.group(0) -> ("?<" + "x" + OtHash.md5(x.group(1)) + ">") }.toMap

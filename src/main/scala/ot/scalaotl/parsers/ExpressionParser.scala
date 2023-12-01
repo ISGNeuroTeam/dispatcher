@@ -90,7 +90,7 @@ trait ExpressionParser extends DefaultParser {
 
     val funcReplacedEvals = evalsWithReplaceQuotes.replaceByMap(replaceFuncsMap)
     // Find all matches for "<varname>="
-    val vars = """(^|,)\s*([\$a-zA-Z0-9_]+)\s*=""".r.findAllIn(evalsWithReplaceQuotes).toList
+    val vars = """(^|,)\s*([\$a-zA-Zа-яА-Я0-9_]+)\s*=""".r.findAllIn(evalsWithReplaceQuotes).toList
 
     // Split full string by all matches for "<varname>=". Get corresponding expressions
     val expressionsWithFuncsReplaces = funcReplacedEvals
