@@ -7,6 +7,8 @@ import ot.scalaotl.extensions.StringExt._
 import ot.scalaotl.static.OtHash.md5
 import ot.scalaotl.static.{EvalFunctions, OtHash}
 
+import scala.collection.immutable.ListMap
+
 trait ExpressionParser extends DefaultParser {
 
   def getQuotesReplaceMap(q: String): Map[String, String] = """(["'])(?:(?=(\\?))\2.)*?\1""".r.findAllIn(q).toList.map { x => (x -> md5(x)) }.toMap
@@ -19,12 +21,16 @@ trait ExpressionParser extends DefaultParser {
     // Replace all texts between quotes with theirs hashes
     val replMap = getQuotesReplaceMap(evals)
     val evalsWithReplaceQuotes = evals.replaceByMap(replMap)
+    //Right eval expression part
+    val evalArg = evalsWithReplaceQuotes.substring(evalsWithReplaceQuotes.indexOf("=") + 1)
     //Map for replacing eval funcs with <func_name+number>
-    val replaceFuncsMap =  evalEqualContFuncs.filter(evalsWithReplaceQuotes.contains(_))
+    val replaceFuncsTuplesList =  evalEqualContFuncs.filter(evalArg.contains(_))
+      //for func names processing in order of its places in eval arg
+      .sortBy(evalArg.indexOf)
       //Get list of func names and counts of them in expression
       .map(func => {
         var count = 0
-        var curEvalTextPart = evalsWithReplaceQuotes
+        var curEvalTextPart = evalArg
         var funcIndex = curEvalTextPart.indexOf(func)
         while (funcIndex >= 0) {
           curEvalTextPart = curEvalTextPart.substring(funcIndex + func.length)
@@ -36,58 +42,63 @@ trait ExpressionParser extends DefaultParser {
       //Build Map(func -> funcReplacement)
       .flatMap(f => {
         //Value of n on last iteration (require for difference between n and lastN calcing for confirming func in expression search)
-      var lastN = -1
+        var lastN = -1
         //Expression text part in iterations in filter and map for access to text of current function as first function in text
-      var iterEvalText = evalsWithReplaceQuotes.substring(evalsWithReplaceQuotes.indexOf(f._1))
+        var iterEvalText = evalArg.substring(evalArg.indexOf(f._1))
+        val lastIndex = f._2 - 1
         //Filter for correct interval between func name and opened bracket (empty or backspaces)
-      (0 until f._2).filter(n => {
-        val firstOpenBracketIndex = iterEvalText.indexOf("(")
-        if (firstOpenBracketIndex > 0) {
-          val funcToOpenBracketPart = if (firstOpenBracketIndex == f._1.length) ""
-          else iterEvalText.substring(f._1.length, firstOpenBracketIndex - 1)
-          val lastIndex = f._2 - 1
+        (0 until f._2).filter(n => {
+          val firstOpenBracketIndex = iterEvalText.indexOf("(")
+          val curLogicResult = if (firstOpenBracketIndex > 0) {
+            val funcToOpenBracketPart = if (firstOpenBracketIndex == f._1.length) ""
+            else iterEvalText.substring(f._1.length, firstOpenBracketIndex)
+            !funcToOpenBracketPart.exists(_ != ' ')
+          }
+          else
+            false
           iterEvalText = if (n == lastIndex) {
-            evalsWithReplaceQuotes
+            evalArg
           } else {
             val ostText = iterEvalText.substring(iterEvalText.indexOf(f._1) + f._1.length)
             ostText.substring(ostText.indexOf(f._1))
           }
-          !funcToOpenBracketPart.exists(_ != ' ')
-        } else false
-      }).map(n => {
-        //Text, started from current func name (by number), created in cycle
-        var funcFullPart = iterEvalText
-        for (t <- 0 until (n-lastN)) {
-          funcFullPart = funcFullPart.substring(funcFullPart.indexOf(f._1))
-          if (t != (n-lastN-1)) {
-            val funcLength = f._1.length
-            funcFullPart = if (funcFullPart.length == funcLength) "" else funcFullPart.substring(funcLength)
-          }
-        }
-        //Function end symbol number defining by opened-closed brackets confirming
-        var openBracketsCount = 0
-        var closeBracketsCount = 0
-        val endTextNum = funcFullPart.length
-        var endNum = endTextNum
-        for ((symb, i) <- funcFullPart.zipWithIndex) {
-          if (openBracketsCount == 0 || openBracketsCount != closeBracketsCount) {
-            if (symb == '(')
-              openBracketsCount += 1
-            if (symb == ')') {
-              closeBracketsCount += 1
-              if (closeBracketsCount == openBracketsCount)
-                endNum = i + 1
+          curLogicResult
+        }).map(n => {
+          //Text, started from current func name (by number), created in cycle
+          var funcFullPart = iterEvalText
+          if (funcFullPart.nonEmpty && funcFullPart.contains(f._1)) {
+            for (t <- 0 until (n - lastN)) {
+              funcFullPart = funcFullPart.substring(funcFullPart.indexOf(f._1))
+              if (t != (n - lastN - 1)) {
+                val funcLength = f._1.length
+                funcFullPart = if (funcFullPart.length == funcLength) "" else funcFullPart.substring(funcLength)
+              }
             }
-          }
-        }
-        //Next iteration text - without current function
-        iterEvalText = if (endNum == endTextNum) "" else funcFullPart.substring(endNum)
-        lastN = n
-        //Iteration result - map element (function text -> replacement text)
-        funcFullPart.substring(0, endNum) -> (f._1 + n.toString)
-      })
-    }).toMap
-
+            //Function end symbol number defining by opened-closed brackets confirming
+            var openBracketsCount = 0
+            var closeBracketsCount = 0
+            val endTextNum = funcFullPart.length
+            var endNum = endTextNum
+            for ((symb, i) <- funcFullPart.zipWithIndex) {
+              if (openBracketsCount == 0 || openBracketsCount != closeBracketsCount) {
+                if (symb == '(')
+                  openBracketsCount += 1
+                if (symb == ')') {
+                  closeBracketsCount += 1
+                  if (closeBracketsCount == openBracketsCount)
+                    endNum = i + 1
+                }
+              }
+            }
+            //Next iteration text - without current function
+            iterEvalText = if (endNum == endTextNum) "" else funcFullPart.substring(endNum)
+            lastN = n
+            //Iteration result - map element (function text -> replacement text)
+            funcFullPart.substring(0, endNum) -> (f._1 + n.toString)
+          } else
+            funcFullPart -> funcFullPart
+        })
+      })    val replaceFuncsMap = ListMap(replaceFuncsTuplesList:_*)
     val funcReplacedEvals = evalsWithReplaceQuotes.replaceByMap(replaceFuncsMap)
     // Find all matches for "<varname>="
     val vars = """(^|,)\s*([\$a-zA-Z0-9_]+)\s*=""".r.findAllIn(evalsWithReplaceQuotes).toList
@@ -110,8 +121,8 @@ trait ExpressionParser extends DefaultParser {
   }
 
   override def returnsParser = (args: String, _) =>{
-      val caseExpr = findCaseString(args)
-      val modfifArgs = if(caseExpr!="") args.replace(caseExpr, OtHash.md5(caseExpr)) else args
+    val caseExpr = findCaseString(args)
+    val modfifArgs = if(caseExpr!="") args.replace(caseExpr, OtHash.md5(caseExpr)) else args
     val res=Return(
       fields = List(),
       funcs = List(),
@@ -120,7 +131,7 @@ trait ExpressionParser extends DefaultParser {
           case h :: t if t != Nil => StatsEval(h.trim, EvalFunctions.argsReplace (t.mkString ("=").trim))
         }
       ))
-      if (caseExpr!="") res.modifyEvalExprs(_.replace(OtHash.md5(caseExpr), caseExpr)) else res
+    if (caseExpr!="") res.modifyEvalExprs(_.replace(OtHash.md5(caseExpr), caseExpr)) else res
   }
 
   def findCaseString(str:String) = {
