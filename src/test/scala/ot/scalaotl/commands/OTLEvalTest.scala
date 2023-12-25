@@ -609,7 +609,7 @@ class OTLEvalTest extends CommandTest {
     assert(jsonCompare(actual, expected), f"Result : $actual\n---\nExpected : $expected")
   }
 
-  test("Test 27 Command: | eval абв") {
+  test("Test 27 Command: | eval <cyrillic_name>") {
     val actual = execute("""eval абв = 9""")
     val expected =
       """[

@@ -2515,7 +2515,7 @@ class EvalCommandTest extends Command2Test {
     assert(jsonCompare(actual, expected), f"Result : $actual\n---\nExpected : $expected")
   }*/
 
-  test("Test 27 Command: | eval абв") {
+  test("Test 27 Command: | eval <cyrillic_name>") {
     val otlCommand =
       """{
         "name": "eval",
