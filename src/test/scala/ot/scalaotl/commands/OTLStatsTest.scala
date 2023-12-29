@@ -141,5 +141,24 @@ class OTLStatsTest extends CommandTest {
         |{"random_Field":"0","sum(serialField)":"8","avg(_subsecond)":"854","latest(junkField)":"112","earliest(serialField)":"8"},
         |{"random_Field":"10","sum(serialField)":"9","avg(_subsecond)":"854","latest(junkField)":"word","earliest(serialField)":"9"}
         |]""".stripMargin
+    assert(jsonCompare(actual, expected), f"Result : $actual\n---\nExpected : $expected")
+  }
+
+  test("Test 10. Command: | stats count AS cnt") {
+    val actual = execute("""stats count AS cnt""")
+    val expected =
+      """[
+        {"cnt":10}
+        |]""".stripMargin
+    assert(jsonCompare(actual, expected), f"Result : $actual\n---\nExpected : $expected")
+  }
+
+  test("Test 11. Command: | stats latest(column) aS <alias>") {
+    val actual = execute("""stats latest(junkField) aS junkLatest""")
+    val expected =
+      """[
+        {"junkLatest":"word"}
+        |]""".stripMargin
+    assert(jsonCompare(actual, expected), f"Result : $actual\n---\nExpected : $expected")
   }
 }
