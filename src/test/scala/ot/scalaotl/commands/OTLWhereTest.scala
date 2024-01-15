@@ -436,4 +436,38 @@ class OTLWhereTest extends CommandTest {
     assert(jsonCompare(actual, expected), f"Result : $actual\n---\nExpected : $expected")
   }
 
+  test("Test 31.1. Command with backspaces") {
+    val actual = execute("""streamstats count | eval x=count*2 | eval z=x+1 | eval y = (-1) * count*3 | where ((x > 2 * ( 1 + 1  * (6 - (2+3)) ) and y < 6* (1 + (8-(3+2*2)))) or (  x=2  ) ) | fields count, x, z, y""")
+    val expected =
+      """[
+        |{"count":1,"x":2,"z":3,"y":-3},
+        |{"count":3,"x":6,"z":7,"y":-9},
+        |{"count":4,"x":8,"z":9,"y":-12},
+        |{"count":5,"x":10,"z":11,"y":-15},
+        |{"count":6,"x":12,"z":13,"y":-18},
+        |{"count":7,"x":14,"z":15,"y":-21},
+        |{"count":8,"x":16,"z":17,"y":-24},
+        |{"count":9,"x":18,"z":19,"y":-27},
+        |{"count":10,"x":20,"z":21,"y":-30}
+        |]""".stripMargin
+    assert(jsonCompare(actual, expected), f"Result : $actual\n---\nExpected : $expected")
+  }
+
+  test("Test 31.2. Command with backspaces") {
+    val actual = execute("""streamstats count | eval x=count*2 | eval z=x+1 | eval y = (-1) * count*3 | where ((x > 2 * ( 1 + 1  * (6 - (2+3)) ) and y < 6* (1 + (8-(3+2*2)))) or (  (x=2) and (z=3)  ) ) | fields count, x, z, y""")
+    val expected =
+      """[
+        |{"count":1,"x":2,"z":3,"y":-3},
+        |{"count":3,"x":6,"z":7,"y":-9},
+        |{"count":4,"x":8,"z":9,"y":-12},
+        |{"count":5,"x":10,"z":11,"y":-15},
+        |{"count":6,"x":12,"z":13,"y":-18},
+        |{"count":7,"x":14,"z":15,"y":-21},
+        |{"count":8,"x":16,"z":17,"y":-24},
+        |{"count":9,"x":18,"z":19,"y":-27},
+        |{"count":10,"x":20,"z":21,"y":-30}
+        |]""".stripMargin
+    assert(jsonCompare(actual, expected), f"Result : $actual\n---\nExpected : $expected")
+  }
+
 }
