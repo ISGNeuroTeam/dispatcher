@@ -10,7 +10,7 @@ import scala.util.matching.Regex
 trait StatsParser extends DefaultParser {
 
   def rexSimpleStatsFunc(funcs: String): Regex = (s"($funcs)" + """(\((\'.+?\'|\S+?)\))?(\s*(as|As|aS|AS)\s*([^,\s]+))?(,|\s|$)""").r
-  def rexStatsEvalFunc(funcs: String): Regex = (s"($funcs)" + """\(eval\((.*?)\)\)\s*(as|As|aS|AS)\s*([a-zA-Z0-9]+)(\s|,|$)""").r
+  def rexStatsEvalFunc(funcs: String): Regex = (s"($funcs)" + """\(eval\((.*?)\)\)\s*(as|As|aS|AS)\s*([a-zA-Zа-яА-Я0-9]+)(\s|,|$)""").r
 
   def parseEvals(args: String, funclist: String = StatsFunctions.funclistString): (List[StatsEval], String) = {
     val evals = rexStatsEvalFunc(funclist).findAllIn(args)

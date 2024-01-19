@@ -51,7 +51,7 @@ libraryDependencies += "com.isgneuro" %% "spark_exec_env" % "1.3.0"
 
 libraryDependencies += "com.isgneuro.otl" %% "otl_processors" % "1.9.0"
 
-libraryDependencies += "com.isgneuro.otl" %% "otl_commands_engine" % "1.2.0"
+libraryDependencies += "com.isgneuro.otl" %% "otl_commands_engine" % "1.3.0"
 
 libraryDependencies += "com.isgneuro" %% "otl_search_engine" % "1.1.0"
 
