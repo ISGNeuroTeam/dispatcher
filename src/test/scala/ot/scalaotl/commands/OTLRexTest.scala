@@ -150,4 +150,23 @@ class OTLRexTest extends CommandTest {
 
     assert(jsonCompare(actual, expected), f"Result : $actual\n---\nExpected : $expected")
   }
+
+  test("Test 8. Command: rex multival input in cyrillic named column") {
+    val actual = execute("""eval мф=mvappend(junkField, junkField)| rex field=мф max_match=5 "(?<new_host>Q)"""")
+    val expected =
+      """[
+        |{"_time":1568026476854,"_raw":"{\"serialField\": \"0\", \"random_Field\": \"100\", \"WordField\": \"qwe\", \"junkField\": \"q2W\", \"nullableField\":\"QQQ.2\"}","junkField":"q2W","мф":["q2W","q2W"]},
+        |{"_time":1568026476855,"_raw":"serialField=1 WordField=rty random_Field=-90.","мф":[null,null]},
+        |{"_time":1568026476856,"_raw":"{\"serialField\": \"2\", \"random_Field\": \"50\", \"WordField\": \"uio\", \"junkField\": \"asd.cx\"}","junkField":"asd.cx","мф":["asd.cx","asd.cx"]},
+        |{"_time":1568026476857,"_raw":"{\"serialField\": \"3\", \"random_Field\": \"20\", \"WordField\": \"GreenPeace\", \"junkField\": \"XYZ\"}","junkField":"XYZ","мф":["XYZ","XYZ"]},
+        |{"_time":1568026476858,"_raw":"{\"serialField\": \"4\", \"random_Field\": \"30\", \"WordField\": \"fgh\", \"junkField\": \"123_ASD\"}","junkField":"123_ASD","мф":["123_ASD","123_ASD"]},
+        |{"_time":1568026476859,"_raw":"{\"serialField\": \"5\", \"random_Field\": \"50\", \"WordField\": \"jkl\", \"junkField\": \"casd(@#)asd\"}","junkField":"casd(@#)asd","мф":["casd(@#)asd","casd(@#)asd"]},
+        |{"_time":1568026476860,"_raw":"{\"serialField\": \"6\", \"random_Field\": \"60\", \"WordField\": \"zxc\", \"junkField\": \"QQQ.2\"}","junkField":"QQQ.2","мф":["QQQ.2","QQQ.2"],"new_host":["Q","Q","Q","Q","Q","Q"]},
+        |{"_time":1568026476861,"_raw":"{\"serialField\": \"7\", \"random_Field\": \"-100\", \"WordField\": \"RUS\", \"junkField\": \"00_3\"}","junkField":"00_3","мф":["00_3","00_3"]},
+        |{"_time":1568026476862,"_raw":"{\"serialField\": \"8\", \"random_Field\": \"0\", \"WordField\": \"MMM\", \"junkField\": \"112\"}","junkField":"112","мф":["112","112"]},
+        |{"_time":1568026476863,"_raw":"{\"serialField\": \"9\", \"random_Field\": \"10\", \"WordField\": \"USA\", \"junkField\": \"word\"}","junkField":"word","мф":["word","word"]}
+        |]""".stripMargin
+
+    assert(jsonCompare(actual, expected), f"Result : $actual\n---\nExpected : $expected")
+  }
 }

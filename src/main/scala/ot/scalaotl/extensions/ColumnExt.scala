@@ -1,14 +1,14 @@
 package ot.scalaotl
 package extensions
 
-import ot.scalaotl.static.EvalFunctions
-import ot.scalaotl.extensions.StringExt._
 import org.apache.spark.sql.Column
-import org.apache.spark.sql.functions.expr
-import org.apache.spark.sql.types.{DataType, NumericType, StructType}
-import org.apache.spark.sql.catalyst.expressions.{Alias, CaseWhen, CreateArray, ExprId, Expression, Literal}
 import org.apache.spark.sql.catalyst.analysis.{UnresolvedAttribute, UnresolvedFunction}
 import org.apache.spark.sql.catalyst.expressions.aggregate._
+import org.apache.spark.sql.catalyst.expressions.{Alias, CaseWhen, CreateArray, ExprId, Expression, Literal}
+import org.apache.spark.sql.functions.expr
+import org.apache.spark.sql.types.{DataType, NumericType, StructType}
+import ot.scalaotl.extensions.StringExt._
+import ot.scalaotl.static.EvalFunctions
 
 object ColumnExt {
 
@@ -167,7 +167,7 @@ object ColumnExt {
       )
       // Find literals with regexp, round them with single quotes by foldLeft with initial string
       // Keeping index and using it within foldLeft is necessary because string becomes longer on each step.
-      """[a-zA-Z0-9]+""".r.findAllMatchIn(strReplacedFormatters)
+      """[a-zA-Zа-яА-Я0-9]+""".r.findAllMatchIn(strReplacedFormatters)
         .map(x => (x.start, x.matched, x.end))
         .zipWithIndex
         .foldLeft(timeStr)
