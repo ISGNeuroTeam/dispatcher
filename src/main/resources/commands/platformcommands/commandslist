@@ -5,4 +5,5 @@ commands {
   eval = "com.isgneuro.otl.commands.EvalCommand"
   where = "com.isgneuro.otl.commands.WhereCommand"
   search = "com.isgneuro.otl.commands.SearchCommand"
+  stats = "com.isgneuro.otl.commands.StatsCommand"
 }

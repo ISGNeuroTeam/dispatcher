@@ -64,7 +64,7 @@ class OTLStatsTest extends CommandTest {
   }
 
   test("Test 3.2. Command: | stats count by column with alias with backspaces between stats func, as and alias") {
-    val actual = execute(""" stats count   as  c by random_Field""")
+    val actual = execute(""" stats count()   as  c by random_Field""")
     val expected =
       """[
         |{"random_Field":"-90","c":1},
@@ -128,18 +128,37 @@ class OTLStatsTest extends CommandTest {
   }
 
   test("Test 9. Command: | stats <time-and-non-time-functions> with by") {
-    val actual = execute("""stats sum(serialField) avg(_subsecond) latest(junkField) earliest(serialField) by random_Field""")
+    val actual = execute("""stats sum(serialField) avg(serialField) latest(junkField) earliest(serialField) by random_Field""")
     val expected =
       """[
-        |{"random_Field":"100","sum(serialField)":"0","avg(_subsecond)":"854","latest(junkField)":"q2W","earliest(serialField)":"0"},
-        |{"random_Field":"-90","sum(serialField)":"1","avg(_subsecond)":"854","latest(junkField)":"132_.","earliest(serialField)":"1"},
-        |{"random_Field":"50","sum(serialField)":"7","avg(_subsecond)":"854","latest(junkField)":"casd(@#)asd","earliest(serialField)":"2"},
-        |{"random_Field":"20","sum(serialField)":"3","avg(_subsecond)":"854","latest(junkField)":"XYZ","earliest(serialField)":"3"},
-        |{"random_Field":"30","sum(serialField)":"4","avg(_subsecond)":"854","latest(junkField)":"123_ASD","earliest(serialField)":"4"},
-        |{"random_Field":"60","sum(serialField)":"6","avg(_subsecond)":"854","latest(junkField)":"QQQ.2","earliest(serialField)":"6"},
-        |{"random_Field":"-100","sum(serialField)":"7","avg(_subsecond)":"854","latest(junkField)":"00_3","earliest(serialField)":"7"},
-        |{"random_Field":"0","sum(serialField)":"8","avg(_subsecond)":"854","latest(junkField)":"112","earliest(serialField)":"8"},
-        |{"random_Field":"10","sum(serialField)":"9","avg(_subsecond)":"854","latest(junkField)":"word","earliest(serialField)":"9"}
+        |{"random_Field":"-90","sum(serialField)":1.0,"avg(serialField)":1.0,"latest(junkField)":"132_.","earliest(serialField)":"1"},
+        |{"random_Field":"30","sum(serialField)":4.0,"avg(serialField)":4.0,"latest(junkField)":"123_ASD","earliest(serialField)":"4"},
+        |{"random_Field":"0","sum(serialField)":8.0,"avg(serialField)":8.0,"latest(junkField)":"112","earliest(serialField)":"8"},
+        |{"random_Field":"100","sum(serialField)":0.0,"avg(serialField)":0.0,"latest(junkField)":"q2W","earliest(serialField)":"0"},
+        |{"random_Field":"60","sum(serialField)":6.0,"avg(serialField)":6.0,"latest(junkField)":"QQQ.2","earliest(serialField)":"6"},
+        |{"random_Field":"-100","sum(serialField)":7.0,"avg(serialField)":7.0,"latest(junkField)":"00_3","earliest(serialField)":"7"},
+        |{"random_Field":"20","sum(serialField)":3.0,"avg(serialField)":3.0,"latest(junkField)":"XYZ","earliest(serialField)":"3"},
+        |{"random_Field":"10","sum(serialField)":9.0,"avg(serialField)":9.0,"latest(junkField)":"word","earliest(serialField)":"9"},
+        |{"random_Field":"50","sum(serialField)":7.0,"avg(serialField)":3.5,"latest(junkField)":"casd(@#)asd","earliest(serialField)":"2"}
         |]""".stripMargin
+    assert(jsonCompare(actual, expected), f"Result : $actual\n---\nExpected : $expected")
+  }
+
+  test("Test 10. Command: | stats count AS cnt") {
+    val actual = execute("""stats count AS cnt""")
+    val expected =
+      """[
+        {"cnt":10}
+        |]""".stripMargin
+    assert(jsonCompare(actual, expected), f"Result : $actual\n---\nExpected : $expected")
+  }
+
+  test("Test 11. Command: | stats latest(column) aS <alias>") {
+    val actual = execute("""stats latest(junkField) aS junkLatest""")
+    val expected =
+      """[
+        {"junkLatest":"word"}
+        |]""".stripMargin
+    assert(jsonCompare(actual, expected), f"Result : $actual\n---\nExpected : $expected")
   }
 }
