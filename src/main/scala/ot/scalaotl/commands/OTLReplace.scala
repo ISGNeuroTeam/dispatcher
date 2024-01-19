@@ -14,17 +14,13 @@ class OTLReplace(sq: SimpleQuery) extends OTLBaseCommand(sq, _seps = Set("in")) 
 
   override def transform(_df: DataFrame): DataFrame = {
     val colToReplace = fieldsUsed.headOption.getOrElse("")
-    val replsMap = {
-      for {e <- returns.fields}
-        yield e.field -> e.newfield
-    }.toMap
-    if (replsMap.isEmpty) {
+    if (returns.fields.length != 1)
       throw E00012(sq.searchId, "replace", "wc-field")
+    val replsTuple = new Tuple2[String, String](returns.fields.head.field, returns.fields.head.newfield)
+    if (replsTuple._1 == replsTuple._2) {
+      throw E00013(sq.searchId, "replace", replsTuple._1 + ", " + replsTuple._2)
     }
-    if (replsMap.forall(f => f._1 == f._2)) {
-      throw E00013(sq.searchId, "replace", replsMap.keys.mkString(", "))
-    }
-    val worker = new Replace(spark, colToReplace, replsMap)
+    val worker = new Replace(spark, colToReplace, replsTuple)
     worker.transform(_df)
   }
 }

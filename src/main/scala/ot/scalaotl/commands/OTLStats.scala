@@ -24,8 +24,6 @@ class OTLStats(sq: SimpleQuery) extends OTLBaseCommand(sq, _seps = Set("by")) wi
     val statsContext = StatsContext(statsFuncs, evals, groupFields, getKeyword("timeCol").getOrElse("_time"))
     val stats = new Stats(spark, statsContext)
     stats.transform(_df)
-    /*val statsTransformer = new StatsTransformer(Left(StatsContext(returns, positionalsMap, getKeyword("timeCol").getOrElse("_time"))), spark)
-    statsTransformer.transform(_df)*/
   }
 
 }

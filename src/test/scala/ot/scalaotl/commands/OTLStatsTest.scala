@@ -64,7 +64,7 @@ class OTLStatsTest extends CommandTest {
   }
 
   test("Test 3.2. Command: | stats count by column with alias with backspaces between stats func, as and alias") {
-    val actual = execute(""" stats count   as  c by random_Field""")
+    val actual = execute(""" stats count()   as  c by random_Field""")
     val expected =
       """[
         |{"random_Field":"-90","c":1},
