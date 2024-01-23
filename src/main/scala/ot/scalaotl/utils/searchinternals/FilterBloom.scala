@@ -2,13 +2,12 @@ package ot.scalaotl
 package utils
 package searchinternals
 
-import java.io._
-import org.apache.hadoop.fs.{ FileSystem, Path }
+import org.apache.hadoop.fs.{FileSystem, Path}
+import org.apache.log4j.{Level, Logger}
 import org.apache.spark.util.sketch.BloomFilter
+import ot.AppConfig.{config, getLogLevel}
+
 import scala.collection.mutable.ListBuffer
-import org.apache.log4j.{ Level, Logger }
-import ot.AppConfig.config
-import ot.AppConfig.getLogLevel
 
 object FilterBloom {
 
@@ -42,7 +41,7 @@ object FilterBloom {
         if (system_cols.contains(token)) isTokenContains="true"
         val token_escaped =  escapeRegex(token)
         log.debug(s"Transformation: $token_escaped $logical_query")
-        logical_query = logical_query.replaceAll(s"""`*$token_escaped`*(=|!=|<|<=|>|>=)(\"(.*?)\"|\\d+(?:\\.\\d+)*|[a-zA-Z0-9_*-]+)""", isTokenContains)
+        logical_query = logical_query.replaceAll(s"""`*$token_escaped`*(=|!=|<|<=|>|>=)(\"(.*?)\"|\\d+(?:\\.\\d+)*|[a-zA-Zа-яА-Я0-9_*-]+)""", isTokenContains)
       }
       logical_query = logical_query.replaceAll("""\s+AND\s+""", " & ")
       logical_query = logical_query.replaceAll("""\s+OR\s+""", " | ")
@@ -57,7 +56,7 @@ object FilterBloom {
 
   private def transormQuery(query: String): String = 
   {
-    val regex_comparison = """!\(`[a-zA-Z0-9_*-.{}]+`=([a-zA-Z0-9_*-]+|\"(.*?)\"|\d+(?:\.\d+)*)\)"""
+    val regex_comparison = """!\(`[a-zA-Zа-яА-Я0-9_*-.{}]+`=([a-zA-Z0-9_*-]+|\"(.*?)\"|\d+(?:\.\d+)*)\)"""
     val transform_query = query.replaceAll(regex_comparison, "true")
     val regex_rlike = """\`(.*?)\` rlike (\"|\')(.*?)(\'|\")"""
     val result = transform_query.replaceAll(regex_rlike, "true")
@@ -78,7 +77,7 @@ object FilterBloom {
   def getBucketsByFB(fs: FileSystem, indexPath: String, indexName: String, bloomFileName: String, buckets: ListBuffer[String], query: String): ListBuffer[String] = {
     log.debug(s"FilterBloom; Query: $query")
     val regex_raw = """`_raw` like (\"|\')%(.*?)%(\'|\")"""
-    val regex_col = """`*([a-zA-Z0-9_*-.{}]+)`*(=|!=|<|<=|>|>=)(\"(.*?)\"|\d+(?:\.\d+)*|[a-zA-Z0-9_*-]+)"""
+    val regex_col = """`*([a-zA-Zа-яА-Я0-9_*-.{}]+)`*(=|!=|<|<=|>|>=)(\"(.*?)\"|\d+(?:\.\d+)*|[a-zA-Z0-9_*-]+)"""
     val tokens_raw =  getTokens(regex_raw, query, 2)
     val tokens_cols = getTokens(regex_col, query, 1)
     var resultbuckets = buckets

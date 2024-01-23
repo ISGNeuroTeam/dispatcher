@@ -84,7 +84,7 @@ class CacheManager(sparkSession: SparkSession) {
   def loadCache(id: Int): DataFrame = {
 
     val schema = File(s"${path}search_$id.cache/data/_SCHEMA").bufferedReader().readLine()
-    val pattern = "`([^`]+)` ([A-Za-z]+(\\([0-9]+,[0-9]+\\))?)".r //group1 - field name, group2 - field type, group3 - precision
+    val pattern = "`([^`]+)` ([A-Za-zА-Яа-я]+(\\([0-9]+,[0-9]+\\))?)".r //group1 - field name, group2 - field type, group3 - precision
 
     val structFields = schema.split(",\\s*(?![^()]*\\))").map { //split by comma without comma in parentheses
       structFieldDDLString =>

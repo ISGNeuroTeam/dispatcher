@@ -1,3 +1,13 @@
+## [2.8.0]
+### New
+- Possibility to use stats command in v2 queries.
+### Bugfix
+- Not worked alias in stats-based commands if alias word not 'as', but 'AS' or 'As' or 'aS'.
+- Incorrect work of where command with nested conditions, bounded by parentheses.
+- Inner bug 'head of empty list' bug in otstats.
+- Ignoring of cyrillic named columns.
+- Application crashing when eval with nested functions in argument is calculating.
+
 ## [2.7.0]
 ### New
 - Possibility to use rename command in v2 queries.

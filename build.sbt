@@ -2,7 +2,7 @@ name := "dispatcher"
 
 organization := "ot.dispatcher"
 
-version := "2.7.0"
+version := "2.8.0"
 
 scalaVersion := "2.11.12"
 
@@ -49,9 +49,9 @@ libraryDependencies += "com.typesafe.play" %% "play-json" % "2.7.4"
 
 libraryDependencies += "com.isgneuro" %% "spark_exec_env" % "1.3.0"
 
-libraryDependencies += "com.isgneuro.otl" %% "otl_processors" % "1.8.0"
+libraryDependencies += "com.isgneuro.otl" %% "otl_processors" % "1.9.0"
 
-libraryDependencies += "com.isgneuro.otl" %% "otl_commands_engine" % "1.2.0"
+libraryDependencies += "com.isgneuro.otl" %% "otl_commands_engine" % "1.3.0"
 
 libraryDependencies += "com.isgneuro" %% "otl_search_engine" % "1.1.0"
 

@@ -9,8 +9,8 @@ import scala.util.matching.Regex
 
 trait StatsParser extends DefaultParser {
 
-  def rexSimpleStatsFunc(funcs: String): Regex = (s"($funcs)" + """(\((\'.+?\'|\S+?)\))?(\s*as\s*([^,\s]+))?(,|\s|$)""").r
-  def rexStatsEvalFunc(funcs: String): Regex = (s"($funcs)" + """\(eval\((.*?)\)\)\s*as\s*([a-zA-Z0-9]+)(\s|,|$)""").r
+  def rexSimpleStatsFunc(funcs: String): Regex = (s"($funcs)" + """(\((\'.+?\'|\S+?)\))?(\s*(as|As|aS|AS)\s*([^,\s]+))?(,|\s|$)""").r
+  def rexStatsEvalFunc(funcs: String): Regex = (s"($funcs)" + """\(eval\((.*?)\)\)\s*(as|As|aS|AS)\s*([a-zA-Zа-яА-Я0-9]+)(\s|,|$)""").r
 
   def parseEvals(args: String, funclist: String = StatsFunctions.funclistString): (List[StatsEval], String) = {
     val evals = rexStatsEvalFunc(funclist).findAllIn(args)
@@ -28,7 +28,7 @@ trait StatsParser extends DefaultParser {
       rexSimpleStatsFunc(funclist).findAllIn(s).matchData.map(x => {
         val oldf = Option(x.group(3)).getOrElse("__fake__").trim.strip("'")
         val func = x.group(1).trim
-        val newf = Option(x.group(5)).getOrElse(if (func == "count") "count" else s"$func($oldf)").trim
+        val newf = Option(x.group(6)).getOrElse(if (func == "count") "count" else s"$func($oldf)").trim
         StatsFunc(newf.strip("'"), func, oldf)
       }).toList
     }

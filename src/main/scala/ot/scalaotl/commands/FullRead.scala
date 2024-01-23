@@ -1,14 +1,14 @@
 package ot.scalaotl
 package commands
 
-import ot.scalaotl.utils.searchinternals._
-import ot.scalaotl.config.OTLIndexes
-import ot.scalaotl.extensions.StringExt._
-import ot.scalaotl.extensions.DataFrameExt._
-import ot.scalaotl.parsers.{ExpressionParser, WildcardParser}
 import org.apache.spark.sql.{Column, DataFrame, functions => F}
 import org.json4s._
 import org.json4s.native.JsonMethods._
+import ot.scalaotl.config.OTLIndexes
+import ot.scalaotl.extensions.DataFrameExt._
+import ot.scalaotl.extensions.StringExt._
+import ot.scalaotl.parsers.{ExpressionParser, WildcardParser}
+import ot.scalaotl.utils.searchinternals._
 
 import scala.collection.mutable.ListBuffer
 
@@ -149,7 +149,7 @@ class FullRead(sq: SimpleQuery) extends OTLBaseCommand(sq) with OTLIndexes with 
         }
     }
     // Throw exception if for all index get errors
-    if (query.size == allExceptions.size) throw allExceptions.head
+    if (query.size == allExceptions.size && allExceptions.nonEmpty) throw allExceptions.head
 
     // Add new columns with arrays of fields by mask ..[\d]...
     // Replace square brackets to curly brackets in column names

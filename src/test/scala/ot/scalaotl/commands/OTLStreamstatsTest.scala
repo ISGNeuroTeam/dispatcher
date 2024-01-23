@@ -63,4 +63,17 @@ class OTLStreamstatsTest extends CommandTest {
     assert(jsonCompare(actual, expected), f"Result : $actual\n---\nExpected : $expected")
   }
 
+  test("Test 5. Command: | streamstats AS") {
+    val actual = execute("""streamstats max(num) AS num_max """)
+    val expected =
+      """[
+        |{"_time":1570008000,"_raw":"_time=1570008000 text=RUB num=1 ","num":"1","num_max":"1"},
+        |{"_time":1570008020,"_raw":"_time=1570008020 text=USD num=2 ","num":"2","num_max":"2"},
+        |{"_time":1570008040,"_raw":"_time=1570008040 text=RUB num=3 ","num":"3","num_max":"3"},
+        |{"_time":1570008060,"_raw":"_time=1570008060 text=USD num=4 ","num":"4","num_max":"4"},
+        |{"_time":1570008080,"_raw":"_time=1570008080 text=DRM num=5 ","num":"5","num_max":"5"}
+        |]""".stripMargin
+    assert(jsonCompare(actual, expected), f"Result : $actual\n---\nExpected : $expected")
+  }
+
 }
