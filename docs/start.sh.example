@@ -20,7 +20,7 @@
  --conf "spark.sql.autoBroadcastJoinThreshold=-1" \
  --conf "spark.application.config=/opt/otp/dispatcher/application.conf" \
  --conf "spark.blacklist.enable=true" \
- --conf "spark.driver.maxResultSize=4G" \--class SuperDriver $(cd ..; pwd)/dispatcher/jars/ot.dispatcher/dispatcher_2.11/dispatcher_2.11-2.8.0_release_2.8.0.jar
+ --conf "spark.driver.maxResultSize=4G" \--class SuperDriver $(cd ..; pwd)/dispatcher/jars/ot.dispatcher/dispatcher_2.11/dispatcher_2.11-2.8.1_release_2.8.1.jar
  --conf "spark.dynamicAllocation.enabled=false" \
  --conf "spark.locality.wait=0" \
  --conf "spark.scheduler.allocation.file=/opt/otp/dispatcher/fairscheduler.xml" \
@@ -34,4 +34,4 @@
  --conf "spark.driver.extraClassPath=/opt/otp/dispatcher/mssql-jdbc-8.2.0.jre8.jar" \
  --conf "spark.executor.extraClassPath=/opt/otp/dispatcher/mssql-jdbc-8.2.0.jre8.jar" \
  --jars `find $(cd ..; pwd)/dispatcher -name "*.jar" | xargs | sed -r 's/ /,/g'` \
- --class SuperDriver $(cd ..; pwd)/dispatcher/jars/ot.dispatcher/dispatcher_2.11/dispatcher_2.11-2.8.0_release_2.8.0.jar
+ --class SuperDriver $(cd ..; pwd)/dispatcher/jars/ot.dispatcher/dispatcher_2.11/dispatcher_2.11-2.8.1_release_2.8.1.jar
