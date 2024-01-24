@@ -1,3 +1,7 @@
+## [2.8.1]
+### Hotfix
+- Fixed not worked operator NOT in where command.
+
 ## [2.8.0]
 ### New
 - Possibility to use stats command in v2 queries.

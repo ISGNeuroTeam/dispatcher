@@ -3,6 +3,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.8.1] - 2024-01-24
+### Fixed
+- Not worked operator NOT in where command.
+
 ## [2.8.0] - 2024-01-19
 ### Changed
 - Processing of stats command moved to otl_processors library.
@@ -12,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 'head of empty list' bug in otstats.
 - Cyrillic named columns was ignored.
 - Application crashing when eval with nested functions in argument is calculating.
+
 ## [2.7.0] - 2023-11-29
 ### Added
 - Possibility to use rename command in Arch 2.0 queries.
