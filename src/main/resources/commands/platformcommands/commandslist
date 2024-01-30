@@ -6,4 +6,5 @@ commands {
   where = "com.isgneuro.otl.commands.WhereCommand"
   search = "com.isgneuro.otl.commands.SearchCommand"
   stats = "com.isgneuro.otl.commands.StatsCommand"
+  fields = "com.isgneuro.otl.commands.FieldsCommand"
 }
