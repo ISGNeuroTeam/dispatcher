@@ -5,7 +5,7 @@ import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.functions.lit
 import ot.AppConfig.{config, getLogLevel}
-import ot.dispatcher.sdk.core.CustomException.{E00012, E00013, E00014}
+import ot.dispatcher.sdk.core.CustomException.{E00002, E00012, E00013, E00014}
 import ot.dispatcher.sdk.proxy.PluginProxyCommand
 import ot.scalaotl.extensions.StringExt._
 import ot.scalaotl.parsers._
@@ -147,6 +147,10 @@ abstract class OTLBaseCommand(sq: SimpleQuery, _seps: Set[String] = Set.empty) e
       case Failure(ex) if ex.getClass.getSimpleName.contains("CustomException") =>
         log.error(ex.getMessage)
         throw ex
+        //Specific path to process exceptions in eval
+      case Failure(ex) if ex.getClass.getSimpleName.contains("EvalException") =>
+        log.error(ex.getMessage)
+        throw E00002(sq.searchId, ex.getMessage)
       //Working with udf exceptions when call df.show
       case Failure(ex: InvocationTargetException) =>
         val exception = ex.getTargetException match {

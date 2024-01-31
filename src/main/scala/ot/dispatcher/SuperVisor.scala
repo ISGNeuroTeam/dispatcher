@@ -1,5 +1,6 @@
 package ot.dispatcher
 
+import com.isgneuro.scalaotl.exceptions.EvalException
 import com.isgneuro.sparkexecenv.{BaseCommand, CommandExecutor, CommandsProvider}
 import com.typesafe.config.ConfigException
 import org.apache.hadoop.fs.Path
@@ -388,6 +389,10 @@ class SuperVisor {
           }
         case error: OutOfMemoryError =>
           superDbConnector.setJobStateFailed(otlQuery.id, error.getLocalizedMessage)
+          superDbConnector.unlockCaches(otlQuery.id)
+          throw error
+        case error: EvalException =>
+          superDbConnector.setJobStateFailed(otlQuery.id, f"[SearchId:${otlQuery.id}] "+ error.getLocalizedMessage)
           superDbConnector.unlockCaches(otlQuery.id)
           throw error
         case error: Exception =>

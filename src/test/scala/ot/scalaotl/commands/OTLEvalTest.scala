@@ -3,7 +3,7 @@ package ot.scalaotl.commands
 class OTLEvalTest extends CommandTest {
 
   test("Test 0. Command: | eval mapred") {
-    val actual = execute("""eval result="a """)
+    val actual = execute("""eval result=mvappend("a","b","c", WordField)""")
     val expected = """[
                      |{"WordField":"qwe","_raw":"{\"serialField\": \"0\", \"random_Field\": \"100\", \"WordField\": \"qwe\", \"junkField\": \"q2W\"}","_time":1568026476854,"result":["a","b","c","qwe"]},
                      |{"WordField":"rty","_raw":"{\"serialField\": \"1\", \"random_Field\": \"-90\", \"WordField\": \"rty\", \"junkField\": \"132_.\"}","_time":1568026476855,"result":["a","b","c","rty"]},
