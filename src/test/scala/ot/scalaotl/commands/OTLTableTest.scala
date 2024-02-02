@@ -1,8 +1,5 @@
 package ot.scalaotl.commands
 
-import ot.dispatcher.OTLQuery
-import ot.scalaotl.Converter
-
 class OTLTableTest extends CommandTest {
    override val dataset: String = """[
   {"_time":1570007900,"_raw":"{\"_time\":1570007900, \"col1\": \"value\", \"Колонка\": \"1\", \"Колонка2\" : \"2\"}","col1": "value", "Колонка": "1", "Колонка2" : "2"}
@@ -17,7 +14,7 @@ class OTLTableTest extends CommandTest {
     assert(jsonCompare(actual, expected), f"Result : $actual\n---\nExpected : $expected")
   }
 
-  test("Test 1. Command: | table _time, _raw, Колонка | Simple table command with cyrrilic name in column") {
+  test("Test 1. Command: | table _time, _raw, Колонка | Simple table command with cyrillic name in column") {
     val actual = execute("""table _time, _raw, Колонка""")
     val expected = """[
                      |{"_time":1570007900,"_raw":"{\"_time\":1570007900, \"col1\": \"value\", \"Колонка\": \"1\", \"Колонка2\" : \"2\"}","Колонка":"1"}
@@ -25,7 +22,7 @@ class OTLTableTest extends CommandTest {
     assert(jsonCompare(actual, expected), f"Result : $actual\n---\nExpected : $expected")
   }
 
-  test("""Test 2. Command: | rename Колонка as "Колонка с пробелами" | table _time, _raw, "Колонка с пробелами" | Simple table command with cyrrilic name and spaces in column""") {
+  test("""Test 2. Command: | rename Колонка as "Колонка с пробелами" | table _time, _raw, "Колонка с пробелами" | Simple table command with cyrillic name and spaces in column""") {
     
     val actual = execute(""" rename Колонка as "Колонка с пробелами" |table _time, _raw, "Колонка с пробелами" """)
     val expected = """[

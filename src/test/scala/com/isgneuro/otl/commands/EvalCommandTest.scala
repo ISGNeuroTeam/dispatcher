@@ -46,7 +46,7 @@ class EvalCommandTest extends Command2Test {
           ]
         }
       }"""
-    val actual = execute(otlCommand)
+    val actual = executeQuery(otlCommand)
     val expected =
       """[
         |{"_time":1568026476854,"_raw":"{\"serialField\": \"0\", \"random_Field\": \"100\", \"WordField\": \"qwe\", \"junkField\": \"q2W\"}","result":["a","b","c"]},
@@ -145,7 +145,7 @@ class EvalCommandTest extends Command2Test {
         |      ]
         |    }
         |  }""".stripMargin
-    val actual = execute(otlCommand)
+    val actual = executeQuery(otlCommand)
     val expected =
       """[
         |{"_time":1568026476854,"_raw":"{\"serialField\": \"0\", \"random_Field\": \"100\", \"WordField\": \"qwe\", \"junkField\": \"q2W\"}","a":[1.0,2.0,3.0,4.0,5.0,6.0,7.0,8.0,9.0,10.0],"result":["4.0","5.0"]},
@@ -256,7 +256,7 @@ class EvalCommandTest extends Command2Test {
         |      ]
         |    }
         |  }""".stripMargin
-    val actual = execute(otlCommand)
+    val actual = executeQuery(otlCommand)
     val expected =
       """[
         |{"_time":1568026476854,"_raw":"{\"serialField\": \"0\", \"random_Field\": \"100\", \"WordField\": \"qwe\", \"junkField\": \"q2W\"}","a":[1.0,2.0,3.0,4.0,5.0,6.0,7.0,8.0,9.0,10.0],"result":["9.0"]},
@@ -327,7 +327,7 @@ class EvalCommandTest extends Command2Test {
         |      ]
         |    }
         |  }""".stripMargin
-    val actual = execute(otlCommand)
+    val actual = executeQuery(otlCommand)
     val expected =
       """[
         |{"_time":1568026476854,"_raw":"{\"serialField\": \"0\", \"random_Field\": \"100\", \"WordField\": \"qwe\", \"junkField\": \"q2W\"}","sf":"abc"},
@@ -420,7 +420,7 @@ class EvalCommandTest extends Command2Test {
         |      ]
         |    }
         |  }""".stripMargin
-    val actual = execute(otlCommand)
+    val actual = executeQuery(otlCommand)
     val expected =
       """[
         |{"_time":1568026476854,"_raw":"{\"serialField\": \"0\", \"random_Field\": \"100\", \"WordField\": \"qwe\", \"junkField\": \"q2W\"}","sf":[1.0,2.0,3.0,4.0,5.0,6.0,7.0,8.0,9.0,10.0],"result":"1.0XXX2.0XXX3.0XXX4.0XXX5.0XXX6.0XXX7.0XXX8.0XXX9.0XXX10.0"},
@@ -482,7 +482,7 @@ class EvalCommandTest extends Command2Test {
         |      ]
         |    }
         |  }""".stripMargin
-    val actual = execute(otlCommand)
+    val actual = executeQuery(otlCommand)
     val expected =
       """[
         |{"_time":1568026476854,"_raw":"{\"serialField\": \"0\", \"random_Field\": \"100\", \"WordField\": \"qwe\", \"junkField\": \"q2W\"}","result":[1.0,3.0,5.0,7.0,9.0]},
@@ -538,7 +538,7 @@ class EvalCommandTest extends Command2Test {
         |      ]
         |    }
         |  }""".stripMargin
-    val actual = execute(otlCommand)
+    val actual = executeQuery(otlCommand)
     val expected =
       """[
         |{"_time":1568026476854,"_raw":"{\"serialField\": \"0\", \"random_Field\": \"100\", \"WordField\": \"qwe\", \"junkField\": \"q2W\"}","result":[1.0,2.0,3.0,4.0,5.0,6.0,7.0,8.0,9.0,10.0]},
@@ -811,7 +811,7 @@ class EvalCommandTest extends Command2Test {
         |      ]
         |    }
         |  }""".stripMargin
-    val actual = execute(otlCommand)
+    val actual = executeQuery(otlCommand)
     val expected =
       """[
         |{"_time":1568026476854,"_raw":"{\"serialField\": \"0\", \"random_Field\": \"100\", \"WordField\": \"qwe\", \"junkField\": \"q2W\"}","rf":[1.0,2.0,3.0,4.0,5.0,6.0,7.0,8.0,9.0,10.0],"wf":[11.0,12.0,13.0,14.0,15.0,16.0,17.0,18.0,19.0,20.0],"result":["1.0---11.0","2.0---12.0","3.0---13.0","4.0---14.0","5.0---15.0","6.0---16.0","7.0---17.0","8.0---18.0","9.0---19.0","10.0---20.0"]},
@@ -920,7 +920,7 @@ class EvalCommandTest extends Command2Test {
                   ]
                 }
               }"""
-    val actual = execute(otlCommand)
+    val actual = executeQuery(otlCommand)
     val expected =
       """[
         |{"_time":1568026476854,"_raw":"{\"serialField\": \"0\", \"random_Field\": \"100\", \"WordField\": \"qwe\", \"junkField\": \"q2W\"}","s":8,"t":0.08,"result":0.1},
@@ -985,7 +985,7 @@ class EvalCommandTest extends Command2Test {
             ]
           }
         }"""
-    val actual = execute(otlCommand)
+    val actual = executeQuery(otlCommand)
     val expected =
       """[
         |{"_time":1568026476854,"_raw":"{\"serialField\": \"0\", \"random_Field\": \"100\", \"WordField\": \"qwe\", \"junkField\": \"q2W\"}","a":533,"result":"3a69aa1b60febf635d84cdca387928f10062450d"},
@@ -1112,7 +1112,7 @@ class EvalCommandTest extends Command2Test {
                   ]
                 }
               }"""
-    val actual = execute(otlCommand)
+    val actual = executeQuery(otlCommand)
     val expected =
       """[
         |{"_time":1568026476854,"_raw":"{\"serialField\": \"0\", \"random_Field\": \"100\", \"WordField\": \"qwe\", \"junkField\": \"q2W\"}","gr":45,"sin":0.8509035245341184,"cos":0.5253219888177297,"tan":1.6197751905438615},
@@ -1183,7 +1183,7 @@ class EvalCommandTest extends Command2Test {
           ]
         }
       }"""
-    val actual = execute(otlCommand)
+    val actual = executeQuery(otlCommand)
     val expected =
       """[
         |{"_time":1568026476854,"_raw":"{\"serialField\": \"0\", \"random_Field\": \"100\", \"WordField\": \"qwe\", \"junkField\": \"q2W\"}","symbols":"mn_rd_kln_az","result":["mn","rd","kln","az"]},
@@ -1248,7 +1248,7 @@ class EvalCommandTest extends Command2Test {
           ]
         }
       }"""
-    val actual = execute(otlCommand)
+    val actual = executeQuery(otlCommand)
     val expected =
       """[
         |{"_time":1568026476854,"_raw":"{\"serialField\": \"0\", \"random_Field\": \"100\", \"WordField\": \"qwe\", \"junkField\": \"q2W\"}","num":64,"result":8.0},
@@ -1325,7 +1325,7 @@ class EvalCommandTest extends Command2Test {
           ]
         }
       }"""
-    val actual = execute(otlCommand)
+    val actual = executeQuery(otlCommand)
     val expected =
       """[
         |{"_time":1568026476854,"_raw":"{\"serialField\": \"0\", \"random_Field\": \"100\", \"WordField\": \"qwe\", \"junkField\": \"q2W\"}","abc":"abcdefgh","result":"def"},
@@ -1390,7 +1390,7 @@ class EvalCommandTest extends Command2Test {
           ]
         }
       }"""
-    val actual = execute(otlCommand)
+    val actual = executeQuery(otlCommand)
     val expected =
       """[
         |{"_time":1568026476854,"_raw":"{\"serialField\": \"0\", \"random_Field\": \"100\", \"WordField\": \"qwe\", \"junkField\": \"q2W\"}","numText":"7483","result":7483.0},
@@ -1450,7 +1450,7 @@ class EvalCommandTest extends Command2Test {
         |            ]
         |          }
         |        }""".stripMargin
-    val actual = execute(otlCommand)
+    val actual = executeQuery(otlCommand)
     val expected =
       """[
         |{"_time":1568026476854,"_raw":"{\"serialField\": \"0\", \"random_Field\": \"100\", \"WordField\": \"qwe\", \"junkField\": \"q2W\"}","result":"1568026476854asd"},
@@ -1512,7 +1512,7 @@ class EvalCommandTest extends Command2Test {
           ]
         }
       }"""
-    val actual = execute(otlCommand)
+    val actual = executeQuery(otlCommand)
     val expected =
       """[
         |{"_time":1568026476854,"_raw":"{\"serialField\": \"0\", \"random_Field\": \"100\", \"WordField\": \"qwe\", \"junkField\": \"q2W\"}","result":1},
@@ -1583,7 +1583,7 @@ class EvalCommandTest extends Command2Test {
       |          ]
       |        }
       |      }""".stripMargin
-    val actual = execute(otlCommand)
+    val actual = executeQuery(otlCommand)
     val expected =
       """[
         |{"_time":1568026476854,"_raw":"{\"serialField\": \"0\", \"random_Field\": \"100\", \"WordField\": \"qwe\", \"junkField\": \"q2W\"}","result":2},
@@ -1741,7 +1741,7 @@ class EvalCommandTest extends Command2Test {
         |      ]
         |    }
         |  }""".stripMargin
-    val actual = execute(otlCommand)
+    val actual = executeQuery(otlCommand)
     val expected =
       """[
         |{"_time":1568026476854,"_raw":"{\"serialField\": \"0\", \"random_Field\": \"100\", \"WordField\": \"qwe\", \"junkField\": \"q2W\"}","sf":[1.0,2.0,3.0,4.0,5.0,6.0,7.0,8.0,9.0,10.0],"result":10},
@@ -1806,7 +1806,7 @@ class EvalCommandTest extends Command2Test {
         |      ]
         |    }
         |  }""".stripMargin
-    val actual = execute(otlCommand)
+    val actual = executeQuery(otlCommand)
     val expected =
       """[
         |{"_time":1568026476854,"_raw":"{\"serialField\": \"0\", \"random_Field\": \"100\", \"WordField\": \"qwe\", \"junkField\": \"q2W\"}","sf":"abc"},
@@ -2068,7 +2068,7 @@ class EvalCommandTest extends Command2Test {
         |            ]
         |          }
         |        }""".stripMargin
-    val actual = execute(otlCommand)
+    val actual = executeQuery(otlCommand)
     val expected =
       """[
         |{"_time":1568026476854,"_raw":"{\"serialField\": \"0\", \"random_Field\": \"100\", \"WordField\": \"qwe\", \"junkField\": \"q2W\"}","g":1672520401},
@@ -2140,7 +2140,7 @@ class EvalCommandTest extends Command2Test {
           ]
         }
       }"""
-    val actual = execute(otlCommand)
+    val actual = executeQuery(otlCommand)
     val expected =
       """[
         |{"_time":1568026476854,"_raw":"{\"serialField\": \"0\", \"random_Field\": \"100\", \"WordField\": \"qwe\", \"junkField\": \"q2W\"}","Колонка с пробелами":"123"},
@@ -2182,7 +2182,7 @@ class EvalCommandTest extends Command2Test {
           ]
         }
       }"""
-    val actual = execute(otlCommand)
+    val actual = executeQuery(otlCommand)
     val expected =
       """[
         |{"_raw":"{\"serialField\": \"0\", \"random_Field\": \"100\", \"WordField\": \"qwe\", \"junkField\": \"q2W\"}","_time":1568026476854,"a":1,"b":2},
@@ -2296,7 +2296,7 @@ class EvalCommandTest extends Command2Test {
         |      ]
         |    }
         |  }""".stripMargin
-    val actual = execute(otlCommand)
+    val actual = executeQuery(otlCommand)
     val expected =
       """[
         |{"_time":1568026476854,"_raw":"{\"serialField\": \"0\", \"random_Field\": \"100\", \"WordField\": \"qwe\", \"junkField\": \"q2W\"}","Word":"xnvtrs","t1":"X"},
@@ -2389,7 +2389,7 @@ class EvalCommandTest extends Command2Test {
         |      ]
         |    }
         |  }""".stripMargin
-    val actual = execute(otlCommand)
+    val actual = executeQuery(otlCommand)
     val expected =
       """[
         |{"_time":1568026476854,"_raw":"{\"serialField\": \"0\", \"random_Field\": \"100\", \"WordField\": \"qwe\", \"junkField\": \"q2W\"}","rf":[1.0,2.0,3.0,4.0,5.0,6.0,7.0,8.0,9.0,10.0],"result":-1},
@@ -2532,7 +2532,7 @@ class EvalCommandTest extends Command2Test {
           ]
         }
       }"""
-    val actual = execute(otlCommand)
+    val actual = executeQuery(otlCommand)
     val expected =
       """[
         |{"_time":1568026476854,"_raw":"{\"serialField\": \"0\", \"random_Field\": \"100\", \"WordField\": \"qwe\", \"junkField\": \"q2W\"}","абв":9},

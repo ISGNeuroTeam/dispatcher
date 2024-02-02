@@ -75,7 +75,7 @@ class ReplaceCommandTest extends Command2Test {
         |    }
         |  }
         |""".stripMargin
-    val actual = execute(otlCommand)
+    val actual = executeQuery(otlCommand)
     val expected =
       """[
         |{"_time":1568026476854,"_raw":"{\"serialField\": \"0\", \"random_Field\": \"100\", \"WordField\": \"qwe\", \"junkField\": \"q2W\"}","junkField":"axdZZZ"},
@@ -165,7 +165,7 @@ class ReplaceCommandTest extends Command2Test {
         |    }
         |  }
         |""".stripMargin
-    val actual = execute(otl_command)
+    val actual = executeQuery(otl_command)
     val expected =
       """[
         |{"_time":1568026476854,"_raw":"{\"serialField\": \"0\", \"random_Field\": \"100\", \"WordField\": \"qwe\", \"junkField\": \"q2W\"}","text":"catcat"},
@@ -255,7 +255,7 @@ class ReplaceCommandTest extends Command2Test {
         |    }
         |  }
         |""".stripMargin
-    val actual = execute(otl_command)
+    val actual = executeQuery(otl_command)
     val expected =
       """[
         |{"_time":1568026476854,"_raw":"{\"serialField\": \"0\", \"random_Field\": \"100\", \"WordField\": \"qwe\", \"junkField\": \"q2W\"}","text":"1 2 3"},
@@ -345,7 +345,7 @@ class ReplaceCommandTest extends Command2Test {
         |    }
         |  }
         |""".stripMargin
-    val actual = execute(otl_command)
+    val actual = executeQuery(otl_command)
     val expected =
       """[
         |{"_time":1568026476854,"_raw":"{\"serialField\": \"0\", \"random_Field\": \"100\", \"WordField\": \"qwe\", \"junkField\": \"q2W\"}","eqField":"d=efgh"},
@@ -435,7 +435,7 @@ class ReplaceCommandTest extends Command2Test {
         |    }
         |  }
         |""".stripMargin
-    val actual = execute(otl_command)
+    val actual = executeQuery(otl_command)
     val expected =
       """[
         |{"_time":1568026476854,"_raw":"{\"serialField\": \"0\", \"random_Field\": \"100\", \"WordField\": \"qwe\", \"junkField\": \"q2W\"}","eqField":"d=efgh"},

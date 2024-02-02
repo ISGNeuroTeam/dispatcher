@@ -6,7 +6,7 @@ import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.log4j.Logger
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.{DataFrame, SparkSession, functions => F}
-import org.scalatest.{BeforeAndAfterAll, FunSuite}
+import org.scalatest.{Assertion, BeforeAndAfterAll, FunSuite}
 import ot.AppConfig
 import ot.AppConfig.config
 import play.api.libs.json.{JsValue, Json}
@@ -110,8 +110,8 @@ class Command2Test extends FunSuite with BeforeAndAfterAll {
     commandClasses = if (kafkaExists) {commandsProvider.get.commandClasses} else {Map()}
     if (List("SearchCommand", "OtstatsCommand").exists(this.getClass.getName.contains(_))) {
       val df = spark.read.options(
-        Map("inferSchema" -> "true", "delimiter" -> ",", "header" -> "true", "quote" -> "\"", "escape" -> "\"")
-      )
+          Map("inferSchema" -> "true", "delimiter" -> ",", "header" -> "true", "quote" -> "\"", "escape" -> "\"")
+        )
         .csv(this.getClass.getClassLoader.getResource("data/sensors.csv").getPath)
         .withColumn("index", F.lit(s"$test_index-0"))
         .withColumn("_time", F.col("_time").cast(LongType))
@@ -160,12 +160,16 @@ class Command2Test extends FunSuite with BeforeAndAfterAll {
     spark.read.json(Seq(json.stripMargin).toDS)
   }
 
-  def execute(query: String): String = {
-    val fullQuery = createQuery(query)
+  def executeQuery(query: String, readCommand: String = "search"): String = {
+    val resDf = runQuery(query, readCommand)
+    resDf.toJSON.collect().mkString("[\n", ",\n", "\n]")
+  }
+
+  def runQuery(query: String, readCommand: String = "search"): DataFrame = {
+    val fullQuery = createQuery(query, readCommand)
     val cmdJson: JsValue = Json.parse(fullQuery)
     val commandsExecutor = new CommandExecutor(AppConfig.config, commandClasses, null)
-    val resDf = commandsExecutor.execute("1", cmdJson.as[List[JsValue]])
-    resDf.toJSON.collect().mkString("[\n", ",\n", "\n]")
+    commandsExecutor.execute("1", cmdJson.as[List[JsValue]])
   }
 
   def executeFull(query: String): DataFrame = {
@@ -179,40 +183,41 @@ class Command2Test extends FunSuite with BeforeAndAfterAll {
     val readQueryPart = readCommand match {
       case "search" =>
         s"""{
-          |"name": "$readCommand",
-          |"arguments": {
-          | "index": [
-          | {
-          |          "key": "index",
-          |          "type": "string",
-          |          "value": "$index",
-          |          "arg_type": "arg",
-          |          "group_by": [],
-          |          "named_as": ""
-          | }
-          | ],
-          | "earliest": [
-          | {
-          |          "key": "earliest",
-          |          "type": "integer",
-          |          "value": $startTime,
-          |          "arg_type": "arg",
-          |          "group_by": [],
-          |          "named_as": ""
-          | }
-          | ],
-          | "latest": [
-          | {
-          |          "key": "latest",
-          |          "type": "integer",
-          |          "value": $finishTime,
-          |          "arg_type": "arg",
-          |          "group_by": [],
-          |          "named_as": ""
-          | }
-          | ]
-          |}
-          |}""".stripMargin
+           |"name": "$readCommand",
+           |"arguments": {
+           | "index": [
+           | {
+           |          "key": "index",
+           |          "type": "string",
+           |          "value": "$index",
+           |          "arg_type": "arg",
+           |          "group_by": [],
+           |          "named_as": ""
+           | }
+           | ],
+           | "earliest": [
+           | {
+           |          "key": "earliest",
+           |          "type": "integer",
+           |          "value": $startTime,
+           |          "arg_type": "arg",
+           |          "group_by": [],
+           |          "named_as": ""
+           | }
+           | ],
+           | "latest": [
+           | {
+           |          "key": "latest",
+           |          "type": "integer",
+           |          "value": $finishTime,
+           |          "arg_type": "arg",
+           |          "group_by": [],
+           |          "named_as": ""
+           | }
+           | ]
+           |}
+           |}""".stripMargin
+      //case "otstats" =>
       case _ => ""
     }
     "[" + readQueryPart + {if(otlCommand.nonEmpty) "," else ""} + otlCommand + "]"
@@ -250,6 +255,30 @@ class Command2Test extends FunSuite with BeforeAndAfterAll {
         val fs = org.apache.hadoop.fs.FileSystem.get(new URI(dir), sparkContext.hadoopConfiguration)
         fs.delete(new Path(dir), true)
       case None =>
+    }
+  }
+
+  def compareDataFrames(df_actual: DataFrame, df_expected: DataFrame): Assertion={
+    assert(
+      df_actual.schema == df_expected.schema,
+      "DataFrames schemas should be equal"
+    )
+
+    assert(
+      df_actual.count() == df_expected.count(),
+      "DataFrames sizes should be equal"
+    )
+
+    if (df_actual.isEmpty && df_expected.isEmpty)
+      assert(true)
+    else {
+      val diff = df_actual.except(df_expected).union(df_expected.except(df_actual))
+      assert(
+        diff.isEmpty,
+        s"DataFrames are different. " +
+          s"\n Counts actual ${df_actual.count()} / expected ${df_expected.count()} / diff ${diff.count()} " +
+          s"\n Difference is:\n${diff.collect().mkString("\n")}"
+      )
     }
   }
 }

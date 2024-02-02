@@ -19,7 +19,7 @@ class WhereCommandTest extends Command2Test {
                 ]
               }
             }"""
-    val actual = execute(otlCommand) //TODO
+    val actual = executeQuery(otlCommand) //TODO
     val expected =
       """[
         |{"_raw":"{\"serialField\": \"5\", \"random_Field\": \"50\", \"WordField\": \"jkl\", \"junkField\": \"casd(@#)asd\"}","serialField":"5","_time":1568026476859},

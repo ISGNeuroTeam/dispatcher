@@ -1,6 +1,7 @@
 package ot.scalaotl
 package commands
 
+import com.isgneuro.otl.processors.Fields
 import org.apache.spark.sql.DataFrame
 import ot.scalaotl.extensions.StringExt._
 import ot.scalaotl.parsers.WildcardParser
@@ -58,7 +59,9 @@ class OTLFields(sq: SimpleQuery) extends OTLBaseCommand(sq) with WildcardParser 
    * @return [[DataFrame]]  - outgoing dataframe with OTL-command results
    */
   override def transform(_df: DataFrame): DataFrame = {
-    val initCols = _df.columns.map(_.addSurroundedBackticks)
+    val fielder = new Fields(spark, act, returns.flatFields)
+    fielder.transform(_df)
+    /*val initCols = _df.columns.map(_.addSurroundedBackticks)
     // field-list from the query
     val retCols = returns.flatFields
       .filter(x => !x.equals(act))
@@ -79,6 +82,6 @@ class OTLFields(sq: SimpleQuery) extends OTLBaseCommand(sq) with WildcardParser 
     newCols match {
       case head :: tail => _df.select(head, tail: _*)
       case _ => spark.emptyDataFrame
-    }
+    }*/
   }
 }

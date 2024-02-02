@@ -35,7 +35,7 @@ class RenameCommandTest extends Command2Test {
         |      ]
         |    }
         |  }""".stripMargin
-    val actual = execute(otlCommand)
+    val actual = executeQuery(otlCommand)
     val expected =
       """[
         |{"_time":1568026476854,"_raw":"{\"serialField\": \"0\", \"random_Field\": \"100\", \"WordField\": \"qwe\", \"junkField\": \"q2W\"}","aa":1},
