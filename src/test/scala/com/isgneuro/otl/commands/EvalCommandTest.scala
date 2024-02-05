@@ -555,127 +555,83 @@ class EvalCommandTest extends Command2Test {
     assert(jsonCompare(actual, expected), f"Result : $actual\n---\nExpected : $expected")
   }
 
-  /*test("Test 3.2 Command: |eval mvrange") {
+  test("Test 3.2 Command: |eval mvrange") {
     val otlCommand =
-    """{
-      |    "name": "eval",
-      |    "arguments": {
-      |      "evaluations": [
-      |        {
-      |          "key": "rf",
-      |          "type": "function",
-      |          "value": {
-      |            "type": "function",
-      |            "funcargs": [
-      |              {
-      |                "type": "integer",
-      |                "value": 1,
-      |                "leaf_type": "simple",
-      |                "grouped_by": []
-      |              },
-      |              {
-      |                "type": "integer",
-      |                "value": 10,
-      |                "leaf_type": "simple",
-      |                "grouped_by": []
-      |              }
-      |            ],
-      |            "funcname": {
-      |              "type": "term",
-      |              "value": "mvrange",
-      |              "leaf_type": "simple"
-      |            },
-      |            "leaf_type": "complex"
-      |          },
-      |          "arg_type": "tree",
-      |          "group_by": [],
-      |          "named_as": ""
-      |        }
-      |      ]
-      |    }
-      |  },
-      |  {
-      |    "name": "eval",
-      |    "arguments": {
-      |      "evaluations": [
-      |        {
-      |          "key": "wf",
-      |          "type": "function",
-      |          "value": {
-      |            "type": "function",
-      |            "funcargs": [
-      |              {
-      |                "type": "integer",
-      |                "value": 11,
-      |                "leaf_type": "simple",
-      |                "grouped_by": []
-      |              },
-      |              {
-      |                "type": "integer",
-      |                "value": 20,
-      |                "leaf_type": "simple",
-      |                "grouped_by": []
-      |              }
-      |            ],
-      |            "funcname": {
-      |              "type": "term",
-      |              "value": "mvrange",
-      |              "leaf_type": "simple"
-      |            },
-      |            "leaf_type": "complex"
-      |          },
-      |          "arg_type": "tree",
-      |          "group_by": [],
-      |          "named_as": ""
-      |        }
-      |      ]
-      |    }
-      |  },
-      |  {
-      |    "name": "eval",
-      |    "arguments": {
-      |      "evaluations": [
-      |        {
-      |          "key": "result",
-      |          "type": "function",
-      |          "value": {
-      |            "type": "function",
-      |            "funcargs": [
-      |              {
-      |                "type": "term",
-      |                "value": "rf",
-      |                "leaf_type": "simple",
-      |                "grouped_by": []
-      |              },
-      |              {
-      |                "type": "term",
-      |                "value": "wf",
-      |                "leaf_type": "simple",
-      |                "grouped_by": []
-      |              },
-      |              {
-      |                "type": "string",
-      |                "value": "---",
-      |                "leaf_type": "simple",
-      |                "grouped_by": []
-      |              }
-      |            ],
-      |            "funcname": {
-      |              "type": "term",
-      |              "value": "mvzip",
-      |              "leaf_type": "simple"
-      |            },
-      |            "leaf_type": "complex"
-      |          },
-      |          "arg_type": "tree",
-      |          "group_by": [],
-      |          "named_as": ""
-      |        }
-      |      ]
-      |    }
-      |  }""".stripMargin
-  val actual = execute(otlCommand)
-    val actual = execute("""eval x=tonumber(serialField) |eval x=mvrange(1,x,2) """)
+      """{
+        |    "name": "eval",
+        |    "arguments": {
+        |      "evaluations": [
+        |        {
+        |          "key": "x",
+        |          "type": "function",
+        |          "value": {
+        |            "type": "function",
+        |            "funcargs": [
+        |              {
+        |                "type": "term",
+        |                "value": "serialField",
+        |                "leaf_type": "simple",
+        |                "grouped_by": []
+        |              }
+        |            ],
+        |            "funcname": {
+        |              "type": "term",
+        |              "value": "tonumber",
+        |              "leaf_type": "simple"
+        |            },
+        |            "leaf_type": "complex"
+        |          },
+        |          "arg_type": "tree",
+        |          "group_by": [],
+        |          "named_as": ""
+        |        }
+        |      ]
+        |    }
+        |  },
+        |  {
+        |    "name": "eval",
+        |    "arguments": {
+        |      "evaluations": [
+        |        {
+        |          "key": "x",
+        |          "type": "function",
+        |          "value": {
+        |            "type": "function",
+        |            "funcargs": [
+        |              {
+        |                "type": "integer",
+        |                "value": 1,
+        |                "leaf_type": "simple",
+        |                "grouped_by": []
+        |              },
+        |              {
+        |                "type": "term",
+        |                "value": "x",
+        |                "leaf_type": "simple",
+        |                "grouped_by": []
+        |              },
+        |              {
+        |                "type": "integer",
+        |                "value": 2,
+        |                "leaf_type": "simple",
+        |                "grouped_by": []
+        |              }
+        |            ],
+        |            "funcname": {
+        |              "type": "term",
+        |              "value": "mvrange",
+        |              "leaf_type": "simple"
+        |            },
+        |            "leaf_type": "complex"
+        |          },
+        |          "arg_type": "tree",
+        |          "group_by": [],
+        |          "named_as": ""
+        |        }
+        |      ]
+        |    }
+        |  }""".stripMargin
+    val actual = executeQuery(otlCommand)
     val expected =
       """[
         |{"_raw":"{\"serialField\": \"0\", \"random_Field\": \"100\", \"WordField\": \"qwe\", \"junkField\": \"q2W\"}","_time":1568026476854,"serialField":"0","x":[]},
@@ -690,7 +646,7 @@ class EvalCommandTest extends Command2Test {
         |{"_raw":"{\"serialField\": \"9\", \"random_Field\": \"10\", \"WordField\": \"USA\", \"junkField\": \"word\"}","_time":1568026476863,"serialField":"9","x":[1.0,3.0,5.0,7.0,9.0]}
         |]""".stripMargin
     assert(jsonCompare(actual, expected), f"Result : $actual\n---\nExpected : $expected")
-  }*/
+  }
 
   test("Test 4 Command: | eval mvzip") { //TODO
     val otlCommand =

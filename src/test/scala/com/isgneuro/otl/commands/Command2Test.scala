@@ -190,7 +190,7 @@ class Command2Test extends FunSuite with BeforeAndAfterAll {
            |          "key": "index",
            |          "type": "string",
            |          "value": "$index",
-           |          "arg_type": "arg",
+           |          "arg_type": "kwarg",
            |          "group_by": [],
            |          "named_as": ""
            | }
@@ -200,7 +200,7 @@ class Command2Test extends FunSuite with BeforeAndAfterAll {
            |          "key": "earliest",
            |          "type": "integer",
            |          "value": $startTime,
-           |          "arg_type": "arg",
+           |          "arg_type": "kwarg",
            |          "group_by": [],
            |          "named_as": ""
            | }
@@ -210,7 +210,7 @@ class Command2Test extends FunSuite with BeforeAndAfterAll {
            |          "key": "latest",
            |          "type": "integer",
            |          "value": $finishTime,
-           |          "arg_type": "arg",
+           |          "arg_type": "kwarg",
            |          "group_by": [],
            |          "named_as": ""
            | }
