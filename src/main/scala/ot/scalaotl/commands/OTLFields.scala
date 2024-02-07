@@ -61,27 +61,5 @@ class OTLFields(sq: SimpleQuery) extends OTLBaseCommand(sq) with WildcardParser 
   override def transform(_df: DataFrame): DataFrame = {
     val fielder = new Fields(spark, act, returns.flatFields)
     fielder.transform(_df)
-    /*val initCols = _df.columns.map(_.addSurroundedBackticks)
-    // field-list from the query
-    val retCols = returns.flatFields
-      .filter(x => !x.equals(act))
-      .map(_.replace("\"", ""))
-    // list of fields from the df matching regular expressions in the field-list from the query
-    val retColsWc = returnsWithWc(initCols, returns).flatFields
-      .filter(x => !x.equals(act))
-      .map(_.replace("\"", "")).union(retCols)
-    // it is correct to use retCols in 'if' statement (not retColsWc) because applying wildcards removes "-" usually
-    val initColsList = initCols.toList
-    // if field-list contains minus return difference from retColsWc, else intersection with retColsWc
-    val newCols = if (act.equals("`-`")) {
-      initColsList.diff(retColsWc)
-    } else {
-      retColsWc.intersect(initColsList)
-    }
-    // if newCols is empty return original df, otherwise return the selected columns from it
-    newCols match {
-      case head :: tail => _df.select(head, tail: _*)
-      case _ => spark.emptyDataFrame
-    }*/
   }
 }

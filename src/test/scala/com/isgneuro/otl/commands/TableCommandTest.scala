@@ -39,7 +39,7 @@ class TableCommandTest extends Command2Test {
     assert(jsonCompare(actual, expected), f"Result : $actual\n---\nExpected : $expected")
   }
 
-  /*test("Test 1. Command: | table _time, _raw, Колонка | Simple table command with cyrillic name in column") {
+  test("Test 1. Command: | table _time, _raw, Колонка | Simple table command with cyrillic name in column") {
     val otlCommand =
       """
         |{
@@ -296,6 +296,6 @@ class TableCommandTest extends Command2Test {
      {"Колонка2":"2","Колонка":"1"}
      ]"""
     assert(jsonCompare(actual, expected), f"Result : $actual\n---\nExpected : $expected")
-  }*/
+  }
 
 }
