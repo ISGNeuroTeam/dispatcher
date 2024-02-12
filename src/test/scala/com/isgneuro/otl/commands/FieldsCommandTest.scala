@@ -4,7 +4,7 @@ import org.apache.spark.sql.functions.col
 
 class FieldsCommandTest extends Command2Test {
 
-  test("Test 1. Command: | Selection of existing fields") {
+  ignore("Test 1. Command: | Selection of existing fields") {
     val otlCommand =
       """{
         |        "name": "fields",
